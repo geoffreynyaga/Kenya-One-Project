@@ -1,3 +1,3 @@
 # Ostrich-Project
 Aircraft Conceptual Design Software
-Integrated with Machine Learning 
+Integrated with Machine Learning. 
