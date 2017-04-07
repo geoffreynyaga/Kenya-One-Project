@@ -1,2 +1,3 @@
 # Ostrich-Project
-Aircraft Design Software
+Aircraft Conceptual Design Software
+Integrated with Machine Learning 
