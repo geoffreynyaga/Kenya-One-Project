@@ -8,17 +8,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-# In[31]:
+
 
 from wing import reducedS,cruiseSpeed,rhoSL,reducedWingspan,wing1,wing,reducedRootChord,fuselageWidth
 
 
-# In[32]:
 
 #SKIN FRICTION DRAG OF A WING
 
-
-# In[43]:
 
 wingSpan = 38.30
 
@@ -110,27 +107,7 @@ print(CfTurbulent,"Cf for 100% turbulent flow")
 #Make a TABLE like in Gudmundsson 684
 
 
-# In[ ]:
 
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
-
-
-
-
-# In[ ]:
 
 
 
