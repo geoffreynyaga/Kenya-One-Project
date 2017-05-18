@@ -1,12 +1,12 @@
 import sys
 import os
 
-
+# for some wierd reason using int for pax and crew number brings a problem when the two are equal
 Range = float(input ('enter the value of range(in km)  ') )
 propEff = float(input ('enter the value of propeller efficiency(0.8-0.85)  ') )
 AR= float(input ('enter the value of aspect ratio (5-9)  ') )
-pax= int(input ('enter the number of passengers  ') )
-crew= int(input ('enter the number of pilots  '))
+pax= float(input ('enter the number of passengers  ') )
+crew= float(input ('enter the number of pilots  '))
 
 # prerequisite = {} #
 
@@ -26,6 +26,7 @@ def writeToValues(name):
     valuePrint.close()
     return mydict
 
+# import writetofile as wtf
 
 writeToValues(Range)
 writeToValues(propEff)

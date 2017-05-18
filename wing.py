@@ -51,10 +51,10 @@ writeToValues(cruiseSpeed)
 writeToValues(altitude)
 
 class aspectRatio:
-    def __init__ (self,initialWeight,finalWeight,altitude,cruiseSpeed,S):
+    def __init__ (self, initialWeight, finalWeight, altitude, cruiseSpeed,S):
         self.initialWeight = initialWeight
         self.finalWeight = finalWeight
-        self.altitude =altitude
+        self.altitude = altitude
         self.cruiseSpeed = cruiseSpeed
         self.S = S
         

@@ -1,42 +1,56 @@
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import sys
 import os
+
+# import PyQt4
 
 # pyuic5 -x example.ui -o example.py
 
 
-dict = {'name':'Zara','Age': 7,'class':'first'}
-dict['Age']= 8
+# dict = {'name':'Zara','Age': 7,'class':'first'}
+# dict['Age']= 8
 
-dict['hair'] = "long"
-print(dict)
-a=(dict['Age'])
-print(a*2)
+# dict['hair'] = "long"
+# print(dict)
+# a=(dict['Age'])
+# print(a*2)
 
-mydict = {}
-from values import prerequisites
-AR = prerequisites['AR'] * 2
-print(prerequisites['AR'],"print test")
-a = 20
-b = 20
-mydict = {} #'initialising" the an empty dictionary to be used locally in the function below
-def writeToValues(name):
-    fileName = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-    valuePrint=open("values.py","a")
-    def namestr(obj,namespace):
-        return[name for name in namespace if namespace[name] is obj]
-    b = namestr(name, globals())
-    c = "".join(str(x) for x in b)
-    mydict[(c)] = name
-    valuePrint.write(fileName)
-    valuePrint.write("=")
-    valuePrint.write(str(mydict))
-    valuePrint.write("\n")
-    valuePrint.close()
-    return mydict
-writeToValues(a)
-writeToValues(b)
+# mydict = {}
+# from values import prerequisites
+# AR = prerequisites['AR'] * 2
+# print(prerequisites['AR'],"print test")
+# test1 = 2.0
+# test2 = 2
+
+# mydict = {} #'initialising" the an empty dictionary to be used locally in the function below
+# def writeToValues(name):
+
+#     fileName = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+#     valuePrint=open("values.py","a")
+#     def namestr(obj,namespace):
+#         return[name for name in namespace if namespace[name] is obj]
+#     b = namestr(name, globals())
+#     c = "".join(str(x) for x in b)
+#     final =( (c) + ('=') + str(name))
+
+#     valuePrint.write(fileName)
+#     valuePrint.write('=')
+
+#     valuePrint.write(str(mydict))
+
+#     valuePrint.write("\n")
+#     valuePrint.write("\n")
+#     valuePrint.write(final)
+#     valuePrint.close()
+#     return mydict
+
+# writeToValues(test1)
+# writeToValues(test2)
+
+
+
+# print(mydict,"this is my dict")
 # x= 2
 # y=20
 # z=x+y

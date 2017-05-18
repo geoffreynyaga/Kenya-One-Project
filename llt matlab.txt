@@ -1,0 +1,83 @@
+% Lifting Line code in MATLAB
+% Coded by L. sankar, December 1998
+%
+croot=input('Please input root chord   ');
+ctip=input('Please input tip chord   ');
+span=input('Please input span   ');
+thetaroot=input('Please input Root twist angle in degrees   ');
+thetatip=input('Please input tip twist angle in degrees   ');
+a0root=input('Please input root lift curve slope in units/ radian   ');
+a0tip=input('Please input lift curve slope at the tip, in units/radian   ');
+alpha=input('Please input angle of attack, in degrees   ');
+alpha0root=input('Please input zero-lift angle at the root   ');
+alpha0tip=input('Please input zero lift angle at the tip   ');
+thetaroot=thetaroot * atan(1.)/45.;
+thetatip=thetatip * atan(1.)/45.;
+alpha = alpha * atan(1.)/45.;
+alpha0root=alpha0root * atan(1.)/45.;
+alpha0tip=alpha0tip * atan(1.)/45.;
+n = 10;
+theta=zeros(1,n);
+y=zeros(1,n);
+c=zeros(1,n);
+cl=zeros(1,n);
+alp=zeros(1,n);
+a=zeros(1,n);
+rhs=zeros(n,1);
+b=zeros(n,n);
+a=zeros(n,1);
+%
+% Define properties at n span stations
+%
+pi = 4. * atan(1.);
+for i=1:n
+  theta(i) = (i) * pi/(2. * n);
+  y(i) = span * 0.5 * cos(theta(i));
+  c(i) = croot+(ctip-croot)*y(i)*2./span;
+  alp(i) = alpha+thetaroot-(alpha0root+(alpha0tip-alpha0root+thetaroot-thetatip)*y(i)*2./span);
+  a(i) = a0root+(a0tip-a0root)*y(i)*2./span;
+ end
+pi = 4. * atan(1.);
+% Set up 2n x 2n system of equations for A1, A3 , ... A2n-1
+for j=1:n
+   mu = c(j)* a(j) / (4. * span)
+rhs(j,1)=alp(j)*sin(theta(j))*c(j)*a(j)/(4*span);
+for i=1:n
+l = 2 * i-1;
+b(j,i)=sin(l*theta(j))*(mu*l+sin(theta(j)));
+end
+end
+%
+% Solve for the Fourier Coefficients
+%
+a=b\rhs
+% Compute wing area and aspect ratio
+S=(croot+ctip)/2.*span;
+AR=span*span/S;
+% Compute CL
+CL=a(1)*pi*AR
+% Compute CD
+CD0=1.;
+for i=2:n
+CD0=CD0+(2.*i-1)*a(i)*a(i)/(a(1)*a(1));
+end
+CD = pi * AR * a(1) * a(1) * CD0
+% Compute spanwise load distribution, normalized by Freestream velocity times Span
+gamma=zeros(1,n);
+for i=1:n
+gamma(i)=0.0;
+y(i)=y(i)*2./span;
+for j=1:n
+gamma(i)=gamma(i)+2.*a(j)*sin((2*j-1)*theta(i));
+end
+gamma(i) = gamma(i) *  span;
+cl(i) = gamma(i)/(0.5*c(i));
+end
+cl
+%
+% Plot the circulation distribution from root to tip with labels
+%
+plot(y,cl);
+xlabel('y/Semi-Span');
+ylabel('Cl');
+title('Sectional Lift Coefficient distribution');
