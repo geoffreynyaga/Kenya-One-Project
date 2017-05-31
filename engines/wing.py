@@ -1,6 +1,6 @@
 from math import sqrt,cos,sin,pi,log,tan
 import numpy as np
-import matplotlib.pylab as plt
+import matplotlib.pyplot as plt
 import sys
 import os
 
