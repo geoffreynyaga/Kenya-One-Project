@@ -6,8 +6,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-
-
 taper = 0.8
 
 

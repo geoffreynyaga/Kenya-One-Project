@@ -1,5 +1,12 @@
-import sqlite3
-from db_API import write_to_db,read_from_db
+
+__author__ = 'Geoffrey Nyaga'
+
+
+import sys
+sys.path.append('../')
+
+from API.db_API import write_to_db,read_from_db
+
 # db = sqlite3.connect("dbse.db")
 # cursor= db.cursor()
 # cursor.execute("CREATE TABLE IF NOT EXISTS Myt (Var TEXT, Test REAL)")
@@ -23,7 +30,7 @@ write_to_db('variable',variable)
 write_to_db('variable1',variable1)
 write_to_db('variable5',variable5)
 
-# read_from_db('variable')
+read_from_db('variable')
 a = read_from_db('variable1')
 
 print (a,"this is working, hopefully")

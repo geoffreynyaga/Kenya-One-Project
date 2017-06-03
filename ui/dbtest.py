@@ -3,7 +3,7 @@ __author__ = 'Geoffrey Nyaga'
 import sys
 sys.path.append('../')
 
-from database.db_API import write_to_db
+from API.db_API import write_to_db
 
 a = 12
 
