@@ -7,7 +7,6 @@ from API.db_API import write_to_db,read_from_db
 from math import sqrt,cos,sin,pi,log,tan
 import numpy as np
 import matplotlib.pyplot as plt
-# import os
 
 import API.wingAPI as wapi 
 
@@ -224,3 +223,5 @@ else:
     oswaldEff = (wing4.sweptWingOswaldEff() + wing4.brandtOswaldEff() + wing4.douglasOswalfEff()) / 3
 
 write_to_db('oswaldEff',oswaldEff)
+
+print(wing4.douglasOswalfEff())

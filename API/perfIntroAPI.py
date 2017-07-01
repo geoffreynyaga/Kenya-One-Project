@@ -43,7 +43,8 @@ class atmosphere:
 class speeds:
     
     
-    def __init__(self,altitude,altitude_temperature,altitude_pressure,cruiseSpeed,gas_constant,gamma,altitude_density,altitude_pressureRatio,rhoSL):
+    def __init__(self,altitude,altitude_temperature,altitude_pressure,cruiseSpeed,gas_constant,gamma,altitude_density,
+                altitude_pressureRatio,rhoSL):
         self.altitude = altitude
         self.temperature = altitude_temperature
         self.pressure = altitude_pressure/altitude_pressureRatio ######AAAAAAAAAAAAAAAAAAA confirm i am guessing
@@ -54,6 +55,7 @@ class speeds:
         self.altitude_density = altitude_density
         self.altitude_pressureRatio = altitude_pressureRatio
         self.rhoSL = rhoSL
+        
     
     def soundSpeed(self):
         soundSpeed = sqrt(self.gamma*self.temperature*self.gas_constant)
@@ -75,4 +77,43 @@ class speeds:
 # In[ ]:
 
 
+class flightEnvelope:
 
+    def __init__(self,finalMTOW,S,maxSpeed,stallSpeed,negCLmin,negloadFactor,rhoSL):
+        self.finalMTOW = finalMTOW
+        self.S = S
+        self.maxSpeed = maxSpeed
+        self.stallSpeed = stallSpeed         ########### make this EAS
+        self.negCLmin = negCLmin
+        self.negloadFactor = negloadFactor
+        self.rhoSL = rhoSL
+
+    def loadFactor(self):
+        n = 2.1 + ( 24000/(self.finalMTOW + 10000))
+        return n
+
+    def minCruiseSpeed(self):
+        vcmin = 33*sqrt(self.finalMTOW/self.S)
+        return vcmin   #This is in KEAS by default
+
+    def maxCruiseSpeed(self):
+        vcmax = 0.9 * self.maxSpeed   ############## convert to KTAS if not
+        return vcmax
+    
+    def diveSpeed(self):
+        vD = 1.40 * flightEnvelope.minCruiseSpeed(self)
+        return vD  ### dive speed should be greater than this value always
+
+    def maneuveringSpeed(self):
+        vA = self.stallSpeed *sqrt(flightEnvelope.loadFactor(self))
+        return vA
+
+    def negmaneuveringSpeed(self):
+        VG = sqrt( (2*abs(self.negloadFactor)*self.finalMTOW)/(self.rhoSL*self.S*abs(self.negCLmin)))
+        return VG
+
+    
+
+
+
+    

@@ -7,11 +7,9 @@ from API.db_API import write_to_db,read_from_db
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-# import os
+
 
 import API.TESTING_MAINAPI as tmapi
-
-# from values import read_from_db
 
 
 Range = read_from_db('Range')
@@ -21,7 +19,7 @@ pax= read_from_db('pax')
 crew= read_from_db('crew')
 
 
-wtoGuess = np.arange(2000,6500,0.1)
+wtoGuess = np.arange(2000,6500,1)
 #Gudmundsson
 # weWtoGud = 0.4074 + 0.0253 * np.log(wtoGuess)
 # print(weWtoGud)
@@ -47,8 +45,9 @@ ldMax=ldmax1 **(-1)
 
 write_to_db('cdo',cdo)
 write_to_db('ldMax',ldMax)
+write_to_db('k',k)
 
-Vc = 140
+Vc = 140   #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 cbhp = 0.4
 fuelAllowance = 5 # in %
 
@@ -143,7 +142,7 @@ write_to_db('finalWeight',finalWeight)
 #e=1.05*(1-w6w1)   # Wf/Wto = 1.05(1 - W6/W1) #
 # f = A*(Wto **C)*Kvs    f is We/Wto  ......equation 1#
 # f = d - (payload+crewTotal)/Wto  ......... ....................equation 2 #
-print(wfWto*100 , "% fuel of the total weight")
+# print(wfWto*100 , "% fuel of the total weight")
 
 Kvs=1
 g= w6w1-weWto
@@ -161,6 +160,8 @@ We=mtow-(Wf+crewTotal+payload)
 print(' The value of MTOW is ' + str(mtow) + ' lbs')
 print(' The value of FUEL is ' + str(Wf)+' lbs')
 print(' The value of WE is ' + str(We)+' lbs')
+
+write_to_db('emptyWeight', We)
 
 print( '  EMPTY WEIGHT BREAKDOWN                        ')
 #initial percentage weights as given by Kundu
@@ -229,11 +230,17 @@ print( '____________________________________________________ ')
 print( '   NOW ENTER THE INITIAL PERFORMANCE DATA ESTIMATES  ')
 print( ' ___________________________________________________ ')
 
-h= float(input(' Ceiling (ft) ===>  ') )
-vmaxe=float(input(' Vmax (knots) ===>  ') )
-sto=float(input(' Take-Off Run (ft) ===>  ') )
-vstall=float(input(' Stall speed (61knots max) ===>  ') )
-rateOfClimb_estimate= float(input(' rate of climb (m/s) ===>  ') )
+# h= float(input(' Ceiling (ft) ===>  ') )
+# vmaxe=float(input(' Vmax (knots) ===>  ') )
+# sto=float(input(' Take-Off Run (ft) ===>  ') )
+# vstall=float(input(' Stall speed (61knots max) ===>  ') )
+# rateOfClimb_estimate= float(input(' rate of climb (m/s) ===>  ') )
+
+h= read_from_db('ceiling')
+vmaxe=read_from_db('maxSpeed')
+sto=read_from_db('takeOffRun')
+vstall=read_from_db('stallSpeed')
+rateOfClimb_estimate= read_from_db('rateOfClimb')
 
 print( '                          ')
 print( 'A GRAPH OF POWER LOADING VS WING LOADING IS SHOWN HERE' )
@@ -248,7 +255,14 @@ print( '                          ')
 
                    #Vmax calculations#
 
-ws = np.arange(5,30)
+start = 5
+end = 30
+interval = 1
+
+ws = np.arange(start,end,interval)
+# print(len(ws))
+
+
 propEff = 0.7 # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 rhoSL = read_from_db('rhoSL')
 vmax = vmaxe*1.688 # we have assumed it is 150 knots
@@ -329,20 +343,101 @@ vs=vstall*1.688  #vs is stall speed and the minimun by law is 61knots#
 WS3 = 0.5*rhoSL*clmax*vs **2
 #clmax is between 1.6-2.2 so we take 1.6 #
 #plot(WS3 , WP)#
+shadeline = np.full(int((end-start)/interval), 40)
 
-plt.plot(ws , wpc)
-plt.plot(ws , wptor)
-plt.plot(ws , wpvmax)
-plt.plot(ws , wprateOfClimb)
+
+plt.plot(ws , wpc , label = 'ceiling')
+plt.plot(ws , wptor, label = 'Take-Off Run')
+plt.plot(ws , wpvmax, label = 'Max Speed')
+plt.plot(ws , wprateOfClimb, label = 'Rate of Climb')
+# plt.plot(ws , shadeline)
+
+
+plt.fill_between(ws, wpc,shadeline,color='k',alpha=.5)
+plt.fill_between(ws, wptor,shadeline,color='y',alpha=.5)
+
+# plt.plot(x, y, marker='.', lw=1)
+# d = scipy.zeros(len(y))
+plt.fill_between(ws,wpvmax, where = wpvmax>=0)
+plt.fill_between(ws,wprateOfClimb, where = wprateOfClimb>=0)
+# ax.fill_between(xs, ys, where=ys<=d, interpolate=True, color='red')
+
 plt.axvline(x=WS3)
-
+plt.legend()
 plt.show()
+
+
+def find_nearest(array,value):
+    idx = (np.abs(array-value)).argmin()
+    return idx
+
+myidx = find_nearest(ws, WS3)
+
+
+def design_point():
+
+    squares = []
+
+    maxspeedidx = wpvmax[myidx]
+    takeoffidx = wptor[myidx]
+    climbidx = wprateOfClimb[myidx]
+    ceilingidx = wpc[myidx]
+    
+    myarray = np.array([maxspeedidx,takeoffidx,climbidx,ceilingidx])
+
+    for x in myarray:
+        mynum = maxspeedidx
+
+        if x >= mynum:
+            squares.append(x)
+            # print (squares) 
+        else:
+            # print ('oops')
+            # return maxspeedidx
+            pass
+              
+            for j in squares:
+                mynum = takeoffidx
+                if j > mynum:
+                    squares.remove(j)
+
+                else:
+                    # print('whats the problem here')
+                    pass
+
+                for k in squares:
+                    mynum = climbidx
+                    if k < mynum:
+                        squares.remove(k)
+
+                    else:
+                        pass
+
+                    for l in squares:
+                        mynum = ceilingidx
+                        if l > mynum:
+                            squares.remove(k)
+
+                        else:
+                            pass
+
+    # print(squares,"2nd")
+    return squares[0]
+
+WP = design_point()
+
+print (WP,"This is the computer generated WP")
+
+
 
 #******************************************PART TWO *********************************************************** #
 #******************************************AIRFOIL PARAMETERS ************************************************* #
 
-x = float(input (' enter the value of w/p -> ') )
-x1 = float(input (' enter the value of w/s -> ') )
+# x = float(input (' enter the value of w/p -> ') )
+# x1 = float(input (' enter the value of w/s -> ') )
+x = WP
+x1 = WS3
+
 write_to_db('WP',x)
 write_to_db('WS',x1)
 
@@ -397,9 +492,10 @@ g=1.155/(ldMax*0.7*550)
 i=g*h1 
 rateOfClimb1=(1-(x*i))*0.7*550/x 
 rateOfClimb=rateOfClimb1*0.3048
-write_to_db('rateOfClimb',rateOfClimb)
+# write_to_db('rateOfClimb',rateOfClimb)
 
 vc=z1/1.2 
+write_to_db('cruiseSpeed',(vc/1.688))
 vs=Vs2 
 S1=S*10.76 
 #Wave=0.5*(mtow*2) 
@@ -449,7 +545,7 @@ print( '   b) NET MAX. LIFT COEFFICIENT (Clmax) is '  + str(netclmax) )
 
 wingspan= np.sqrt (AR*S) 
 wmeanchord= wingspan/AR 
-wtaper=0.45 #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+wtaper=0.45#AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 wcroot=(wmeanchord*3) / (2*((1+wtaper+wtaper **2)/(1+wtaper))) 
 wctip=wtaper*wcroot 
 

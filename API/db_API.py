@@ -22,11 +22,11 @@ def write_to_db(x,y):
 	c.execute("SELECT * FROM Variables where Variable=?", ([(x)]))
 	data = c.fetchall()
 	if not data:
-		print ('not found')
+		# print ('not found')
 		c.execute('INSERT INTO Variables VALUES (?,?)', (x, y,))
 
 	else:
-	    print ('found')
+	    # print ('found')
 	    c.execute(" UPDATE Variables SET Value=? WHERE Variable = ? ", (y,x))
 		
 	conn.commit()
@@ -41,6 +41,10 @@ def read_from_db(x):
 	c.execute("SELECT * FROM Variables WHERE Variable=?",([(x)]))
 	for row in c.fetchall():
 		return (row[1])
+
+	conn.commit()
+	c.close()
+	conn.close()
 
 """ How this should be used """
 # variable = 1

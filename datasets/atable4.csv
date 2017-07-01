@@ -1,0 +1,131 @@
+Manufacturer,BOEING,BOEING,BOEING,BOEING,BOEING,BOEING,BOEING
+Type,777-,777-,777-,777-,777-,777-,777-
+Model,100X1,100X2,200,200IGW,200X1,200X2,300
+Initial service date,2000,2000,1995,1995,2000,2000,1998
+In service (ordered),,,,,,,
+Africa,-,-,--->,3(4),-,-,-
+Middle East/Asia/Pacific,-,-,--->,90(74),-,-,11(37)
+Europe & CIS,-,-,--->,26(39),-,-,-
+North & South America,-,-,--->,38(78),-,-,-
+Total aircraft,-,-,--->,157(195),-,-,11(37)
+Engine Manufacturer,R-R/GE/PW,R-R/GE/PW,R-R/GE/PW,R-R/GE/PW,R-R/GE/PW,R-R/GE/PW,R-R
+Model / Type,Options,Options,Options,Options,Options,Options,Trent 895
+No. of engines,2,2,2,2,2,2,2
+Static Thrust (kN),400.0,400.0,342.5,373.7,413.8,436.0,423.0
+Operational Items:,,,,,,,
+Accomodation:,,,,,,,
+Max. seats (single class),330,330,440,440,440,440,550
+Two class seating,,,375,375,375,375,479
+Three class seating,271,250,310,310,298,298,394
+No. abreast,,,10,10,10,10,10
+Hold volume (m3),,,160.00,160.00,160.00,160.00,200.50
+Volume per passenger,,,0.36,0.36,0.36,0.36,0.36
+Mass (Weight) (kg):,,,,,,,
+Ramp,,,243577,287804,,,299600
+Max. take-off,286621,299320,242670,286897,299320,312925,299370
+Max. landing,,,201850,208652,,,237685
+Zero-fuel,,,190510,195045,,,224530
+Max. payload,,,54635,56925,,,68570
+Max. fuel payload,,,,,,,
+Design payload,25745,23750,35625,29450,,,
+Design fuel load,,,71170,119327,,,
+Operational empty,,,135875,138120,,,155960
+Weight Ratios:,,,,,,,
+Ops empty/Max. T/O,,,0.560,0.481,,,0.521
+Max. payload/Max. T/O,,,0.225,0.198,,,0.229
+Max. fuel/Max. T/O,,,0.382,0.466,,,0.452
+Max. landing/Max. T/O,,,0.832,0.727,,,0.794
+Fuel (litres):,,,,,,,
+Standard,,,117348,169208,174735,174735,171170
+Optional,,,,,,,
+,,,,,,,
+DIMENSIONS,,,,,,,
+Fuselage:,,,,,,,
+Length (m),56.40,59.60,62.78,62.78,62.78,62.78,72.88
+Height (m),6.20,6.20,6.20,6.20,6.20,6.20,6.20
+Width (m),6.20,6.20,6.20,6.20,6.20,6.20,6.20
+Finess Ratio,9.10,9.61,10.13,10.13,10.13,10.13,11.75
+Wing:,,,,,,,
+Area (mý),427.80,427.80,427.80,427.80,427.80,427.80,427.80
+Span (m),60.90,60.90,60.90,60.90,60.90,60.90,60.90
+MAC (m),8.75,8.75,8.75,8.75,8.75,8.75,8.75
+Aspect Ratio,8.67,8.67,8.67,8.67,8.67,8.67,8.67
+Taper Ratio,0.149,0.149,0.149,0.149,0.149,0.149,0.149
+Average (t/c) %,,,,,,,
+1/4 Chord Sweep (§),31.60,31.60,31.60,31.60,31.60,31.60,31.60
+High Lift Devices:,,,,,,,
+Trailing Edge Flaps Type,S2/S1,S2/S1,S2/S1,S2/S1,S2/S1,S2/S1,S2/S1
+Flap Span/Wing Span,0.758,0.758,0.758,0.758,1.758,2.758,2.758
+Area (mý),,,,,,,
+Leading Edge Flaps Type,slats,slats,slats,slats,slats,slats,slats
+Area (mý),,,,,,,
+Vertical Tail:,,,,,,,
+Area (mý),53.23,53.23,53.23,53.23,53.23,53.23,53.23
+Height (m),9.24,9.24,9.24,9.24,9.24,9.24,9.24
+Aspect Ratio,1.60,1.60,1.60,1.60,1.60,1.60,1.60
+Taper Ratio,0.290,0.290,0.290,0.290,0.290,0.290,0.290
+1/4 Chord Sweep (§),46.00,46.00,46.00,46.00,46.00,46.00,46.00
+Tail Arm (m),23.41,25.01,26.60,26.60,26.60,26.60,31.65
+Sv/S,0.124,0.124,0.124,0.124,0.124,0.124,0.124
+SvLv/Sb,0.048,0.051,0.054,0.054,0.054,0.054,0.065
+Horizontal Tail:,,,,,,,
+Area (mý),101.26,101.26,101.26,101.26,101.26,101.26,101.26
+Span (m),21.35,21.35,21.35,21.35,21.35,21.35,21.35
+Aspect Ratio,4.50,4.50,4.50,4.50,4.50,4.50,4.50
+Taper Ratio,0.300,0.300,0.300,0.300,0.300,0.300,0.300
+1/4 Chord Sweep (§),35.00,35.00,35.00,35.00,35.00,35.00,35.00
+Tail Arm  (m),24.71,26.31,27.90,27.90,27.90,27.90,32.95
+Sh/S,0.237,0.237,0.237,0.237,0.237,0.237,0.237
+ShLh/Sc,0.668,0.712,0.755,0.755,0.755,0.755,0.891
+Undercarriage:,,,,,,,
+Track (m),11.00,11.00,11.00,11.00,11.00,11.00,11.00
+Wheelbase (m),25.80,25.80,25.80,25.80,25.80,25.80,25.80
+Turning radius (m),41.00,41.00,41.00,41.00,41.00,41.00,41.00
+No. of wheels (nose;main),2;12,2;12,2;12,2;12,2;12,2;12,2;12
+Main Wheel diameter (m),1.118,1.118,1.118,1.118,1.118,1.118,1.118
+Main Wheel width (m),0.457,0.457,0.457,0.457,0.457,0.457,0.457
+Nacelle:,,,,,,,
+Length (m),7.30,7.30,7.30,7.30,7.30,7.30,7.30
+Max. width (m),3.20,3.20,3.20,3.20,3.20,3.20,3.20
+Spanwise location,0.326,0.326,0.326,0.326,0.326,0.326,0.326
+,,,,,,,
+PERFORMANCE,,,,,,,
+Loadings:,,,,,,,
+Max. Power Load (kg/kN),358.28,374.15,354.24,383.90,361.67,358.86,353.87
+Max. Wing Load (kg/m2),669.99,699.67,567.25,670.63,699.67,731.47,699.79
+Thrust/Weight Ratio,0.2845,0.2724,0.2878,0.2655,0.2818,0.2841,0.2881
+Take-off (m):,,,,,,,
+ISA sea level,,,2135,,,,
+ISA +20§C SL.,,,2440,3050,,,3540
+ISA 5000ft,,,,,,,
+ISA +20§C 5000ft,,,,,,,
+Landing (m):,,,,,,,
+ISA sea level.,,,1585,1620,,,1860
+ISA +20§C SL.,,,1585,1620,,,1860
+ISA 5000ft,,,1875,1940,,,
+ISA +20§C 5000ft,,,1875,1940,,,
+Speeds (kt/Mach):,,,,,,,
+V2,,,,,,,
+Vapp,,,138,140,,,
+Vno/Mmo,,,330/M0.87,330/M0.87,,,330/M0.87
+Vne/Mme,,,,,,,
+CLmax (T/O),,,,,,,
+CLmax (L/D @ MLM),,,2.53,2.55,,,
+Max. cruise :,,,,,,,
+Speed (kt),,,499,499,,,
+Altitude (ft),,,39000,39000,,,
+Fuel consumption (kg/h),,,,,,,
+Long range cruise:,,,,,,,
+Speed (kt),,,476,476,,,
+Altitude (ft),,,39000,39000,,,
+Fuel consumption (kg/h),,,,,,,
+Range (nm):,,,,,,,
+Max. payload,,,,,,,
+Design range,7625,8420,4820,7380,7455,7970,5604
+Max. fuel (+ payload),,,,,,,
+Ferry range,,,,,,,
+Design Parameters:,,,,,,,
+W/SCLmax,,,,,,,
+W/aCLtoST,,,,,,,
+Fuel/pax/nm (kg),,,,,,,
+Seats x Range (seats.nm),,,,,,,

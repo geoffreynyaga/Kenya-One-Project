@@ -1,3 +1,3 @@
-# Kenya One Project
+# Ostrich-Project
 Aircraft Conceptual Design Software
 Integrated with Machine Learning. 

@@ -81,3 +81,5 @@ plot(y,cl);
 xlabel('y/Semi-Span');
 ylabel('Cl');
 title('Sectional Lift Coefficient distribution');
+
+

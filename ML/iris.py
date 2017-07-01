@@ -3,12 +3,14 @@ import numpy as np
 from sklearn import tree
 
 iris = load_iris()
-# print(iris.feature_names)
-# print(iris.target_names)
-# print(iris.data[0])
-# print (iris.target[0])
-for i in range(len(iris.target)):
-	print("example %d: label %s, features %s"%(i,iris.target[i],iris.data[i]))
+print(iris.feature_names)
+print(iris.target_names)
+print(iris.data[0])
+print(iris.data[50])
+print (iris.target[1])
+print(iris.target)
+# for i in range(len(iris.target)):
+# 	print("example %d: label %s, features %s"%(i,iris.target[i],iris.data[i]))
 
 test_idx = [0,50,100]
 
@@ -23,8 +25,10 @@ test_data = iris.data[test_idx]
 clf = tree.DecisionTreeClassifier()
 clf = clf.fit(train_data,train_target)
 
-print(test_target)
-print (clf.predict(test_data))
+print(train_data)
+
+# print(test_target)
+# print (clf.predict(test_data))
 
 import pydotplus
 from sklearn.externals.six import StringIO
@@ -42,5 +46,5 @@ Image(graph.create_png())
 graph.write_pdf("iris.pdf")
 
 
-print(test_data[0],test_target[0])
-print(iris.feature_names,iris.target_names)
+# print(test_data[0],test_target[0])
+# print(iris.feature_names,iris.target_names)

@@ -110,7 +110,5 @@ print(speeds.CAS(),"ft/s calibrated airspeed")
 
 
 
-# In[ ]:
-
 
 
