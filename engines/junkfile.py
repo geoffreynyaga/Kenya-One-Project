@@ -1,61 +1,15 @@
+
+# coding: utf-8
+
+# In[1]:
+
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
 import os
 import math
 
-N = 9 # (number of segments - 1)
-S = 24.3919 # m^2
-AR = 7.8 # Aspect ratio
-taper = 0.45 # Taper ratio
-alpha_twist = -2 # Twist angle (deg)
-i_w = 1 # wing setting angle (deg)
-a_2d = 6.8754 # lift curve slope (1/rad)
-alpha_0 = -4.2 # zero-lift angle of attack (deg)
-b = math.sqrt(AR*S) # wing span (m)
-MAC = S/b # Mean Aerodynamic Chord (m)
-Croot = (1.5*(1+taper)*MAC)/(1+taper+taper**2) # root chord (m)
-theta = np.arange(math.pi/(2*N), math.pi/2, math.pi/(2*(N+1)))
-alpha = np.arange(i_w+alpha_twist,i_w ,-alpha_twist/(N))
-z = (b/2)*np.cos(theta)
-c = Croot * (1 - (1-taper)* np.cos(theta)) # Mean Aerodynamics
-mu = c * a_2d / (4 * b)
-LHS = np.asarray(mu * (alpha-alpha_0)/57.3)#.reshape((N-1),1)# Left Hand Side
 
-RHS = [0,0,0,0,0,0,0,0,0]
-for i in range(1,N+1):
-  RHS_iter = np.sin(i*theta)*(1+(mu*i)/(np.sin(theta)))
-  # RHS.append(RHS_iter)
-  test = RHS_iter + RHS
-  # print (RHS)
-RHS = (np.asarray(RHS))#.reshape((N-1),(N-1))
-print((RHS),"RHS")
-
-# print(RHS.shape,"RHS")
-test = (np.asarray(test))
-print(test,"test")
-
-# inv_RHS = np.linalg.inv(RHS)
-# inv_RHS = np.inv(RHS)
-# print(inv_RHS,"inv_RHS")
-ans = np.matmul(test,LHS)
-ans = np.dot(test,LHS)
-print(ans,"ans")
-
-# print ((np.sin((2*(2-1))) * theta[2]) * (1 + (mu[2] * (2*(2-1)) / np.sin(theta[2]))),"tetstststst")
-for i,j in  zip (range(1,N),range(1,N)):
-    print(i,"i")
-    print (j,"j")
-    B = (math.sin((2*(j-1))) * theta[i]) * (1 + (mu[i] * (2*j-1)) / np.sin(theta[i]))
-           
-    #print(B)   
-    A = B/np.transpose(LHS) 
-    print(A)
-    
-    sum1 = 0 + (2*j-1) * A[j] * np.sin((2*j-1)* theta[i])
-    sum2 = 0 + A[j] * np.sin((2*j-1) * theta[i])
-  
-   
 
 # import PyQt4
 

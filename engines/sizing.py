@@ -527,51 +527,51 @@ write_to_db('fuselageLength',lfus*3.2808)
 # print( '          ')
 # print( '   Fuselage length    '  + str(lfus) + ' meters')
 
-m=mtow/2.20462  #kg
-#S=24.3919  #sq m
-# clmax=1.8
-negclmax=-1.2 
-#AR=7.8 
-clalfa=6.8754 #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-vci=vc 
-vc=vci/1.688 
-nmax=3.8 
-negnmax=-(0.5*nmax) 
-vd=1.55*vc 
-f=[nmax,vd] 
-g=[negnmax,vd] 
-weight=m*9.81 
-dsi=1.225
+# m=mtow/2.20462  #kg
+# #S=24.3919  #sq m
+# # clmax=1.8
+# negclmax=-1.2 
+# #AR=7.8 
+# clalfa=6.8754 #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# vci=vc 
+# vc=vci/1.688 
+# nmax=3.8 
+# negnmax=-(0.5*nmax) 
+# vd=1.55*vc 
+# f=[nmax,vd] 
+# g=[negnmax,vd] 
+# weight=m*9.81 
+# dsi=1.225
 
-o=[0,0]
-vsi=vs/1.688 
-vs=vsi 
-a=[1,vs] 
-v1=np.sqrt( (nmax*weight)/(0.5*dsi*S*netclmax) )  # m/s
-v= v1*1.94384 
-b=[nmax , v] 
+# o=[0,0]
+# vsi=vs/1.688 
+# vs=vsi 
+# a=[1,vs] 
+# v1=np.sqrt( (nmax*weight)/(0.5*dsi*S*netclmax) )  # m/s
+# v= v1*1.94384 
+# b=[nmax , v] 
 
-vst1= np.sqrt( (-2*weight)/(dsi*S*negclmax) )  # m/s
-vst= vst1*1.94384 
-k=[-1 , vst]
+# vst1= np.sqrt( (-2*weight)/(dsi*S*negclmax) )  # m/s
+# vst= vst1*1.94384 
+# k=[-1 , vst]
 
-# from origin to A
-x=np.arange(vs)
-x1=x/1.94384 
-y1=((0.5*dsi*S*netclmax)/weight)*x1 **2
+# # from origin to A
+# x=np.arange(vs)
+# x1=x/1.94384 
+# y1=((0.5*dsi*S*netclmax)/weight)*x1 **2
 
 
-x2=np.arange(vs,v)
-x22=x2/1.94384 
-y2=((0.5*dsi*S*netclmax)/weight)*x22 **2
+# x2=np.arange(vs,v)
+# x22=x2/1.94384 
+# y2=((0.5*dsi*S*netclmax)/weight)*x22 **2
 
-x3=np.arange(v,vd,0.1)
-y3=nmax 
+# x3=np.arange(v,vd,0.1)
+# y3=nmax 
 
-#plt.plot(x3, y3)
-plt.show()
+# #plt.plot(x3, y3)
+# plt.show()
 
-plt.plot (x,y1)
-plt.plot(x2,y2)
-plt.axhline(y=y3)
-plt.show()
+# plt.plot (x,y1)
+# plt.plot(x2,y2)
+# plt.axhline(y=y3)
+# plt.show()

@@ -1,8 +1,11 @@
-# import numpy as np
-# import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.pyplot as plt
 import os
 import sys
-#
+
+a = [1,2,3]
+b = np.array((2,3,4))
+print(np.hstack((a,b)))
 # from values import mtow
 # print(mtow*2)
 #
@@ -164,25 +167,25 @@ import sys
 # (x+1)**2 - (x**2 + 2*x + 1**2)
 
 # print(integrate(cos(x),x))
-import sys
-import os
-mydict = {} #'initialising" the an empty dictionary to be used locally in the function below
-def writeToValues(name):
-    fileName = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-    valuePrint=open("values.py","a")
-    def namestr(obj,namespace):
-        return[name for name in namespace if namespace[name] is obj]
-    b = namestr(name, globals())
-    c = "".join(str(x) for x in b)
-    mydict[(c)] = name
-    valuePrint.write(fileName)
-    valuePrint.write("=")
-    valuePrint.write(str(mydict))
-    valuePrint.write("\n")
-    valuePrint.close()
-    return mydict
-a = 2
-b = 3
+# import sys
+# import os
+# mydict = {} #'initialising" the an empty dictionary to be used locally in the function below
+# def writeToValues(name):
+#     fileName = os.path.splitext(os.path.basename(sys.argv[0]))[0]
+#     valuePrint=open("values.py","a")
+#     def namestr(obj,namespace):
+#         return[name for name in namespace if namespace[name] is obj]
+#     b = namestr(name, globals())
+#     c = "".join(str(x) for x in b)
+#     mydict[(c)] = name
+#     valuePrint.write(fileName)
+#     valuePrint.write("=")
+#     valuePrint.write(str(mydict))
+#     valuePrint.write("\n")
+#     valuePrint.close()
+#     return mydict
+# a = 2
+# b = 3
 
-writeToValues(a)
-writeToValues(b)
+# writeToValues(a)
+# writeToValues(b)

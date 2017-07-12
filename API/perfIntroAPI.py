@@ -79,18 +79,21 @@ class speeds:
 
 class flightEnvelope:
 
-    def __init__(self,finalMTOW,S,maxSpeed,stallSpeed,negCLmin,negloadFactor,rhoSL):
+    def __init__(self,finalMTOW,S,maxSpeed,stallSpeed,negCLmin,rhoSL):
         self.finalMTOW = finalMTOW
         self.S = S
         self.maxSpeed = maxSpeed
         self.stallSpeed = stallSpeed         ########### make this EAS
         self.negCLmin = negCLmin
-        self.negloadFactor = negloadFactor
         self.rhoSL = rhoSL
 
     def loadFactor(self):
         n = 2.1 + ( 24000/(self.finalMTOW + 10000))
         return n
+
+    def negloadFactor(self):
+    	negloadFactor = -0.4*flightEnvelope.loadFactor(self)
+    	return negloadFactor
 
     def minCruiseSpeed(self):
         vcmin = 33*sqrt(self.finalMTOW/self.S)
@@ -109,8 +112,11 @@ class flightEnvelope:
         return vA
 
     def negmaneuveringSpeed(self):
-        VG = sqrt( (2*abs(self.negloadFactor)*self.finalMTOW)/(self.rhoSL*self.S*abs(self.negCLmin)))
-        return VG
+        VG = sqrt( (2*abs(flightEnvelope.negloadFactor(self))*self.finalMTOW)/(self.rhoSL*self.S*abs(self.negCLmin)))
+        return VG/1.688
+
+    def maxGustSpeed(self):
+    	pass
 
     
 
