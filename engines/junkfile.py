@@ -14,29 +14,23 @@ import os
 import math
 
 
-b = (10,20)
-d = (3,4)
+def subplots():
+    nrows = 4
+    fig, axes = plt.subplots(nrows, 2)
 
-x = []
-for i in b:
-	for j in d:
-		lst = (i,j)
-		x.append (lst)
-		# print (lst)
-# print(x)	
+    for row in axes:
+      x = np.random.normal(0, 1, 100).cumsum()
+      y = np.random.normal(0, 0.5, 100).cumsum()
+      plot(row,x, y)
 
-def add (g,h):
-	sum = g+h
-	return sum
+    plt.show()
 
-ans = add (1,3)
-# print (ans)
+def plot(axrow, x, y):
+    axrow[0].plot(x, color='red')
+    axrow[1].plot(y, color='green')
 
-for a,b in x:
-	# print( a,b)
-	fin = add(a,b)
-	print (fin)
-# print (l)
+subplots()
+
 # plt.scatter(np.linspace(30, 200, 3), np.random.randn(3))
 # import PyQt4
 

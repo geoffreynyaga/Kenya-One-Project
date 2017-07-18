@@ -12,7 +12,7 @@ __author__ = 'Geoffrey Nyaga'
 import sys
 sys.path.append('../')
 from API.db_API import write_to_db, read_from_db
-from API.lifting_line_theory import llt,llt_with_plots
+from API.lifting_line_theory import llt,llt_with_plots,llt_subplots
 
 import numpy as np
 import math
@@ -30,7 +30,6 @@ alpha_0 = -4.2 # zero-lift angle of attack (deg)
 llt(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0)
 
 def lifting_line_theory_combinations():
-
 	 
 	myans = 0.4049
 	alpha_twist = np.arange(0,-4,-.01)
@@ -51,14 +50,44 @@ def lifting_line_theory_combinations():
 			instant = [alpha_twist,i_w]
 			finalvals.append(instant)
 			llt_with_plots(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0)
-						
+					
 		else:
 			pass
+	# print(np.array(finalvals).shape)
+	last = np.array(finalvals).shape
+	finalval = last[0]
+	# print (finalval,"finalval")
+	return finalval
 
-# llt(N,S,AR,taper,-1.1,0.4,a_2d,alpha_0)
-# print(llt(N,S,AR,taper,-1.1,0.4,a_2d,alpha_0))
-
-lifting_line_theory_combinations()
-
+y = lifting_line_theory_combinations()
 plt.show()
+print(y)
 
+
+
+def lifting_line_theory_subplots():
+   
+  myans = 0.4049
+  alpha_twist = np.arange(0,-4,-.01)
+  # print(alpha_twist)
+  i_w = np.arange(0,5,.1)
+  x = []
+  for i in alpha_twist:
+    for j in i_w:
+      lst = (i,j)
+      x.append (lst)
+      
+  finalvals = []    
+  for alpha_twist,i_w in x:
+    final = llt(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0)
+    # print (final)
+    if abs( (final/myans) - 1 ) <= 0.00005:
+      print (final,alpha_twist,i_w,"yeeh")
+      instant = [alpha_twist,i_w]
+      finalvals.append(instant)
+      llt_subplots(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0)          
+    else:
+      pass
+
+# lifting_line_theory_subplots()
+# llt_subplots(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0)
