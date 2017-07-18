@@ -86,41 +86,6 @@ print(np.hstack((a,b)))
 # #c= a[b]
 # #print(c)
 #
-# N = 9 # (number of segments - 1)
-# S = 24.3919 # m^2
-# AR = 7.8 # Aspect ratio
-# taper = 0.45 # Taper ratio
-# alpha_twist = -2 # Twist angle (deg)
-# i_w = 1 # wing setting angle (deg)
-# a_2d = 6.8754 # lift curve slope (1/rad)
-# alpha_0 = -4.2 # zero-lift angle of attack (deg)
-#
-#
-# b = np.sqrt(AR*S) # wing span (m)
-# MAC = S/b # Mean Aerodynamic Chord (m)
-# Croot = (1.5*(1+taper)*MAC)/(1+taper+taper**2) # root chord (m)
-# theta = np.arange(np.pi/(2*N), np.pi/2, np.pi/(2*N))
-# alpha = np.arange(i_w+alpha_twist,i_w ,-alpha_twist/(N-1))
-#
-#
-# # segment’s angle of attack
-# z = (b/2)*np.cos(theta)
-# c = Croot * (1 - (1-taper)*np.cos(theta)) # Mean Aerodynamics
-# #Chord at each segment (m)
-# mu = c * a_2d / (4 * b)
-# LHS = mu * (alpha-alpha_0)/57.3 # Left Hand Side
-#
-# N=9
-# for i in np.arange(1,N):
-#    # B =  theta*(i) * (1  / np.sin(theta*(i)))
-#     for j in np.arange(1,N):
-#         B = np.sin((2*j-1) * theta*(i)) * (1 + (mu*(i) * (2*j-1)) / np.sin(theta*(i)))
-#
-#         print(B)
-#
-# b = np.array([[1,2],[3,4]],np.int32)
-# d = b.transpose()
-#
 #
 # a= np.array([6,2,3,4])
 # b=np.argmin(a)
@@ -167,25 +132,3 @@ print(np.hstack((a,b)))
 # (x+1)**2 - (x**2 + 2*x + 1**2)
 
 # print(integrate(cos(x),x))
-# import sys
-# import os
-# mydict = {} #'initialising" the an empty dictionary to be used locally in the function below
-# def writeToValues(name):
-#     fileName = os.path.splitext(os.path.basename(sys.argv[0]))[0]
-#     valuePrint=open("values.py","a")
-#     def namestr(obj,namespace):
-#         return[name for name in namespace if namespace[name] is obj]
-#     b = namestr(name, globals())
-#     c = "".join(str(x) for x in b)
-#     mydict[(c)] = name
-#     valuePrint.write(fileName)
-#     valuePrint.write("=")
-#     valuePrint.write(str(mydict))
-#     valuePrint.write("\n")
-#     valuePrint.close()
-#     return mydict
-# a = 2
-# b = 3
-
-# writeToValues(a)
-# writeToValues(b)

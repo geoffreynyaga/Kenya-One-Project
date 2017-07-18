@@ -1,7 +1,6 @@
 
 # coding: utf-8
 
-# In[80]:
 __author__ = 'Geoffrey Nyaga'
 
 import sys
@@ -14,8 +13,6 @@ import matplotlib.pyplot as plt
 
 import API.perfIntroAPI as pfintro
 
-# In[81]:
-
 altitude = 8500 #ft
 rhoSL  = read_from_db('rhoSL')
 gamma = 1.4   #do sth
@@ -23,51 +20,40 @@ gas_constant = 1716
 cruiseSpeed = read_from_db('cruiseSpeed') 
 finalMTOW = read_from_db('finalMTOW')
 maxSpeed = read_from_db('maxSpeed')
-         
+S = read_from_db('S') * 10.764
+stallSpeed = read_from_db('stallSpeed')
+
 atmosphere = pfintro.atmosphere(altitude,rhoSL) 
-
-
-print(atmosphere.pressure(),"psf")
-print(atmosphere.pressureRatio(),"pressure ratio")
-print(atmosphere.density(),"slugs/ft^3")
-print(atmosphere.densityRatio(),"density ratio")
-print(atmosphere.temperature(),"degree R")
-print(atmosphere.temperatureRatio(),"temperature Ratio")
+# print(atmosphere.pressure(),"psf")
+# print(atmosphere.pressureRatio(),"pressure ratio")
+# print(atmosphere.density(),"slugs/ft^3")
+# print(atmosphere.densityRatio(),"density ratio")
+# print(atmosphere.temperature(),"degree R")
+# print(atmosphere.temperatureRatio(),"temperature Ratio")
 
 altitude_pressure = atmosphere.pressure()
 altitude_density = atmosphere.density()
 altitude_temperature = atmosphere.temperature()
 altitude_pressureRatio = atmosphere.pressureRatio()
 
-
-    
 speeds = pfintro.speeds(altitude,altitude_temperature,altitude_pressure,cruiseSpeed,gas_constant,gamma,altitude_density,
 	altitude_pressureRatio,rhoSL)
-print(speeds.soundSpeed(),"ft/s Speed of Sound")
-print(speeds.dynamicPressure(),"psf dynamic pressure")
-print(speeds.EAS(),"ft/s equivalent airspeed")
-print(speeds.CAS(),"ft/s calibrated airspeed")
-
-
-
-
-finalMTOW = read_from_db('finalMTOW')
-S = read_from_db('S') * 10.764
-stallSpeed = read_from_db('stallSpeed')
+# print(speeds.soundSpeed(),"ft/s Speed of Sound")
+# print(speeds.dynamicPressure(),"psf dynamic pressure")
+# print(speeds.EAS(),"ft/s equivalent airspeed")
+# print(speeds.CAS(),"ft/s calibrated airspeed")
 
 # negloadFactor = -1.2
 negCLmin = -1
 
-
 flightEnvelope = pfintro.flightEnvelope(finalMTOW,S,maxSpeed,stallSpeed,negCLmin,rhoSL)
 
-
-print(flightEnvelope.loadFactor(),"load factor")
-print(flightEnvelope.negloadFactor(),"neg load factor")
-print(flightEnvelope.minCruiseSpeed(),"min Cruise Speed")
-print(flightEnvelope.maxCruiseSpeed(),"max Cruise Speed")
-print(flightEnvelope.diveSpeed(),"dive Speed")
-print(flightEnvelope.maneuveringSpeed(),"maneuvering Speed")
+# print(flightEnvelope.loadFactor(),"load factor")
+# print(flightEnvelope.negloadFactor(),"neg load factor")
+# print(flightEnvelope.minCruiseSpeed(),"min Cruise Speed")
+# print(flightEnvelope.maxCruiseSpeed(),"max Cruise Speed")
+# print(flightEnvelope.diveSpeed(),"dive Speed")
+# print(flightEnvelope.maneuveringSpeed(),"maneuvering Speed")
 print(flightEnvelope.negmaneuveringSpeed(),"neg maneuvering Speed") # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
 maneuveringSpeed = flightEnvelope.maneuveringSpeed()

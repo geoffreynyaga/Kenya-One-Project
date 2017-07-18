@@ -8,45 +8,41 @@ from math import sqrt,pi
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-
 grossWeight = read_from_db('finalMTOW')
-cruiseAltitude = 10000 #ft
 cruiseSpeed = read_from_db('cruiseSpeed') 
-gForce = 2
-V_ROC = 80
 ROC = read_from_db('rateOfClimb')*3.28*60
 vLof = read_from_db('stallSpeed')*1.1
-groundRun = 900
-serviceCeiling = 18000
-
-
-
 AR = read_from_db('AR')
 cdMin = read_from_db('cdMin')
-wsInitial = 22.6 #lb/f**2
 wsfromsizing = read_from_db('WS')
 rhoSL = read_from_db('rhoSL')
+propEff = read_from_db('propEff')
+
+cruiseAltitude = 10000 #ft
+gForce = 2
+V_ROC = 80
+groundRun = 900
+serviceCeiling = 18000
+wsInitial = 22.6 #lb/f**2
 g = 32.174
 CDto = 0.04
 CLto = 0.5
 groundFriction = 0.04
-propEff = read_from_db('propEff')
+
 
 def oswaldEff (AR):
     e= (1.78*(1-(0.045*AR**0.68)))-0.64
     return e
 
 e = oswaldEff(AR)
-# print('Oswald Span Efficiency, e = ' +str(e))
+
 
 k = 1/(pi * AR * e)
-# print ('lift induced drag, k = ' +str(k) )
+
 
 write_to_db('k', k)
 
 #dynamic pressure at altitude
-
 def rhoAlt(cruiseAltitude):
     rhoalt = rhoSL*(1-0.0000068756*cruiseAltitude)**4.2561
     return rhoalt
@@ -62,19 +58,12 @@ def gagFerrar(bhp):
     normBhp=bhp/(1.132*(rhoCruise/rhoSL)-0.132)
     return normBhp
 
-
-
 WS = np.arange(10,30)
 
-
-
 twTurn = qAltitude*( (cdMin/WS)+ k*(gForce/ qAltitude)**2 *(WS) )
-# print(twTurn)
-
 qROC = 0.5*rhoSL*(V_ROC*1.688)**2
 Vv = ROC/60
 twROC = ( (Vv/(V_ROC*1.688)) + (qROC*cdMin/WS)+(k*WS/qROC))
-
 qVlof = 0.5*rhoSL*(vLof*1.688/sqrt(2))**2
 twVlof = ((vLof*1.688)**2/(2*g*groundRun))+(qVlof*CDto/WS)+(groundFriction*(1-(qVlof*CLto/WS)) ) 
 
@@ -131,71 +120,10 @@ def point():
 	ceilingidx = norm_twCeiling[myidx]
 	# print([cruiseidx,takeoffidx,climbidx,turnidx,ceilingidx])
 	# print (cruiseidx,"cruiseidx")
-
 	x = np.array([cruiseidx,takeoffidx,climbidx,turnidx,ceilingidx])
 	return x[np.argmax(x)]
 
 finalBHP= point()
-write_to_db(finalBHP,'finalBHP')
+write_to_db('finalBHP',finalBHP)
 print ( finalBHP,"The Final normalised BHP")
-
-
-
-# # In[7]:
-
-# tw_Turn = qAltitude*( (cdMin/wsInitial)+ k*(gForce/ qAltitude)**2 *(wsInitial) )
-# # print(tw_Turn)
-
-
-# # In[8]:
-
-# tw_ROC = ( (Vv/(V_ROC*1.688)) + (qROC*cdMin/wsInitial)+(k*wsInitial/qROC))
-# # print(tw_ROC)
-
-
-# # In[9]:
-
-# tw_Vlof = ((vLof*1.688)**2/(2*g*groundRun))+(qVlof*CDto/wsInitial)+(groundFriction*(1-(qVlof*CLto/wsInitial)) )                       
-# print(tw_Vlof,"vlof")
-
-
-# # In[10]:
-
-# tw_Cruise = qAltitude*cdMin*(1/wsInitial) + (k)
-# print(tw_Cruise,"cruise")
-
-
-# # In[11]:
-
-# tw_Ceiling = (1.667/(sqrt((2*wsInitial/rhoCeiling)*sqrt(k/3*cdMin))))+(k*cdMin/3)*4
-# print(tw_Ceiling,"ceiling")
-
-
-# # In[12]:
-
-# ##Selecting the T/W 
-# # twList = ([tw_Ceiling,tw_Cruise,tw_Vlof,tw_ROC,tw_Turn])
-# # maxTW = np.argmax(twList)
-# # V=int(maxTW)
-# # # print(V)
-# # finalTW=twList[V]
-# # print(finalTW,"Final T/W")
-
-
-
-
-# # #for first case
-# # propThrust = grossWeight*finalTW
-# # print(propThrust,"Prop Thrust")
-# # pBHP=propThrust*(cruiseSpeed*1.688)/(propEff*550)
-# # print(pBHP,"BHP")
-
-
-# # # In[14]:
-
-# # normBhp = gagFerrar(pBHP)
-# # print(normBhp,"Normalised BHP")
-
-
-# # print(gagFerrar(207))
 

@@ -1,7 +1,11 @@
 
 # coding: utf-8
+__author__ = 'Geoffrey Nyaga'
 
-# In[1]:
+import sys
+sys.path.append('../')
+from API.db_API import write_to_db, read_from_db
+
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,7 +14,30 @@ import os
 import math
 
 
+b = (10,20)
+d = (3,4)
 
+x = []
+for i in b:
+	for j in d:
+		lst = (i,j)
+		x.append (lst)
+		# print (lst)
+# print(x)	
+
+def add (g,h):
+	sum = g+h
+	return sum
+
+ans = add (1,3)
+# print (ans)
+
+for a,b in x:
+	# print( a,b)
+	fin = add(a,b)
+	print (fin)
+# print (l)
+# plt.scatter(np.linspace(30, 200, 3), np.random.randn(3))
 # import PyQt4
 
 # pyuic5 -x example.ui -o example.py
@@ -129,41 +156,6 @@ import math
 # #print( (b)
 # #c= a[b]
 # #print((c)
-#
-# N = 9 # (number of segments - 1)
-# S = 24.3919 # m^2
-# AR = 7.8 # Aspect ratio
-# taper = 0.45 # Taper ratio
-# alpha_twist = -2 # Twist angle (deg)
-# i_w = 1 # wing setting angle (deg)
-# a_2d = 6.8754 # lift curve slope (1/rad)
-# alpha_0 = -4.2 # zero-lift angle of attack (deg)
-#
-#
-# b = np.sqrt(AR*S) # wing span (m)
-# MAC = S/b # Mean Aerodynamic Chord (m)
-# Croot = (1.5*(1+taper)*MAC)/(1+taper+taper**2) # root chord (m)
-# theta = np.arange(np.pi/(2*N), np.pi/2, np.pi/(2*N))
-# alpha = np.arange(i_w+alpha_twist,i_w ,-alpha_twist/(N-1))
-#
-#
-# # segment’s angle of attack
-# z = (b/2)*np.cos(theta)
-# c = Croot * (1 - (1-taper)*np.cos(theta)) # Mean Aerodynamics
-# #Chord at each segment (m)
-# mu = c * a_2d / (4 * b)
-# LHS = mu * (alpha-alpha_0)/57.3 # Left Hand Side
-#
-# N=9
-# for i in np.arange(1,N):
-#    # B =  theta*(i) * (1  / np.sin(theta*(i)))
-#     for j in np.arange(1,N):
-#         B = np.sin((2*j-1) * theta*(i)) * (1 + (mu*(i) * (2*j-1)) / np.sin(theta*(i)))
-#
-#         print((B)
-#
-# b = np.array([[1,2],[3,4]],np.int32)
-# d = b.transpose()
 #
 #
 # a= np.array([6,2,3,4])
