@@ -14,22 +14,91 @@ import os
 import math
 
 
-def subplots():
-    nrows = 4
-    fig, axes = plt.subplots(nrows, 2)
 
-    for row in axes:
-      x = np.random.normal(0, 1, 100).cumsum()
-      y = np.random.normal(0, 0.5, 100).cumsum()
-      plot(row,x, y)
+# fig = plt.figure()
 
-    plt.show()
+# ax1 = fig.add_subplot(2,2,1)
+# ax1.plot([1,2,3,4,5], [10,5,10,5,10], 'r-')
 
-def plot(axrow, x, y):
-    axrow[0].plot(x, color='red')
-    axrow[1].plot(y, color='green')
+# ax2 = fig.add_subplot(222)
+# ax2.plot([1,2,3,4], [1,4,9,16], 'k-')
 
-subplots()
+# ax3 = fig.add_subplot(223)
+# ax3.plot([1,2,3,4], [1,10,100,1000], 'b-')
+
+# ax4 = fig.add_subplot(224)
+# ax4.plot([1,2,3,4], [0,0,1,1], 'g-')
+
+
+# # plt.tight_layout()
+# plt.show()
+
+m = 3
+
+k = 5
+
+empty = []
+for x in range (1,k):
+	mat = (m,m,x)
+	empty.append(mat)
+print(str(empty))
+
+# for x in empty:
+	# print (x)
+#The x-axis is constant
+
+
+	
+
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+myx = [  6.89668072, 6.79190465,  6.48075998e+00 ,  5.97270071, 5.28316394 , 4.43310092,  
+         3.44834036,  2.35880373,  1.19759604e+00 ,  4.22299899e-16]
+#the y axis for this example is 
+finalyy =[np.array([ 0.        ,  0.19801812,  0.32703622,  0.39731833,  0.43205176,
+                    0.44652588,  0.44920819,  0.44348252,  0.430474  ,  0.40601885]), 
+            np.array([ 0.        ,  0.18017484,  0.30180713,  0.37321907,  0.41381173,
+                      0.43625179,  0.44750785,  0.44986628,  0.44364735,  0.42256948]), 
+            np.array([ 0.        ,  0.16233156,  0.27657803,  0.3491198 ,  0.3955717 ,
+                      0.4259777 ,  0.44580751,  0.45625005,  0.4568207 ,  0.43912011]), 
+            np.array([ 0.        ,  0.14448829,  0.25134894,  0.32502053,  0.37733167,
+                      0.41570361,  0.44410717,  0.46263381,  0.46999405,  0.45567074]),
+            np.array([ 0.        ,  0.12664501,  0.22611984,  0.30092126,  0.35909164,
+                      0.40542952,  0.44240682,  0.46901757,  0.4831674 ,  0.47222137])]
+last = np.array(finalyy).shape
+finalval = last[0]
+m = math.ceil(finalval/2) #used below to define number of subplots
+
+fig, axes = plt.subplots(nrows=m, ncols=2)
+for ax, row in zip(axes.flatten(), finalyy):
+    ax.plot(myx,row,  'r-',label = ( "alpha_twist:",num1,"wing_incidence:",num2   ))
+
+# turn remaining axes off
+for i in range(len(finalyy),m**2):
+    axes.flatten()[i].axis("off")
+
+plt.tight_layout()
+plt.show()
+
+
+# def subplots():
+#     nrows = 4
+#     fig, axes = plt.subplots(nrows, 2)
+
+#     for row in axes:
+#       x = np.random.normal(0, 1, 100).cumsum()
+#       y = np.random.normal(0, 0.5, 100).cumsum()
+#       plot(row,x, y)
+
+#     plt.show()
+
+# def plot(axrow, x, y):
+#     axrow[0].plot(x, color='red')
+#     axrow[1].plot(y, color='green')
+
+# subplots()
 
 # plt.scatter(np.linspace(30, 200, 3), np.random.randn(3))
 # import PyQt4

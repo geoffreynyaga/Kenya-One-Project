@@ -44,7 +44,8 @@ def llt(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0):
 	CL = test+test1+test2+test3+test4+test5+test6+test7+test8
 	CL1 = np.append (0,CL)
 	y_s=[b/2 , z[0], z[1], z[2] ,z[3], z[4] ,z[5], z[6], z[7] ,z[8]]
-
+	# print(y_s,"ys")
+	
 	if __name__ == "__main__":
 
 		
@@ -58,7 +59,10 @@ def llt(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0):
 
 
 	CL_wing = math.pi * AR * ans[0] # USE THIS CL WITH CRUISE SPEED TO CALCULATE THE ACCURATE LIFT!!!!!!!!!!
-	return CL_wing
+	myfinalmat = np.array(y_s)
+	myfinalmat2 = CL1
+
+	return myfinalmat,myfinalmat2, CL_wing #CL_wing,y_s,CL1
 
 	if __name__ == "__main__":
 		print (CL_wing,"CL_wing")
@@ -122,7 +126,7 @@ def llt_with_plots(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0):
 	if __name__ == "__main__":
 		print (CL_wing,"CL_wing")
 
-
+ 
 def llt_subplots(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0):
 
 	b = math.sqrt(AR*S) # wing span (m)
@@ -168,37 +172,25 @@ def llt_subplots(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0):
 	num1 = "{0:.2f}".format(alpha_twist)
 	num2 = "{0:.2f}".format(i_w)
 
-	def subplots():
-		nrows = 1
-		fig, axes = plt.subplots(nrows, 2)
+	# k = 4
+	# empty = []
+	# for x in range (1,k):
+	# 	mat = str(k)+str(k)+str(x)
+	# 	empty.append(mat)
 
-		# for row in axes:
-		# x = y_s
-		# y = CL1
-		# print (row,"row")
-		# plt.plot(x, y)
 
-		plt.show()
+	# fig = plt.figure()
 
-	def plot(axrow):
-		x = y_s
-		y = CL1
-		axrow[0].plot(x,y,color='red')
-		axrow[1].plot(x,y, color='green')
+	# ax1 = fig.add_subplot(2,2,1)
+	# ax1.plot(y_s, CL1, 'r-')
 
-	x = y_s
-	y = CL1
-	plot([1,2])
 
-	plt.show()
-	subplots()
-
-		# plt.plot(y_s,CL1, marker='o',label = ( "alpha_twist:",num1,"wing_incidence:",num2   )  )
-		# plt.title('Lifting Line Theory\n Elliptical Lift distribution')
-		# plt.xlabel('Semi-span location (m)')
-		# plt.ylabel ('Lift coefficient')
-		# plt.legend ()
-		# plt.grid()
+	
+	# plt.title('Lifting Line Theory\n Elliptical Lift distribution')
+	# plt.xlabel('Semi-span location (m)')
+	# plt.ylabel ('Lift coefficient')
+	# plt.legend ()
+	# plt.grid()
 	# plt.show()
 
 	CL_wing = math.pi * AR * ans[0] # USE THIS CL WITH CRUISE SPEED TO CALCULATE THE ACCURATE LIFT!!!!!!!!!!
@@ -206,6 +198,3 @@ def llt_subplots(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0):
 
 	if __name__ == "__main__":
 		print (CL_wing,"CL_wing")
-
-
-  
