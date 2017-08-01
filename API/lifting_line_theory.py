@@ -1,3 +1,6 @@
+# coding: utf-8
+__author__ = 'Geoffrey Nyaga'
+
 
 import numpy as np
 import math
@@ -29,7 +32,6 @@ def llt(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0):
 	inv_RHS = np.linalg.inv(x)
 	ans = np.matmul(inv_RHS,LHS)
 
-
 	mynum = np.divide((4*b),c)
 	test = ((np.sin((1)*theta))*ans[0]*mynum)
 	test1 = ((np.sin((3)*theta))*ans[1]*mynum)
@@ -46,9 +48,7 @@ def llt(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0):
 	y_s=[b/2 , z[0], z[1], z[2] ,z[3], z[4] ,z[5], z[6], z[7] ,z[8]]
 	# print(y_s,"ys")
 	
-	if __name__ == "__main__":
-
-		
+	if __name__ == "__main__":		
 		plt.plot(y_s,CL1, marker='o')
 		plt.title('Lifting Line Theory\n Elliptical Lift distribution')
 		plt.xlabel('Semi-span location (m)')
@@ -56,7 +56,6 @@ def llt(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0):
 		plt.grid()
 		if __name__ == "__main__":
 			plt.show()
-
 
 	CL_wing = math.pi * AR * ans[0] # USE THIS CL WITH CRUISE SPEED TO CALCULATE THE ACCURATE LIFT!!!!!!!!!!
 	myfinalmat = np.array(y_s)
@@ -171,27 +170,6 @@ def llt_subplots(N,S,AR,taper,alpha_twist,i_w,a_2d,alpha_0):
 	# num1 = 	str(round(alpha_twist,2))
 	num1 = "{0:.2f}".format(alpha_twist)
 	num2 = "{0:.2f}".format(i_w)
-
-	# k = 4
-	# empty = []
-	# for x in range (1,k):
-	# 	mat = str(k)+str(k)+str(x)
-	# 	empty.append(mat)
-
-
-	# fig = plt.figure()
-
-	# ax1 = fig.add_subplot(2,2,1)
-	# ax1.plot(y_s, CL1, 'r-')
-
-
-	
-	# plt.title('Lifting Line Theory\n Elliptical Lift distribution')
-	# plt.xlabel('Semi-span location (m)')
-	# plt.ylabel ('Lift coefficient')
-	# plt.legend ()
-	# plt.grid()
-	# plt.show()
 
 	CL_wing = math.pi * AR * ans[0] # USE THIS CL WITH CRUISE SPEED TO CALCULATE THE ACCURATE LIFT!!!!!!!!!!
 	return CL_wing

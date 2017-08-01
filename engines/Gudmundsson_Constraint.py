@@ -73,6 +73,8 @@ twCruise = qAltitude*cdMin*(1/WS) + (k)
 
 twCeiling = (1.667/(np.sqrt((2*WS/rhoCeiling)*sqrt(k/3*cdMin))))+((k*cdMin/3)*4)
 
+plt.figure(1)
+plt.subplot(211)
 
 plt.plot(WS,twTurn, label = 'Rate of Turn')
 plt.plot(WS,twROC, label = 'Rate of Climb')
@@ -80,9 +82,11 @@ plt.plot(WS,twVlof, label = 'Vlof')
 plt.plot(WS,twCruise, label = 'Cruise')
 plt.plot(WS,twCeiling, label = 'Ceiling')
 plt.axvline(x=wsfromsizing)
+plt.title(' Graph 1 \n HP/Weight ratio')
 plt.legend()
-plt.show()
 
+# ax = plt.gca()
+# ax.set_xticklabels([])
 
 ###NORMAlization
 norm_twTurn = gagFerrar((grossWeight*twTurn*1.688*cruiseSpeed/(propEff*550)))
@@ -92,17 +96,20 @@ norm_twVlof = gagFerrar((grossWeight*twVlof*1.688*vLof/(propEff*550)))
 norm_twCruise = gagFerrar((grossWeight*twCruise*1.688*cruiseSpeed/(propEff*550)))
 norm_twCeiling = gagFerrar((grossWeight*twCeiling*1.688*cruiseSpeed/(propEff*550)))
 
+plt.subplot(212)
+
 plt.plot(WS,norm_twTurn, label = 'Rate of Turn')
 plt.plot(WS,norm_twROC, label = 'Rate of Climb')
 plt.plot(WS,norm_twVlof, label = 'Vlof')
 plt.plot(WS,norm_twCruise, label = 'Cruise')
 plt.plot(WS,norm_twCeiling, label = 'Ceiling')
-plt.title('Normalised BHP')
-plt.legend()
-
-         
+plt.title('Graph 2 \n Normalised BHP')
+plt.legend()      
 plt.axvline(x=wsfromsizing)
-plt.show()
+
+plt.tight_layout()
+if __name__ == '__main__':
+	plt.show()
 
 def find_nearest(array,value):
     idx = (np.abs(array-value)).argmin()
@@ -126,4 +133,8 @@ def point():
 finalBHP= point()
 write_to_db('finalBHP',finalBHP)
 print ( finalBHP,"The Final normalised BHP")
+
+
+
+# now switch back to figure 1 and make some changes
 

@@ -18,11 +18,11 @@ taper = read_from_db('taper')
 initialWeight = read_from_db('initialWeight')
 finalWeight = read_from_db('finalWeight')
 finalMTOW = read_from_db('finalMTOW')
-altitude = read_from_db('altitude') #ft
+altitude = read_from_db('cruise_altitude') #ft
 rhoSL = read_from_db('rhoSL')
 
 
-cbhp = 0.4586
+cbhp = read_from_db('cbhp')
 
 propEff = read_from_db('propEff')
 cruiseSpeed =read_from_db('maxSpeed')/1.2 #CALCULATE THIS, MAYBE USE MAXSPEED/1.2 THEN LATER OPTIMIZE IN PERFORMANCE
@@ -219,9 +219,11 @@ write_to_db('sweepTmax',sweepTmax)
 wing4 = wapi.classOswaldEff(rangeAR , sweepLeadingEdge, sweepTmax,fuselageWidth,wingSpan,cdMin)
 if taper == 1:
     oswaldEff = wing4.straightWingOswaldEff()
+    print (oswaldEff,"final oswald efficiency of this straight wing")
 else:
     oswaldEff = (wing4.sweptWingOswaldEff() + wing4.brandtOswaldEff() + wing4.douglasOswalfEff()) / 3
+    print (oswaldEff,"final oswald")
 
 write_to_db('oswaldEff',oswaldEff)
 
-print(wing4.douglasOswalfEff())
+# print(wing4.douglasOswalfEff(),'final oswaldEff')

@@ -15,7 +15,7 @@ cdmin = 0.025
 write_to_db('cdMin',cdmin)
 
 do = read_from_db('rhoSL')
-dalt = 0.001756    #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+dalt = read_from_db('altitudeDensity')   #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 k = read_from_db('k')
 
 # v = read_from_db('cruiseSpeed') * 1.688
@@ -61,7 +61,9 @@ plt.plot(ws, twcruise,label = 'cruise')
 plotWS = read_from_db('WS')
 plt.axvline(x=plotWS)                         ################################
 plt.legend(loc='upper left')
-plt.show()
+
+if __name__ == '__main__':
+	plt.show()
 
 
 

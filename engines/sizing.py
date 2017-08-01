@@ -106,7 +106,8 @@ plt.xlabel("Wto Guess")
 plt.ylabel("Wto")
 plt.title("WEIGHT SIZING CONSIDERING VARIOUS FUEL FRACTIONS \n But the sizing constants are Raymer's ")
 plt.legend()
-plt.show()
+if __name__ == '__main__':
+	plt.show()
 
 d = wtoYaxisRaymer[idx]
 e = wtoYaxisGud[idx]
@@ -192,7 +193,6 @@ rateOfClimb_estimate= read_from_db('rateOfClimb')
 # ws = np.arange(start,end,interval)
 
 
-
 propEff = 0.7 # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 rhoSL = read_from_db('rhoSL')
 vmax = vmaxe*1.688 # we have assumed it is 150 knots
@@ -201,9 +201,9 @@ vmax = vmaxe*1.688 # we have assumed it is 150 knots
 # e=0.8 e is oswalds span efficiency factor 0.7-0.95 #
 
 #k=1/(np.pi*oswaldeff*AR)
-altitude = 10000
+altitude = read_from_db('cruise_altitude')
 
-write_to_db('altitude',altitude)
+# write_to_db('altitude',altitude)
 
 
 # altitudeDensity=0.001756    #USE THE ALTITUDE DENSITY FUNCTION ##CHECK 
@@ -368,10 +368,7 @@ WS3 = 0.5*rhoSL*clmax*vs **2
 
 write_to_db('WS',WS3)
 
-
-
 import constraint
-
 
 WP = (mtow)/(read_from_db('finalBHP'))
 
@@ -381,7 +378,6 @@ x = read_from_db('WP')
 x1 = WS3
 
 # write_to_db('WP',x)
-
 S=mtow/(x1*10.57)
 write_to_db('S',S)
 # P=mtow/x
@@ -398,9 +394,7 @@ stallSpeed= Vs2/1.688
 write_to_db('stallSpeed',stallSpeed)
 
 # Vmax RESOLVE #
-
 x2=(0.7*550)/x 
-
 c=6.873*10 **-6 
 rade=(1-c*10000)**4.26 
 y=(0.5*rhoSL*cdo)/x1
@@ -424,7 +418,6 @@ takeOffRun=sto1/(0.6*rhoSL*32.17*CDG/x1)
 write_to_db('takeOffRun',takeOffRun)
 
 #Rate Of Climb Resolve
-
 k=1/(np.pi*oswaldeff*AR) 
 e1= np.sqrt (3*cdo/k) 
 f1=2/(rhoSL*e1)
@@ -451,16 +444,12 @@ clcw=clc/0.95
 cli=clcw/0.9
 write_to_db('cli',cli)
 
-
 clmaxn=(2*mtow)/(rhoSL*S1*vs **2)
 clmaxw=clmaxn/0.95 
 clmaxgross=clmaxw/0.9 
 write_to_db('clmaxgross',clmaxgross)
 netclmax=clmaxgross-0.6  #cfc = cf/c #
 write_to_db('netclmax',netclmax)
-
-
-
 
 # print( '- - - - - - - - - - - - - - - - - - - - - - - - - - ' )
 # print( '               CALCULATED PERFORMANCE VALUES                           ')
@@ -522,56 +511,3 @@ write_to_db('mainWheelWidth',mwwidth)
 lfus=(0.86*(mtow) **0.42)/3.28084 
 write_to_db('fuselageLength',lfus*3.2808)
 
-# print( '            ')
-# print( '  FUSELAGE  SIZING')
-# print( '          ')
-# print( '   Fuselage length    '  + str(lfus) + ' meters')
-
-# m=mtow/2.20462  #kg
-# #S=24.3919  #sq m
-# # clmax=1.8
-# negclmax=-1.2 
-# #AR=7.8 
-# clalfa=6.8754 #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-# vci=vc 
-# vc=vci/1.688 
-# nmax=3.8 
-# negnmax=-(0.5*nmax) 
-# vd=1.55*vc 
-# f=[nmax,vd] 
-# g=[negnmax,vd] 
-# weight=m*9.81 
-# dsi=1.225
-
-# o=[0,0]
-# vsi=vs/1.688 
-# vs=vsi 
-# a=[1,vs] 
-# v1=np.sqrt( (nmax*weight)/(0.5*dsi*S*netclmax) )  # m/s
-# v= v1*1.94384 
-# b=[nmax , v] 
-
-# vst1= np.sqrt( (-2*weight)/(dsi*S*negclmax) )  # m/s
-# vst= vst1*1.94384 
-# k=[-1 , vst]
-
-# # from origin to A
-# x=np.arange(vs)
-# x1=x/1.94384 
-# y1=((0.5*dsi*S*netclmax)/weight)*x1 **2
-
-
-# x2=np.arange(vs,v)
-# x22=x2/1.94384 
-# y2=((0.5*dsi*S*netclmax)/weight)*x22 **2
-
-# x3=np.arange(v,vd,0.1)
-# y3=nmax 
-
-# #plt.plot(x3, y3)
-# plt.show()
-
-# plt.plot (x,y1)
-# plt.plot(x2,y2)
-# plt.axhline(y=y3)
-# plt.show()
