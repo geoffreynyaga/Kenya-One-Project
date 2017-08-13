@@ -19,7 +19,7 @@ pax= read_from_db('pax')
 crew= read_from_db('crew')
 
 
-wtoGuess = np.arange(2000,6500,1)
+wtoGuess = np.arange(2500,6500,1)
 #Gudmundsson
 # weWtoGud = 0.4074 + 0.0253 * np.log(wtoGuess)
 # print(weWtoGud)
@@ -51,6 +51,7 @@ Vc = 140   #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 cbhp = 0.4
 fuelAllowance = 5 # in %
 
+write_to_db('cbhp',cbhp)
 
 w4w3 = math.exp((-Range*3280.8399*cbhp/3600)/(propEff*ldMax*550))
 w2w1= 0.98

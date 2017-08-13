@@ -5,7 +5,7 @@ from sklearn import tree
 iris = load_iris()
 print(iris.feature_names)
 print(iris.target_names)
-print(iris.data[0])
+print(iris.data ,"iris data")
 print(iris.data[50])
 print (iris.target[1])
 print(iris.target)

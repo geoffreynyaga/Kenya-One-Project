@@ -4,4 +4,4 @@ import sys
 sys.path.append('../')
 from API.db_API import write_to_db
 
-from engines import prerequisitesEngine, defaults,sizing,Gudmundsson_Constraint
+from engines import prerequisitesEngine,defaults,sizing,Gudmundsson_Constraint,wingEngine,airfoilEngine,performanceIntroductionEngine

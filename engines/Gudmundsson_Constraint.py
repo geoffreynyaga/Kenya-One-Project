@@ -74,7 +74,7 @@ twCruise = qAltitude*cdMin*(1/WS) + (k)
 twCeiling = (1.667/(np.sqrt((2*WS/rhoCeiling)*sqrt(k/3*cdMin))))+((k*cdMin/3)*4)
 
 plt.figure(1)
-plt.subplot(211)
+plt.subplot(121)
 
 plt.plot(WS,twTurn, label = 'Rate of Turn')
 plt.plot(WS,twROC, label = 'Rate of Climb')
@@ -96,7 +96,7 @@ norm_twVlof = gagFerrar((grossWeight*twVlof*1.688*vLof/(propEff*550)))
 norm_twCruise = gagFerrar((grossWeight*twCruise*1.688*cruiseSpeed/(propEff*550)))
 norm_twCeiling = gagFerrar((grossWeight*twCeiling*1.688*cruiseSpeed/(propEff*550)))
 
-plt.subplot(212)
+plt.subplot(122)
 
 plt.plot(WS,norm_twTurn, label = 'Rate of Turn')
 plt.plot(WS,norm_twROC, label = 'Rate of Climb')

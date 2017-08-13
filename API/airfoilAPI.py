@@ -3,7 +3,6 @@ import numpy as np
 # import sys
 # import os
 
-
 class CLalfa:
 
     def __init__ (self, clalfa,rangeAR,Mach,sweepHalfChord):

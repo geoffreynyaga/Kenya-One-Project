@@ -41,8 +41,6 @@ CLalfa = read_from_db('CLalfa')
 #for elliptical wing
 Mach = cruiseSpeed /11164.27
 
-
- 
 wing3 = aa.CLalfa(clalfa,rangeAR,Mach,sweepHalfChord)  
 # make this shit work
 #finalCLalfa = np.average(wing1.ellipticalCLalfa(),wing1.hemboldCLalfa(),wing1.polhamusCLalfa())

@@ -5,20 +5,23 @@ import sys
 sys.path.append('../')
 from API.db_API import write_to_db, read_from_db
 
-# KENYA ONE PROJECT #
-		 # Matlab code to solve for CL of the wing and elliptical#
-        # lift distribution with flaps .#
-               #-------------------------------------------------------#
-				 # done by Geoffrey Nyaga Kinyua #
-               #-------------------------------------------------------#
+""" 
+  KENYA ONE PROJECT 
+		  Matlab code to solve for CL of the wing and elliptical#
+        lift distribution with flaps.
+          -------------------------------------------------------
+				  done by Geoffrey Nyaga Kinyua 
+          -------------------------------------------------------
+
+"""
+
 import numpy as np
 import math
 import matplotlib.pylab as plt
 
-
 import lifting_line_theory as llt
 
-N = llt.N# (number of segments - 1)
+N = llt.N  # (number of segments - 1)
 S = llt.S # m^2
 AR = llt.AR # Aspect ratio
 taper = llt.taper # Taper ratio
@@ -75,8 +78,6 @@ def llt_full(fuselage_angle,df):
 
   # USE THIS CL WITH take-off speed TO CALCULATE THE ACCURATE LIFT!!!!!!!!!!
 
-
-
 v_takeoff = 1.2*read_from_db('stallSpeed')*1.688
 
 initial_CL_TO = (2*read_from_db('finalMTOW'))/(read_from_db('rhoSL')*v_takeoff**2 * S * 10.764)
@@ -116,7 +117,6 @@ def llt_final():
   print(mycombination,"select one ")
   return outputcombination
 
-# llt_final()
 
 #select one combination
 combination = llt_final()
