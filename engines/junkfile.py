@@ -5,7 +5,17 @@ import sys
 sys.path.append('../')
 from API.db_API import write_to_db, read_from_db
 
+import requests
+import json
 
+send_url = 'http://freegeoip.net/json'
+r = requests.get(send_url)
+j = json.loads(r.text)
+lat = j['latitude']
+lon = j['longitude']
+
+print (lat,"latitude")
+print (lon,"longitute")
 
 # import webview
 # webview.create_window("It works, Jim!", "http://geoffreynyaga.com")

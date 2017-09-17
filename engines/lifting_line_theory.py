@@ -25,7 +25,7 @@ alpha_0 = -4.2 # zero-lift angle of attack (deg)
 
 def lifting_line_theory_combinations():
 
-	myans = 0.4049  #AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+	myans = 0.4049  #This is the lift that you want to achieve!!!!!!!!!!!!!!!!!!!!!
 	alpha_twist = np.arange(0,-4,-.01)
 	# print(alpha_twist)
 	i_w = np.arange(0,5,.1)

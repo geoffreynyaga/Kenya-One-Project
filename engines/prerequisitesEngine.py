@@ -36,5 +36,5 @@ write_to_db('takeOffRun',takeOffRun)
 write_to_db('stallSpeed',stallSpeed)
 write_to_db('rateOfClimb',rateOfClimb)
 
-cruise_altitude = 1000
+cruise_altitude = 10000
 write_to_db('cruise_altitude',cruise_altitude)
