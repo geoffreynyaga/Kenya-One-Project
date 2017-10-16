@@ -12,7 +12,7 @@ import pandas as pd
 import random
 
 """ 
- this is my code
+ Explanation Here>>>  http://geoffreynyaga.com/blog/basic-machine-learning-aircraft-design/
 
 """
 
@@ -40,7 +40,7 @@ for iteration in range(9):
 index = np.bincount(output_matrix).argmax()
 # print(index,"my index")
 aircraft_type = aircraft_categories[index]
-print("the aircraft type is:",aircraft_type," and YEEEEH!!! I finally i made it!!!!!!")
+print("the aircraft type is:",aircraft_type," and YEEEEH!!! I finally made it!!!!!!")
 
 
 
