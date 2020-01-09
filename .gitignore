@@ -1,7 +1,3 @@
-
-ASTRAL_UTM/settings/local.py
-ASTRAL_UTM/settings/local2.py
-
 db.sqlite3
 swhtml.html
 
@@ -55,6 +51,7 @@ nosetests.xml
 coverage.xml
 *.cover
 .hypothesis/
+.pytest_cache/
 
 # Translations
 *.mo

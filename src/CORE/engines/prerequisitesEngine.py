@@ -1,7 +1,8 @@
-__author__ = 'Geoffrey Nyaga'
+__author__ = "Geoffrey Nyaga"
 
 import sys
-sys.path.append('../')
+
+sys.path.append("../")
 from API.db_API import write_to_db
 
 
@@ -13,28 +14,29 @@ from API.db_API import write_to_db
 
 Range = 1200
 propEff = 0.8
-AR= 7.8
-pax= 4
-crew= 2
+AR = 7.8
+pax = 4
+crew = 2
 
-write_to_db('Range',Range)
-write_to_db('propEff',propEff)
-write_to_db('AR',AR)
-write_to_db('pax',pax)
-write_to_db('crew',crew)
+write_to_db("Range", Range)
+write_to_db("propEff", propEff)
+write_to_db("AR", AR)
+write_to_db("pax", pax)
+write_to_db("crew", crew)
 
 ceiling = 15000
 maxSpeed = 175
-takeOffRun = 1200 #ft
+takeOffRun = 1200  # ft
 stallSpeed = 61
-rateOfClimb = 5 #m/s
+rateOfClimb = 5  # m/s
 
 
-write_to_db('ceiling',ceiling)
-write_to_db('maxSpeed',maxSpeed)
-write_to_db('takeOffRun',takeOffRun)
-write_to_db('stallSpeed',stallSpeed)
-write_to_db('rateOfClimb',rateOfClimb)
+write_to_db("ceiling", ceiling)
+write_to_db("maxSpeed", maxSpeed)
+write_to_db("takeOffRun", takeOffRun)
+write_to_db("stallSpeed", stallSpeed)
+write_to_db("rateOfClimb", rateOfClimb)
 
 cruise_altitude = 10000
-write_to_db('cruise_altitude',cruise_altitude)
+write_to_db("cruise_altitude", cruise_altitude)
+

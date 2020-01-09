@@ -1,9 +1,6 @@
-
 from math import sin,cos,pi,sqrt,log
 import numpy as np
 import matplotlib.pyplot as plt
-
-
 
 from wing import reducedS,cruiseSpeed,rhoSL,reducedWingspan,wing1,wing,reducedRootChord,fuselageWidth
 
