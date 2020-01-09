@@ -12,7 +12,8 @@ import pandas as pd
 import random
 
 """ 
- Explanation Here>>>  http://geoffreynyaga.com/blog/basic-machine-learning-aircraft-design/
+ Explanation Here >>>  
+ http://geoffreynyaga.com/blog/basic-machine-learning-aircraft-design/
 
 """
 

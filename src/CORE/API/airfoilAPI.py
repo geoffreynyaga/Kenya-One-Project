@@ -43,5 +43,4 @@ class classCLmax:
         kA = math.cos(self.sweepQuarterChord/57.3)    
         rapidClmax = CLmaxo*kA
         return rapidClmax
-    
-        
+
