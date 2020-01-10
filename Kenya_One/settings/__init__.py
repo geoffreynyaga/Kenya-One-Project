@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 ##################################################################################
-# File: c:\Projects\KENYA ONE PROJECT\accounts\tests.py                          #
-# Project: c:\Projects\KENYA ONE PROJECT\accounts                                #
-# Created Date: Thursday, January 9th 2020, 8:56:55 pm                           #
+# File: c:\Projects\KENYA ONE PROJECT\Kenya_One\settings\__init__.py             #
+# Project: c:\Projects\KENYA ONE PROJECT\Kenya_One\settings                      #
+# Created Date: Friday, January 10th 2020, 11:26:27 pm                           #
 # Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )                     #
 # -----                                                                          #
-# Last Modified: Thursday January 9th 2020 8:56:55 pm                            #
+# Last Modified: Friday January 10th 2020 11:26:27 pm                            #
 # Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )               #
 # -----                                                                          #
 # MIT License                                                                    #
@@ -34,9 +34,5 @@
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
 
-from django.test import TestCase
-import pytest
 
-
-def test_a_plus_b():
-    assert 1 + 1 == 2
+from .local import *
