@@ -1,0 +1,29 @@
+# .coveragerc to control coverage.py
+[run]
+source = .
+omit =
+   *venv/*
+   *venv/bin/*
+   *venv/include/*
+   *venv/lib/*
+   *templates/*
+   *staticfiles/*
+   */node_modules/*
+   *manage.py
+   */Frontend/*
+   */settings/*
+   */tests/*
+   *apps.py
+   *migrations/*
+   *urls.py
+   *wsgi.py
+   *__init__*
+   */__pycache__/*
+   */site-packages/*
+   */distutils/*
+
+
+[report]
+#fail_under = 100
+show_missing = True
+#skip_covered = True
