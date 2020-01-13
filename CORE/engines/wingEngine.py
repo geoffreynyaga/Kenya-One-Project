@@ -33,18 +33,18 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-__author__ = "Geoffrey Nyaga"
+
 
 import sys
 
 sys.path.append("../")
-from API.db_API import write_to_db, read_from_db
+from CORE.API.db_API import write_to_db, read_from_db
 
 from math import sqrt, cos, sin, pi, log, tan
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np # type: ignore
+import matplotlib.pyplot as plt # type: ignore
 
-import API.wingAPI as wapi
+from  CORE.API import wingAPI as wapi
 
 S = read_from_db("S") * 10.76  # sq ft
 taper = read_from_db("taper")
@@ -159,15 +159,15 @@ plt.show()
 # IMPORT ALL THESE JUNK SOMETIMES LATER... AND JEEZ ORGANIZE THE DAMN CODE
 ## 2D airfoil properties
 ## this will kill you down the line Nyaga
-AOA = 5  # Degree
-clalfa = 6.1
-clo = 0.4
+AOA: float = 5.0  # Degrees
+clalfa: float = 6.1
+clo: float = 0.4
 alfazero = -clo / (clalfa / 57.3)  # confirm this or just read the damn graph
-cma = -0.01
-clmax = 1.560  # from airfoil
+cma: float = -0.01
+clmax: float = 1.560  # from airfoil
 # do shit here later e.g Re on tip and root is different cz of taper. Read from the NACA R-824
-clmaxRoot = 1.561
-clmaxTip = 1.4
+clmaxRoot: float = 1.561
+clmaxTip: float = 1.4
 
 write_to_db("AOA", AOA)
 write_to_db("clalfa", clalfa)
@@ -262,10 +262,10 @@ write_to_db("reducedCL", reducedCL)
 # print(reducedTaper,"reduced Taper" )
 
 # for SOME VERY WIERD REASON WE'LL GET INACCURATE DICT VALUES IF ANY OF THE FOLLOWING IS THE SAME WITH ANOTHER VALUE
-sweepHalfChord = 4
-sweepQuarterChord = 4.0
-sweepLeadingEdge = 0
-sweepTmax = 4.5
+sweepHalfChord: float = 4.0
+sweepQuarterChord: float = 4.0
+sweepLeadingEdge: float = 0.0
+sweepTmax: float = 4.5
 
 write_to_db("sweepHalfChord", sweepHalfChord)
 write_to_db("sweepQuarterChord", sweepQuarterChord)

@@ -6,7 +6,7 @@
 # Created Date: Thursday, January 9th 2020, 8:56:55 pm                           #
 # Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )                     #
 # -----                                                                          #
-# Last Modified: Sunday January 12th 2020 3:37:00 pm                             #
+# Last Modified: Sunday January 12th 2020 3:43:06 pm                             #
 # Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )               #
 # -----                                                                          #
 # MIT License                                                                    #
@@ -37,6 +37,8 @@
 
 import os
 
+from decouple import config # type: ignore
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -48,7 +50,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = "ek616)0$u_wm_+-detxalb+f#h!=-qc2y*rn%$4&n9p)8!4f64"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG: bool = True
 
 ALLOWED_HOSTS = ["*"]
 
@@ -101,10 +103,20 @@ WSGI_APPLICATION = "Kenya_One.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.sqlite3",
+#         "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+#     }
+# }
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "kenya_one_db",
+        "USER": "postgres",
+        "HOST": "localhost",
+        "PASSWORD": config("DATABASE_PASSWORD"),
+        "PORT": "5432",
     }
 }
 

@@ -34,33 +34,30 @@
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
 
-__author__ = "Geoffrey Nyaga"
 
 import sys
 
 sys.path.append("../")
-from API.db_API import write_to_db, read_from_db
+from CORE.API.db_API import write_to_db, read_from_db
 
-import numpy as np
-from sklearn import tree
-import pandas as pd
+import numpy as np  # type: ignore
+from sklearn import tree  # type: ignore
+import pandas as pd  # type: ignore
 import random
 
-# In[5]:
 
+def aircraft_type(number_of_aircraft: int, mydict:list)->int:
 
-def aircraft_type(number_of_aircraft, mydict):
-
-    finaldp = []
+    finaldp: list = []
 
     LSA = number_of_aircraft
 
-    def dpLSA():
-        grossweight = random.randint(400, 1430)
-        emptyweight = random.randint(200, 880)
-        wingarea = random.randint(75, 160)
-        wingspan = random.randint(17, 35)
-        row = [grossweight, emptyweight, wingarea, wingspan, 0]
+    def dpLSA() -> list:
+        grossweight: int = random.randint(400, 1430)
+        emptyweight: int = random.randint(200, 880)
+        wingarea: int = random.randint(75, 160)
+        wingspan: int = random.randint(17, 35)
+        row: list = [grossweight, emptyweight, wingarea, wingspan, 0]
         return row
 
     for x in range(LSA):
@@ -69,12 +66,12 @@ def aircraft_type(number_of_aircraft, mydict):
 
     sailplanes = number_of_aircraft
 
-    def dpSailplanes():
-        grossweight = random.randint(280, 1700)
-        emptyweight = random.randint(100, 1100)
-        wingarea = random.randint(120, 150)
-        wingspan = random.randint(35, 101)
-        row = [grossweight, emptyweight, wingarea, wingspan, 1]
+    def dpSailplanes() -> list:
+        grossweight: int = random.randint(280, 1700)
+        emptyweight: int = random.randint(100, 1100)
+        wingarea: int = random.randint(120, 150)
+        wingspan: int = random.randint(35, 101)
+        row: list = [grossweight, emptyweight, wingarea, wingspan, 1]
         return row
 
     for x in range(sailplanes):

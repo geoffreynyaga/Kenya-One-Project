@@ -34,15 +34,13 @@
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
 
-__author__ = "Geoffrey Nyaga"
 
-
-import numpy as np
+import numpy as np  # type: ignore
 import math
-import matplotlib.pylab as plt
+import matplotlib.pylab as plt  # type: ignore
+from typing import Any
 
-
-def llt(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0):
+def llt(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0) -> Any:
 
     b = math.sqrt(AR * S)  # wing span (m)
     MAC = S / b  # Mean Aerodynamic Chord (m)
@@ -107,7 +105,7 @@ def llt(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0):
         print(CL_wing, "CL_wing")
 
 
-def llt_with_plots(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0):
+def llt_with_plots(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0) -> float:
 
     b = math.sqrt(AR * S)  # wing span (m)
     MAC = S / b  # Mean Aerodynamic Chord (m)
@@ -173,7 +171,7 @@ def llt_with_plots(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0):
         print(CL_wing, "CL_wing")
 
 
-def llt_subplots(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0):
+def llt_subplots(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0)->float:
 
     b = math.sqrt(AR * S)  # wing span (m)
     MAC = S / b  # Mean Aerodynamic Chord(m)

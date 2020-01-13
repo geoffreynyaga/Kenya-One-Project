@@ -33,13 +33,13 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-# coding: utf-8
+
 
 # In[1]:
 
-import numpy as np
-import pandas as pd
-import matplotlib.pylab as plt
+import numpy as np# type: ignore
+import pandas as pd# type: ignore
+import matplotlib.pylab as plt# type: ignore
 import math
 
 

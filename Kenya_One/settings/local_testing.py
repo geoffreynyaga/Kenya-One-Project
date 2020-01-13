@@ -6,7 +6,7 @@
 # Created Date: Thursday, January 9th 2020, 8:56:55 pm                           #
 # Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )                     #
 # -----                                                                          #
-# Last Modified: Friday January 10th 2020 11:26:27 pm                            #
+# Last Modified: Sunday January 12th 2020 3:43:06 pm                             #
 # Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )               #
 # -----                                                                          #
 # MIT License                                                                    #
@@ -36,7 +36,7 @@
 
 
 import os
-from decouple import config
+from decouple import config  # type: ignore
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -49,9 +49,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = "ek616)0$u_wm_+-detxalb+f#h!=-qc2y*rn%$4&n9p)8!4f64"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG: bool = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition

@@ -38,13 +38,13 @@
 import sys
 
 sys.path.append("../")
-from API.db_API import write_to_db, read_from_db
+from CORE.API.db_API import write_to_db, read_from_db
 
 import math
-import numpy as np
+import numpy as np # type: ignore
 
 # import os
-import API.airfoilAPI as aa
+import CORE.API.airfoilAPI as aa
 
 # from values import prerequisites,TESTING_MAIN,wing
 

@@ -33,12 +33,11 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-__author__ = "Geoffrey Nyaga"
 
-import sys
+# import sys
 
-sys.path.append("../")
-from API.db_API import write_to_db
+# sys.path.append("../")
+# from CORE.API.db_API import write_to_db
 
 
 # Range = float(input ('enter the value of range(in km)  ') )
@@ -47,30 +46,42 @@ from API.db_API import write_to_db
 # pax= int(input ('enter the number of passengers  ') )
 # crew= int(input ('enter the number of pilots  '))
 
-Range = 1200
-propEff = 0.8
-AR = 7.8
-pax = 4
-crew = 2
+# Initial estimates
+Range: int = 1200
+propEff: float = 0.8
+AR: float = 7.8
+pax: int = 4
+crew: int = 0
 
-write_to_db("Range", Range)
-write_to_db("propEff", propEff)
-write_to_db("AR", AR)
-write_to_db("pax", pax)
-write_to_db("crew", crew)
+# Weights
+paxWeight: int = 180  # this is the weight of a single passenger
+crewWeight: int = 200
+payloadPax: int = 50
 
-ceiling = 15000
-maxSpeed = 175
-takeOffRun = 1200  # ft
-stallSpeed = 61
-rateOfClimb = 5  # m/s
+# initial estimates
+ldMax: float = 13
+Vc: float = 140
+cbhp: float = 0.4
+fuelAllowance: float = 5  # in %
+
+# write_to_db("Range", Range)
+# write_to_db("propEff", propEff)
+# write_to_db("AR", AR)
+# write_to_db("pax", pax)
+# write_to_db("crew", crew)
+
+ceiling: int = 15000
+maxSpeed: float = 175
+takeOffRun: int = 1200  # ft
+stallSpeed: float = 61
+rateOfClimb: float = 5  # m/s
 
 
-write_to_db("ceiling", ceiling)
-write_to_db("maxSpeed", maxSpeed)
-write_to_db("takeOffRun", takeOffRun)
-write_to_db("stallSpeed", stallSpeed)
-write_to_db("rateOfClimb", rateOfClimb)
+# write_to_db("ceiling", ceiling)
+# write_to_db("maxSpeed", maxSpeed)
+# write_to_db("takeOffRun", takeOffRun)
+# write_to_db("stallSpeed", stallSpeed)
+# write_to_db("rateOfClimb", rateOfClimb)
 
-cruise_altitude = 10000
-write_to_db("cruise_altitude", cruise_altitude)
+cruise_altitude: int = 10000
+# write_to_db("cruise_altitude", cruise_altitude)

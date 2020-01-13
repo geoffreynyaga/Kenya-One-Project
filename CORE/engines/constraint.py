@@ -33,21 +33,21 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-__author__ = "Geoffrey Nyaga"
+
 
 import sys
 
 sys.path.append("../")
-from API.db_API import write_to_db, read_from_db
+from CORE.API.db_API import write_to_db, read_from_db
 
-import numpy as np
-import matplotlib.pylab as plt
+import numpy as np # type: ignore
+import matplotlib.pylab as plt# type: ignore
 
 a = np.arange(50)
 
 ws = np.arange(10, 35, 0.01)
 
-cdmin = 0.025
+cdmin: float = 0.025
 write_to_db("cdMin", cdmin)
 
 do = read_from_db("rhoSL")
@@ -55,7 +55,7 @@ dalt = read_from_db("altitudeDensity")  # AAAAA
 k = read_from_db("k")
 
 # v = read_from_db('cruiseSpeed') * 1.688
-v = 140 * 1.688  # AAAAA
+v: float = 140 * 1.688  # AAAAA
 qcruise = 0.5 * dalt * v ** 2  # dynamic pressure at cruise
 qtakeoff = 0.5 * do * v ** 2  # dynamic pressure at take-off
 
@@ -78,10 +78,10 @@ twclimb = (
 ) * (Vy * 5850 / (0.6 * 550))
 
 # ground run
-Sg = 1000  # ground run ft
-Vlof = 70 * 1.688
-clto = 1.4670
-u = 0.04
+Sg: int = 1000  # ground run ft
+Vlof: float = 70 * 1.688
+clto: float = 1.4670
+u: float = 0.04
 cdto = 0.03
 q1 = 0.5 * do * (Vlof / np.sqrt(2)) ** 2
 twtakeoff = (

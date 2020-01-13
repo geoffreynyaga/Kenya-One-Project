@@ -33,25 +33,23 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-# coding: utf-8
 
-__author__ = "Geoffrey Nyaga"
 
 import sys
 
 sys.path.append("../")
-from API.db_API import write_to_db, read_from_db
+from CORE.API.db_API import write_to_db, read_from_db
 
 from math import sqrt
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np  # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
 
-import API.perfIntroAPI as pfintro
+import CORE.API.perfIntroAPI as pfintro
 
-altitude = 8500  # ft
+altitude: int = 8500  # ft
 rhoSL = read_from_db("rhoSL")
-gamma = 1.4  # do sth
-gas_constant = 1716
+gamma: float = 1.4  # do sth
+gas_constant: int = 1716
 cruiseSpeed = read_from_db("cruiseSpeed")
 finalMTOW = read_from_db("finalMTOW")
 maxSpeed = read_from_db("maxSpeed")
@@ -88,7 +86,7 @@ speeds = pfintro.speeds(
 # print(speeds.CAS(),"ft/s calibrated airspeed")
 
 # negloadFactor = -1.2
-negCLmin = -1
+negCLmin: float = -1.0
 
 flightEnvelope = pfintro.flightEnvelope(
     finalMTOW, S, maxSpeed, stallSpeed, negCLmin, rhoSL

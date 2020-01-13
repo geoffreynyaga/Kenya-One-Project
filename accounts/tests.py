@@ -34,8 +34,8 @@
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
 
-from django.test import TestCase
-import pytest
+from django.test import TestCase # type: ignore
+import pytest # type: ignore
 
 
 def test_a_plus_b():
