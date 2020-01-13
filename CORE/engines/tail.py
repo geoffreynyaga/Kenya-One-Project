@@ -33,48 +33,33 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-# coding: utf-8
 
-# In[1]:
 
-import numpy as np
+import numpy as np  # type: ignore
 from math import pi, sqrt
-import matplotlib.pylab as plt
+import matplotlib.pylab as plt  # type: ignore
 
 
-# In[51]:
+from CORE.engines.wingEngine import wing, wing1, S
 
-from wing import wing, wing1, S
-
-
-# In[52]:
 
 Sref = S  # ft^2
 Cref = wing1.meanGeometricChord()  # ft   #Shit is confusing, do i use MGC or Cref?????
-VHT = 0.75
-ConeRadius1 = 2  # ft
-ConeRadius2 = 0.3  # ft
+VHT: float = 0.75
+ConeRadius1: float = 2.0  # ft
+ConeRadius2: float = 0.3  # ft
 bref = wing1.wingSpan()
 
 
-# In[53]:
-
 ##DIMENSIONING
 
-
-# In[54]:
-
-HtailAR = 4
-HtailTaper = 0.5
+HtailAR: float = 4.0
+HtailTaper: float = 0.5
 # HtailWingspan
 
 
-# In[55]:
-
 # INITIAL TAIL SIZING CONSIDERING H.TAIL ONLY - GUDMUNDSSON
 
-
-# In[56]:
 
 # Optimim tail Arm
 HtailArm = sqrt((2 * VHT * Sref * Cref) / (pi * (ConeRadius1 + ConeRadius2)))
@@ -83,21 +68,14 @@ print(HtailArm, "ft is the Tail Arm for the VHT input of", VHT, "ft")
 print(Swet, "ft^2 is the correponding wetted area")
 
 
-# In[57]:
-
 HtailArea = (VHT * Sref * Cref) / HtailArm
 HtailWingspan = sqrt(HtailAR * HtailArea)
 HtailCavg = HtailWingspan / HtailAR
 
 
-# In[58]:
-
 print(HtailArea, "ft^2 Horizontal Tail Area")
 print(HtailWingspan, "ft Horizontal Tail wingspan")
 print(HtailCavg, "ft Horizontal Tail average chord")
-
-
-# In[59]:
 
 
 def SurfaceAreavsTailArm():
@@ -150,33 +128,22 @@ def SurfaceAreavsTailArm():
 SurfaceAreavsTailArm()
 
 
-# In[60]:
-
 # INITIAL TAIL SIZING OPTIMIZATION CONSIDERING V.TAIL ONLY - GUDMUNDSSON
 
 
-# In[64]:
+Vvt: float = 0.040
+VtailAR: float = 4.0
 
-Vvt = 0.040
-VtailAR = 4
-
-
-# In[65]:
 
 VtailArm = sqrt((Vvt * Sref * bref) / (pi * (ConeRadius1 + ConeRadius2)))
 print(VtailArm, "ft Optimum V.Tail arm")
 
-
-# In[66]:
 
 if HtailArm >= VtailArm:
     VtailArea = (Vvt * Sref * bref) / HtailArm
 else:
     VtailArea = (Vvt * Sref * bref) / VtailArm
 print(VtailArea, "ft^2 VTail area")
-
-
-# In[67]:
 
 VtailWingspan = sqrt(VtailAR * VtailArea)
 VtailCavg = VtailWingspan / VtailAR
@@ -185,10 +152,4 @@ print(VtailWingspan, "ft VTail wingspan")
 print(VtailCavg, "ft VTail average chord")
 
 
-# In[31]:
-
 # INITIAL TAIL SIZING OPTIMIZATION CONSIDERING H.TAIL and V.TAIL  - GUDMUNDSSON
-
-
-# In[ ]:
-

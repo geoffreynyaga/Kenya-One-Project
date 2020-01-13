@@ -33,15 +33,15 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-__author__ = "Geoffrey Nyaga"
+
 
 import sys
 
 sys.path.append("../")
-from API.db_API import write_to_db, read_from_db
+from CORE.API.db_API import write_to_db, read_from_db
 
-import numpy as np
-import matplotlib.pylab as plt
+import numpy as np# type: ignore
+import matplotlib.pylab as plt# type: ignore
 
 print("  EMPTY WEIGHT BREAKDOWN                        ")
 # initial percentage weights as given by Kundu

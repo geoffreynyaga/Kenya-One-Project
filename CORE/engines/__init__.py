@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 ##################################################################################
-# File: c:\Projects\KENYA ONE PROJECT\accounts\api\views.py                      #
-# Project: c:\Projects\KENYA ONE PROJECT\accounts\api                            #
-# Created Date: Sunday, January 12th 2020, 3:26:05 pm                            #
+# File: c:\Projects\KENYA ONE PROJECT\CORE\engines\__init__.py                   #
+# Project: c:\Projects\KENYA ONE PROJECT\CORE\engines                            #
+# Created Date: Monday, January 13th 2020, 2:45:07 pm                            #
 # Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )                     #
 # -----                                                                          #
-# Last Modified: Thursday January 9th 2020 8:56:55 pm                            #
+# Last Modified: Monday January 13th 2020 2:45:07 pm                             #
 # Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )               #
 # -----                                                                          #
 # MIT License                                                                    #
@@ -33,52 +33,3 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-
-from rest_framework.views import APIView
-from rest_framework.response import Response
-
-
-class ExampleSimpleAPIView(APIView):
-    def get(self, request, *args, **kwargs):
-        print("===== ExampleSimpleAPIView ===")
-
-        from CORE.engines import Try_GA_Sizing
-        from CORE.engines.prerequisitesEngine import (
-            pax,
-            paxWeight,
-            crew,
-            crewWeight,
-            payloadPax,
-            Range,
-            ldMax,
-            Vc,
-            cbhp,
-            fuelAllowance,
-            propEff,
-        )
-
-        # x = Try_GA_Sizing.sample_return()
-        x = Try_GA_Sizing.MTOW_estimate(
-            pax,
-            paxWeight,
-            crew,
-            crewWeight,
-            payloadPax,
-            Range,
-            ldMax,
-            Vc,
-            cbhp,
-            fuelAllowance,
-            propEff,
-        )
-        # print(x, "x")
-        return Response(
-            {
-                "Status": "Success",
-                # "result1": x["a"],
-                # "result2": x["b"],
-                "image": x["image"],
-            },
-            content_type="image/png",
-        )
-

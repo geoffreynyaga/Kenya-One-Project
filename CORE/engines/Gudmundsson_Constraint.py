@@ -33,16 +33,16 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-__author__ = "Geoffrey Nyaga"
+
 
 import sys
 
 sys.path.append("../")
-from API.db_API import write_to_db, read_from_db
+from CORE.API.db_API import write_to_db, read_from_db  # type: ignore
 
 from math import sqrt, pi
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np  # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
 
 grossWeight = read_from_db("finalMTOW")
 cruiseSpeed = read_from_db("cruiseSpeed")
@@ -54,19 +54,19 @@ wsfromsizing = read_from_db("WS")
 rhoSL = read_from_db("rhoSL")
 propEff = read_from_db("propEff")
 
-cruiseAltitude = 10000  # ft
-gForce = 2
-V_ROC = 80
-groundRun = 900
-serviceCeiling = 18000
-wsInitial = 22.6  # lb/f**2
-g = 32.174
-CDto = 0.04
-CLto = 0.5
-groundFriction = 0.04
+cruiseAltitude: int = 10000  # ft
+gForce: float = 2.0
+V_ROC: float = 80.0
+groundRun: int = 900
+serviceCeiling: int = 18000
+wsInitial: float = 22.6  # lb/f**2
+g: float = 32.174
+CDto: float = 0.04
+CLto: float = 0.5
+groundFriction: float = 0.04
 
 
-def oswaldEff(AR):
+def oswaldEff(AR: float) -> float:
     e = (1.78 * (1 - (0.045 * AR ** 0.68))) - 0.64
     return e
 
@@ -74,13 +74,13 @@ def oswaldEff(AR):
 e = oswaldEff(AR)
 
 
-k = 1 / (pi * AR * e)
+k: float = 1 / (pi * AR * e)
 
 
 write_to_db("k", k)
 
 # dynamic pressure at altitude
-def rhoAlt(cruiseAltitude):
+def rhoAlt(cruiseAltitude: int) -> float:
     rhoalt = rhoSL * (1 - 0.0000068756 * cruiseAltitude) ** 4.2561
     return rhoalt
 
@@ -93,6 +93,7 @@ qAltitude = 0.5 * rhoCruise * (1.688 * cruiseSpeed) ** 2
 
 # Gag Ferrar Model
 def gagFerrar(bhp):
+    "takes in bhp and returns normalised bhp"
     normBhp = bhp / (1.132 * (rhoCruise / rhoSL) - 0.132)
     return normBhp
 
@@ -161,7 +162,7 @@ if __name__ == "__main__":
     plt.show()
 
 
-def find_nearest(array, value):
+def find_nearest(array, value: float) -> int:
     idx = (np.abs(array - value)).argmin()
     return idx
 
@@ -171,7 +172,7 @@ plotWS = read_from_db("WS")
 myidx = find_nearest(WS, plotWS)
 
 
-def point():
+def point() -> float:
     cruiseidx = norm_twCruise[myidx]
     takeoffidx = norm_twVlof[myidx]
     climbidx = norm_twROC[myidx]

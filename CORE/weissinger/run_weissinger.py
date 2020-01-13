@@ -33,15 +33,16 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-#!/usr/bin/env python
 
-# from matplotlib import pyplot as plt
-import matplotlib.pyplot as plt
-import numpy as np
 
-import inputs
-from wing import Wing
-from weissinger import weissinger_l
+# from matplotlib import pyplot as plt  # type: ignore
+
+import matplotlib.pyplot as plt  # type: ignore
+import numpy as np  # type: ignore
+
+from CORE.weissinger import inputs
+from CORE.weissinger.wing import Wing
+from CORE.weissinger.weissinger import weissinger_l
 
 
 def create_plot(wing, y, cl, ccl, CL, CDi):

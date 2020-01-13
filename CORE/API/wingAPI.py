@@ -35,8 +35,8 @@
 ##################################################################################
 
 from math import sqrt, cos, sin, pi, log, tan
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np # type: ignore
+import matplotlib.pyplot as plt # type: ignore
 
 # import sys
 # import os

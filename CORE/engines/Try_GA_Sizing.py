@@ -6,8 +6,8 @@
 # Created Date: Thursday, January 9th 2020, 8:56:55 pm                           #
 # Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )                     #
 # -----                                                                          #
-# Last Modified: Saturday January 11th 2020 6:57:33 pm                           #
-# Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )                 #
+# Last Modified: Sunday January 12th 2020 3:43:06 pm                             #
+# Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )               #
 # -----                                                                          #
 # MIT License                                                                    #
 #                                                                                #
@@ -33,11 +33,18 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-# coding: utf-8
 
 
-import numpy as np
-import pandas as pd
+import io
+import math
+
+import matplotlib  # type: ignore
+import numpy as np  # type: ignore
+import pandas as pd  # type: ignore
+from matplotlib import pylab as plt  # type: ignore
+
+matplotlib.use("Agg")
+
 
 """
     By default matplotlib uses TK gui toolkit, when you're rendering an image without using
@@ -48,15 +55,9 @@ import pandas as pd
         matplotlib.use("Agg")
         from matplotlib import pylab as plt
 """
-import matplotlib
-
-matplotlib.use("Agg")
-from matplotlib import pylab as plt
-import math
-import io
 
 
-def sample_return():
+def sample_return() -> dict:
     # here is the trick save your figure into a bytes object and you can afterwards expose it via flas
     bytes_image = io.BytesIO()
     # plt.plot([1, 2, 3, 4, 5], [100, 300, 500, 1500, 10])
@@ -88,7 +89,19 @@ def sample_return():
     }
 
 
-def MTOW_estimate():
+def MTOW_estimate(
+    pax,
+    paxWeight,
+    crew,
+    crewWeight,
+    payloadPax,
+    Range,
+    ldMax,
+    Vc,
+    cbhp,
+    fuelAllowance,
+    propEff,
+) -> dict:
 
     wtoGuess = np.arange(2000, 6500)
     # Gudmundsson
@@ -97,11 +110,11 @@ def MTOW_estimate():
     # use this when using Gudmundsson sizing and constants
 
     ## also in input  main file, decide what to import and from which file
-    pax = 4
-    paxWeight = 180
-    crew = 2
-    crewWeight = 200
-    payloadPax = 50
+    # pax = 4
+    # paxWeight = 180
+    # crew = 2
+    # crewWeight = 200
+    # payloadPax = 50
 
     ## also in input  main file, decide what to import and from which file
     paxTotal = pax * paxWeight
@@ -109,18 +122,18 @@ def MTOW_estimate():
     crewTotal = crew * crewWeight
 
     ## also in input  main file, decide what to import and from which file
-    Range = 1200
-    ldMax = 13
-    Vc = 140
-    cbhp = 0.4
-    propEff = 0.8
-    fuelAllowance = 5  # in %
+    # Range = 1200
+    # ldMax = 13
+    # Vc = 140
+    # cbhp = 0.4
+    # propEff = 0.8
+    # fuelAllowance = 5  # in %
     w4w3 = math.exp((-Range * 3280.8399 * cbhp / 3600) / (propEff * ldMax * 550))
-    w2w1 = 0.98
-    w3w2 = 0.97
-    w5w4 = 0.99
-    w6w5 = 0.997
-    w6w1 = w2w1 * w3w2 * w4w3 * w5w4 * w6w5
+    w2w1: float = 0.98
+    w3w2: float = 0.97
+    w5w4: float = 0.99
+    w6w5: float = 0.997
+    w6w1: float = w2w1 * w3w2 * w4w3 * w5w4 * w6w5
 
     wfWto = ((100 + fuelAllowance) / 100) * (1 - w6w1)
 
@@ -131,10 +144,10 @@ def MTOW_estimate():
     wfWtoGud = (1 + (fuelAllowance / 100)) * (1 - w4w3 * 0.994 * 0.985 * 0.996 * 0.995)
     wfWtoSadraey = (1 + (fuelAllowance / 100)) * (1 - w2w1 * w3w2 * w4w3 * w5w4 * w6w5)
 
-    print(wfWto)
+    print(wfWto, "wfWto")
 
-    a = 1.51
-    b = -0.1
+    a: float = 1.51
+    b: float = -0.1
 
     # Raymer
     weWto = a * (wtoGuess ** b)
@@ -200,4 +213,3 @@ def MTOW_estimate():
     print(finalMTOW, "LBS <<-- final MTOW")
 
     return {"finalMTOW": finalMTOW, "image": image_base64}
-

@@ -33,19 +33,19 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-__author__ = "Geoffrey Nyaga"
+
 
 import sys
 
 sys.path.append("../")
-from API.db_API import write_to_db, read_from_db
+from CORE.API.db_API import write_to_db, read_from_db
 
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np# type: ignore
+import matplotlib.pyplot as plt# type: ignore
 import math
 
 
-import API.TESTING_MAINAPI as tmapi
+import CORE.API.TESTING_MAINAPI as tmapi
 
 
 Range = read_from_db("Range")
@@ -76,7 +76,7 @@ oswaldeff = (
 )  # e is oswalds span efficiency factor 0.7-0.95 #
 k = 1 / (np.pi * oswaldeff * AR)  # k is the induced drag factor k=1/(pi*e*AR) #
 
-cdo = 0.025  # zerolift drag coefficient cdo = 0.022 - 0.028#
+cdo: float = 0.025  # zerolift drag coefficient cdo = 0.022 - 0.028#
 ldmax1 = 2 * np.sqrt(k * cdo)
 ldMax = ldmax1 ** (-1)
 
@@ -85,17 +85,17 @@ write_to_db("cdo", cdo)
 write_to_db("ldMax", ldMax)
 write_to_db("k", k)
 
-Vc = 140  # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-cbhp = 0.4
-fuelAllowance = 5  # in %
+Vc: float = 140.0  # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+cbhp: float = 0.4
+fuelAllowance: float= 5.0  # in %
 
 write_to_db("cbhp", cbhp)
 
 w4w3 = math.exp((-Range * 3280.8399 * cbhp / 3600) / (propEff * ldMax * 550))
-w2w1 = 0.98
-w3w2 = 0.97
-w5w4 = 0.99
-w6w5 = 0.997
+w2w1: float = 0.98
+w3w2: float = 0.97
+w5w4: float = 0.99
+w6w5: float = 0.997
 w6w1 = w2w1 * w3w2 * w4w3 * w5w4 * w6w5
 # print(w4w3,"w4w3")
 wfWto = ((100 + fuelAllowance) / 100) * (1 - w6w1)
@@ -108,8 +108,8 @@ wfWtoGud = (1 + (fuelAllowance / 100)) * (1 - w4w3 * 0.994 * 0.985 * 0.996 * 0.9
 wfWtoSadraey = (1 + (fuelAllowance / 100)) * (1 - w2w1 * w3w2 * w4w3 * w5w4 * w6w5)
 
 # empty weight constants
-sizingConstantA = 1.51
-sizingConstantB = -0.1
+sizingConstantA: float = 1.51
+sizingConstantB: float = -0.1
 
 # Raymer
 weWto = sizingConstantA * (wtoGuess ** sizingConstantB)
@@ -235,7 +235,7 @@ rateOfClimb_estimate = read_from_db("rateOfClimb")
 # ws = np.arange(start,end,interval)
 
 
-propEff = 0.7  # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+# propEff: float = 0.7  # cz mypy raises the error that his has already been read
 rhoSL = read_from_db("rhoSL")
 vmax = vmaxe * 1.688  # we have assumed it is 150 knots
 
@@ -264,15 +264,15 @@ write_to_db("altitudeDensity", altitudeDensity)
 vto = 1.1 * vstall * 1.688
 
 
-U = 0.04
-CLC = 0.4042  # MATLAB??? AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
-CLFLAP = 0.8
+U:float= 0.04
+CLC:float = 0.4042  # MATLAB??? AAAAAAAAAAAAA
+CLFLAP:float = 0.8
 CLTO = CLC + CLFLAP
 
 write_to_db("CLTO", CLTO)
 
-CDOLG = 0.009
-CDOHLD = 0.007
+CDOLG: float = 0.009
+CDOHLD: float = 0.007
 CDOTO = cdo + CDOLG + CDOHLD
 CDTO = CDOTO + k * CLTO ** 2
 CLR = 1.8 / 1.1 ** 2
@@ -310,7 +310,7 @@ CDG = CDTO - U * CLTO
 
 # Vstall calculations#
 # WP=np.arange(1,51)
-clmax = 1.8  # CAN THIS BE IMPORTED LATER???
+clmax: float = 1.8  # CAN THIS BE IMPORTED LATER???
 vs = vstall * 1.688  # vs is stall speed and the minimun by law is 61knots#
 WS3 = 0.5 * rhoSL * clmax * vs ** 2
 # clmax is between 1.6-2.2 so we take 1.6 #
@@ -409,7 +409,7 @@ WS3 = 0.5 * rhoSL * clmax * vs ** 2
 
 write_to_db("WS", WS3)
 
-import constraint
+from CORE.engines import constraint
 
 WP = (mtow) / (read_from_db("finalBHP"))
 
@@ -441,12 +441,12 @@ rade = (1 - c * 10000) ** 4.26
 y = (0.5 * rhoSL * cdo) / x1
 
 z = (2 * k * x1) / (altitudeDensity * rade)
-z1 = [y, 0, 0, -x2, z]
+z1: list = [y, 0, 0, -x2, z]
 s = np.roots(z1)
 # z=s[3]
 z = np.max(s)
-z1 = abs(z)
-maxSpeed = z1 / 1.688
+z1 = (abs(z))
+maxSpeed = (z1 / 1.688) # type: ignore
 write_to_db("maxSpeed", maxSpeed)
 
 # Take-off Run Resolve
@@ -469,7 +469,7 @@ rateOfClimb1 = (1 - (x * i)) * 0.7 * 550 / x
 rateOfClimb = rateOfClimb1 * 0.3048
 # write_to_db('rateOfClimb',rateOfClimb)
 
-vc = z1 / 1.2
+vc = z1 / 1.2 # type: ignore
 write_to_db("cruiseSpeed", (vc / 1.688))
 vs = Vs2
 S1 = S * 10.76
@@ -519,7 +519,7 @@ wingspan = np.sqrt(AR * S)
 wmeanchord = wingspan / AR
 wtaper = (
     0.45
-)  # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+)  # AAAAAAAAAAAA
 wcroot = (wmeanchord * 3) / (2 * ((1 + wtaper + wtaper ** 2) / (1 + wtaper)))
 wctip = wtaper * wcroot
 

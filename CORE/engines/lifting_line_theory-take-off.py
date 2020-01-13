@@ -33,13 +33,12 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-# coding: utf-8
-__author__ = "Geoffrey Nyaga"
+
 
 import sys
 
 sys.path.append("../")
-from API.db_API import write_to_db, read_from_db
+from CORE.API.db_API import write_to_db, read_from_db  # type: ignore
 
 """
   KENYA ONE PROJECT
@@ -51,11 +50,11 @@ from API.db_API import write_to_db, read_from_db
 
 """
 
-import numpy as np
+import numpy as np  # type: ignore
 import math
-import matplotlib.pylab as plt
+import matplotlib.pylab as plt  # type: ignore
 
-import lifting_line_theory as llt
+from CORE.engines import lifting_line_theory as llt  # type: ignore
 
 N = llt.N  # (number of segments - 1)
 S = llt.S  # m^2
@@ -66,15 +65,15 @@ a_2d = llt.a_2d  # lift curve slope (1/rad)
 alpha_0 = llt.alpha_0  # zero-lift angle of attack (deg)
 i_w = llt.i_w  # wing setting angle (deg)
 
-a_0 = -4.2  # flap up zero-lift angle of attack (deg)
-fuselage_angle = 10
-cfc = 0.20
-df = 14
+a_0: float = -4.2  # flap up zero-lift angle of attack (deg)
+fuselage_angle: float = 10.0
+cfc: float = 0.20
+df: float = 14.0
 
 bf_b = 0.6  # flap-to-wing span ratio
 
 
-def llt_full(fuselage_angle, df):
+def llt_full(fuselage_angle, df) -> float:
 
     doflap = -1.15 * cfc * df
     i_wing = fuselage_angle + i_w

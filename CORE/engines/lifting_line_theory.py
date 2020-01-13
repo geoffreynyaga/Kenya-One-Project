@@ -33,8 +33,7 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-# coding: utf-8
-__author__ = "Geoffrey Nyaga"
+
 
 # KENYA ONE PROJECT #
 # Python code to solve for CL of the wing and elliptical#
@@ -43,26 +42,26 @@ __author__ = "Geoffrey Nyaga"
 import sys
 
 sys.path.append("../")
-from API.db_API import write_to_db, read_from_db
-from API.lifting_line_theory import llt, llt_with_plots, llt_subplots
+from CORE.API.db_API import write_to_db, read_from_db  # type: ignore
+from CORE.API.lifting_line_theory import llt, llt_with_plots, llt_subplots
 
-import numpy as np
+import numpy as np  # type: ignore
 import math
-import matplotlib.pylab as plt
+import matplotlib.pylab as plt  # type: ignore
 
-N = 9  # (number of segments - 1)
+N: int = 9  # (number of segments - 1)
 S = read_from_db("S")  # m^2
 AR = read_from_db("AR")  # Aspect ratio
 taper = read_from_db("taper")  # Taper ratio
-alpha_twist = -2  # Twist angle (deg)
-i_w = 1  # wing setting angle (deg)
-a_2d = 6.8754  # lift curve slope (1/rad)
-alpha_0 = -4.2  # zero-lift angle of attack (deg)
+alpha_twist: float = -2  # Twist angle (deg)
+i_w: float = 1  # wing setting angle (deg)
+a_2d: float = 6.8754  # lift curve slope (1/rad)
+alpha_0: float = -4.2  # zero-lift angle of attack (deg)
 
 
-def lifting_line_theory_combinations():
+def lifting_line_theory_combinations() -> float:
 
-    myans = 0.4049  # This is the lift that you want to achieve!!!!!!!!!!!!!!!!!!!!!
+    myans: float = 0.4049  # This is the lift that you want to achieve!!!!!!!!!!!!!!!!!!!!!
     alpha_twist = np.arange(0, -4, -0.01)
     # print(alpha_twist)
     i_w = np.arange(0, 5, 0.1)
@@ -92,7 +91,7 @@ def lifting_line_theory_combinations():
 lifting_line_theory_combinations()
 
 
-def lifting_line_theory_subplots():
+def lifting_line_theory_subplots() -> list:
 
     myans = 0.4049
     alpha_twist = np.arange(0, -4, -0.01)
@@ -104,9 +103,9 @@ def lifting_line_theory_subplots():
             lst = (i, j)
             x.append(lst)
 
-    finalyy = []
-    finalxx = []
-    mycombination = []
+    finalyy: list = []
+    finalxx: list = []
+    mycombination: list = []
     for alpha_twist, i_w in x:
         final = llt(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0)
 

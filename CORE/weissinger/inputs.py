@@ -34,10 +34,10 @@
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
 
-alpha = 2  # Geometric angle of attack at root, degrees
-span = 100  # Wing span
-root = 10  # Root chord
-tip = 7  # Tip chord
-sweep = 5  # Sweep of quarter-chord, degrees
-washout = 3  # Downward twist at tip, degrees
-npoints = 21  # Number of points to evaluate on wing half
+alpha: float = 2  # Geometric angle of attack at root, degrees
+span: float = 100.0  # Wing span
+root: float = 10  # Root chord
+tip: float = 7  # Tip chord
+sweep: int = 5  # Sweep of quarter-chord, degrees
+washout: float = 3  # Downward twist at tip, degrees
+npoints: int = 21  # Number of points to evaluate on wing half

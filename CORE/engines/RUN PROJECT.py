@@ -33,14 +33,14 @@
 # -----                                                                          #
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
-__author__ = "Geoffrey Nyaga"
+
 
 import sys
 
 sys.path.append("../")
-from API.db_API import write_to_db
+from CORE.API.db_API import write_to_db
 
-from engines import (
+from CORE.engines import (
     prerequisitesEngine,
     defaults,
     sizing,

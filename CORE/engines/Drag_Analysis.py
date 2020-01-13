@@ -35,10 +35,10 @@
 ##################################################################################
 
 from math import sin, cos, pi, sqrt, log
-import numpy as np
-import matplotlib.pyplot as plt
+import numpy as np # type: ignore
+import matplotlib.pyplot as plt # type: ignore
 
-from wing import (
+from CORE.engines.wingEngine import (
     reducedS,
     cruiseSpeed,
     rhoSL,
@@ -52,54 +52,50 @@ from wing import (
 
 # SKIN FRICTION DRAG OF A WING
 
-wingSpan = 38.30
+wingSpan: float = 38.30  # ft
 
 # on a standard day (OAT(Outside air Temp)  = 518.67 R or 273.15 K).
-OAT = 518.67  # R
-viscosity = 3.17 * (10 ** -11) * OAT ** 1.5 * (734.7 / (OAT + 216))
-XtrCr = (
+OAT: float = 518.67  # R
+viscosity: float = 3.17 * (10 ** -11) * OAT ** 1.5 * (734.7 / (OAT + 216))
+XtrCr: float = (
     0.45
 )  #    % where laminar layer gets disrupted GET FROM THE AIRFOIL DATA OR XFRL5 Xtr/Cr
-XtrCtUpper = 0.6
-XtrCtLower = 0.5
+XtrCtUpper: float = 0.6
+XtrCtLower: float = 0.5
 # def skinFrictionDrag():
-Swet = (
+Swet: float = (
     1.07 * reducedS * 2
 )  # quick way of calculating wetted area(better method down) #Gud page 681 the value 7% is given
 print(Swet, "Swet 1")
 # Re of root airfoil
-rootRe = (rhoSL * cruiseSpeed * wing1.rootChord()) / (viscosity)
+rootRe: float = (rhoSL * cruiseSpeed * wing1.rootChord()) / (viscosity)
 print(rootRe, "root airfoil RE")
 
 # Re of tip airfoil
-tipRe = (rhoSL * cruiseSpeed * wing1.tipChord()) / (viscosity)
+tipRe: float = (rhoSL * cruiseSpeed * wing1.tipChord()) / (viscosity)
 print(tipRe, "tip airfoil RE")
 
 # fictitious Turbulent BL on Root Airfoil - Upper Surface
 
-X0CrUpper = 36.9 * XtrCr ** 0.625 * (1 / rootRe) ** 0.375
+X0CrUpper: float = 36.9 * XtrCr ** 0.625 * (1 / rootRe) ** 0.375
 print(X0CrUpper, "upper root surface turbulent BL")
-X0CrLower = (
-    X0CrUpper
-)  # Here we have assumed that the lower part of the root airfoil has tghe same turbulent point on Xtr/Cr
+X0CrLower: float = X0CrUpper  # Here we have assumed that the lower part of the root airfoil has tghe same turbulent point on Xtr/Cr
 
 # fictitious Turbulent BL on tip Airfoil - Upper Surface
-X0CtUpper = 36.9 * XtrCtUpper ** 0.625 * (1 / tipRe) ** 0.375
+X0CtUpper: float = 36.9 * XtrCtUpper ** 0.625 * (1 / tipRe) ** 0.375
 print(X0CtUpper, "upper tip surface turbulent BL")
 # fictitious Turbulent BL on tip Airfoil - lower Surface
-X0CtLower = 36.9 * XtrCtLower ** 0.625 * (1 / tipRe) ** 0.375
+X0CtLower: float = 36.9 * XtrCtLower ** 0.625 * (1 / tipRe) ** 0.375
 print(X0CtLower, "lower tip surface turbulent BL")
 print("\n")
 # Skin Friction for Root Airfoil - Upper Surface
-CfRootUpper = (0.074 / rootRe ** 0.2) * (1 - (XtrCr - X0CrUpper)) ** 0.8
+CfRootUpper: float = (0.074 / rootRe ** 0.2) * (1 - (XtrCr - X0CrUpper)) ** 0.8
 print(CfRootUpper, "skin friction, root airfoil upper part")
 # Skin Friction for Root Airfoil - Lower Surface
-CfRootLower = (
-    CfRootUpper
-)  # Here we have assumed that the lower part of the root airfoil has tghe same turbulent point on Xtr/Cr
+CfRootLower: float = CfRootUpper  # Here we have assumed that the lower part of the root airfoil has tghe same turbulent point on Xtr/Cr
 print(CfRootUpper, "skin friction, root airfoil upper part")
 # Average Skin friction for root Airfoil
-CfRoot = 0.5 * (CfRootLower + CfRootUpper)
+CfRoot: float = 0.5 * (CfRootLower + CfRootUpper)
 print(CfRoot, "skin friction, root airfoil ")
 
 # Skin Friction for Tip Airfoil - Upper Surface
