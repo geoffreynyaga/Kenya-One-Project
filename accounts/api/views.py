@@ -6,7 +6,7 @@
 # Created Date: Sunday, January 12th 2020, 3:26:05 pm                            #
 # Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )                     #
 # -----                                                                          #
-# Last Modified: Thursday January 9th 2020 8:56:55 pm                            #
+# Last Modified: Sunday January 12th 2020 3:43:06 pm                             #
 # Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )               #
 # -----                                                                          #
 # MIT License                                                                    #
@@ -81,4 +81,3 @@ class ExampleSimpleAPIView(APIView):
             },
             content_type="image/png",
         )
-

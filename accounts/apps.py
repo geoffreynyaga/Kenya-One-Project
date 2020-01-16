@@ -1,4 +1,4 @@
-from django.apps import AppConfig # type: ignore
+from django.apps import AppConfig  # type: ignore
 
 
 class AccountsConfig(AppConfig):

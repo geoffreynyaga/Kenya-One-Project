@@ -56,4 +56,3 @@ write_to_db("rhoSL", rhoSL)
 write_to_db("paxWeight", paxWeight)
 write_to_db("crewWeight", crewWeight)
 write_to_db("payloadPax", payloadPax)
-

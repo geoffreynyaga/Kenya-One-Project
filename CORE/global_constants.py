@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 ##################################################################################
-# File: c:\Projects\KENYA ONE PROJECT\accounts\api\urls.py                       #
-# Project: c:\Projects\KENYA ONE PROJECT\accounts\api                            #
-# Created Date: Sunday, January 12th 2020, 3:26:05 pm                            #
+# File: c:\Projects\KENYA ONE PROJECT\CORE\global_constants.py                   #
+# Project: c:\Projects\KENYA ONE PROJECT\CORE                                    #
+# Created Date: Tuesday, January 14th 2020, 7:47:55 pm                           #
 # Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )                     #
 # -----                                                                          #
-# Last Modified: Sunday January 12th 2020 3:43:06 pm                             #
+# Last Modified: Tuesday January 14th 2020 7:47:55 pm                            #
 # Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )               #
 # -----                                                                          #
 # MIT License                                                                    #
@@ -34,8 +34,6 @@
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
 
-from django.conf.urls import url
 
-from .views import ExampleSimpleAPIView
-
-urlpatterns = [url(r"^example/$", ExampleSimpleAPIView.as_view(), name="example_api")]
+rho_sl: float = 0.002378  # slug/ft3
+temp_sl: int = 15  # deg

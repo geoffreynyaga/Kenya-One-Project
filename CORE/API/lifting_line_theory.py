@@ -40,6 +40,7 @@ import math
 import matplotlib.pylab as plt  # type: ignore
 from typing import Any
 
+
 def llt(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0) -> Any:
 
     b = math.sqrt(AR * S)  # wing span (m)
@@ -171,7 +172,7 @@ def llt_with_plots(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0) -> float:
         print(CL_wing, "CL_wing")
 
 
-def llt_subplots(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0)->float:
+def llt_subplots(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0) -> float:
 
     b = math.sqrt(AR * S)  # wing span (m)
     MAC = S / b  # Mean Aerodynamic Chord(m)
@@ -224,4 +225,3 @@ def llt_subplots(N, S, AR, taper, alpha_twist, i_w, a_2d, alpha_0)->float:
 
     if __name__ == "__main__":
         print(CL_wing, "CL_wing")
-

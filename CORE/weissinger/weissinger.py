@@ -37,7 +37,7 @@
 from math import sqrt, pi, cos, sin, tan
 import numpy as np  # type: ignore
 
-eps: float= 1e-10
+eps: float = 1e-10
 
 
 def l_function(lam, spc, y, n):

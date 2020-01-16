@@ -35,7 +35,7 @@
 ##################################################################################
 
 import math
-import numpy as np # type: ignore
+import numpy as np  # type: ignore
 
 # import sys
 # import os

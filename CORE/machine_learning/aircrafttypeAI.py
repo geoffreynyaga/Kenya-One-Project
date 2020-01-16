@@ -83,4 +83,8 @@ for iteration in range(9):
 index = np.bincount(output_matrix).argmax()
 # print(index,"my index")
 final_aircraft_type: str = aircraft_categories[index]
-print("the aircraft type is:", final_aircraft_type, " and YEEEEH!!! I finally made it!!!!!!")
+print(
+    "the aircraft type is:",
+    final_aircraft_type,
+    " and YEEEEH!!! I finally made it!!!!!!",
+)
