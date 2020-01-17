@@ -40,8 +40,8 @@ import sys
 sys.path.append("../")
 from CORE.API.db_API import write_to_db, read_from_db
 
-import numpy as np # type: ignore
-import matplotlib.pylab as plt# type: ignore
+import numpy as np  # type: ignore
+import matplotlib.pylab as plt  # type: ignore
 
 a = np.arange(50)
 

@@ -46,7 +46,7 @@ import pandas as pd  # type: ignore
 import random
 
 
-def aircraft_type(number_of_aircraft: int, mydict:list)->int:
+def aircraft_type(number_of_aircraft: int, mydict: list) -> int:
 
     finaldp: list = []
 
@@ -161,4 +161,3 @@ def aircraft_type(number_of_aircraft: int, mydict:list)->int:
 
 # # print(return_matrix)
 # print(np.bincount(return_matrix5).argmax())
-

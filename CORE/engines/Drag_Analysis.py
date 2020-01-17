@@ -35,8 +35,8 @@
 ##################################################################################
 
 from math import sin, cos, pi, sqrt, log
-import numpy as np # type: ignore
-import matplotlib.pyplot as plt # type: ignore
+import numpy as np  # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
 
 from CORE.engines.wingEngine import (
     reducedS,

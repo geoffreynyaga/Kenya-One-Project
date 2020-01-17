@@ -41,10 +41,10 @@ sys.path.append("../")
 from CORE.API.db_API import write_to_db, read_from_db
 
 from math import sqrt, cos, sin, pi, log, tan
-import numpy as np # type: ignore
-import matplotlib.pyplot as plt # type: ignore
+import numpy as np  # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
 
-from  CORE.API import wingAPI as wapi
+from CORE.API import wingAPI as wapi
 
 S = read_from_db("S") * 10.76  # sq ft
 taper = read_from_db("taper")

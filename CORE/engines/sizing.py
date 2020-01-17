@@ -40,8 +40,8 @@ import sys
 sys.path.append("../")
 from CORE.API.db_API import write_to_db, read_from_db
 
-import numpy as np# type: ignore
-import matplotlib.pyplot as plt# type: ignore
+import numpy as np  # type: ignore
+import matplotlib.pyplot as plt  # type: ignore
 import math
 
 
@@ -87,7 +87,7 @@ write_to_db("k", k)
 
 Vc: float = 140.0  # AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 cbhp: float = 0.4
-fuelAllowance: float= 5.0  # in %
+fuelAllowance: float = 5.0  # in %
 
 write_to_db("cbhp", cbhp)
 
@@ -264,9 +264,9 @@ write_to_db("altitudeDensity", altitudeDensity)
 vto = 1.1 * vstall * 1.688
 
 
-U:float= 0.04
-CLC:float = 0.4042  # MATLAB??? AAAAAAAAAAAAA
-CLFLAP:float = 0.8
+U: float = 0.04
+CLC: float = 0.4042  # MATLAB??? AAAAAAAAAAAAA
+CLFLAP: float = 0.8
 CLTO = CLC + CLFLAP
 
 write_to_db("CLTO", CLTO)
@@ -445,8 +445,8 @@ z1: list = [y, 0, 0, -x2, z]
 s = np.roots(z1)
 # z=s[3]
 z = np.max(s)
-z1 = (abs(z))
-maxSpeed = (z1 / 1.688) # type: ignore
+z1 = abs(z)
+maxSpeed = z1 / 1.688  # type: ignore
 write_to_db("maxSpeed", maxSpeed)
 
 # Take-off Run Resolve
@@ -469,7 +469,7 @@ rateOfClimb1 = (1 - (x * i)) * 0.7 * 550 / x
 rateOfClimb = rateOfClimb1 * 0.3048
 # write_to_db('rateOfClimb',rateOfClimb)
 
-vc = z1 / 1.2 # type: ignore
+vc = z1 / 1.2  # type: ignore
 write_to_db("cruiseSpeed", (vc / 1.688))
 vs = Vs2
 S1 = S * 10.76
@@ -517,9 +517,7 @@ write_to_db("netclmax", netclmax)
 
 wingspan = np.sqrt(AR * S)
 wmeanchord = wingspan / AR
-wtaper = (
-    0.45
-)  # AAAAAAAAAAAA
+wtaper = 0.45  # AAAAAAAAAAAA
 wcroot = (wmeanchord * 3) / (2 * ((1 + wtaper + wtaper ** 2) / (1 + wtaper)))
 wctip = wtaper * wcroot
 
@@ -554,4 +552,3 @@ write_to_db("mainWheelWidth", mwwidth)
 # fuselage sizing
 lfus = (0.86 * (mtow) ** 0.42) / 3.28084
 write_to_db("fuselageLength", lfus * 3.2808)
-

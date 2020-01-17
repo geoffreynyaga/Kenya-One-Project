@@ -82,11 +82,7 @@ def sample_return() -> dict:
     #     base64string = base64.b64encode(image_file.read())
     #     return base64string
 
-    return {
-        "a": 1,
-        "b": 2,
-        "image": image_base64,
-    }
+    return {"a": 1, "b": 2, "image": image_base64}
 
 
 def MTOW_estimate(

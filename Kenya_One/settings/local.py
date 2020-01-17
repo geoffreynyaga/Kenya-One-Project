@@ -37,7 +37,7 @@
 
 import os
 
-from decouple import config # type: ignore
+from decouple import config  # type: ignore
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -47,17 +47,17 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "ek616)0$u_wm_+-detxalb+f#h!=-qc2y*rn%$4&n9p)8!4f64"
+SECRET_KEY: str = "ek616)0$u_wm_+-detxalb+f#h!=-qc2y*rn%$4&n9p)8!4f64"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG: bool = True
 
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS: list = ["*"]
 
 
 # Application definition
 
-INSTALLED_APPS = [
+INSTALLED_APPS: list = [
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -66,9 +66,10 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "accounts",
 ]
 
-MIDDLEWARE = [
+MIDDLEWARE: list = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
@@ -79,7 +80,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "Kenya_One.urls"
+ROOT_URLCONF: str = "Kenya_One.urls"
 
 TEMPLATES = [
     {
@@ -97,7 +98,7 @@ TEMPLATES = [
     }
 ]
 
-WSGI_APPLICATION = "Kenya_One.wsgi.application"
+WSGI_APPLICATION: str = "Kenya_One.wsgi.application"
 
 
 # Database
@@ -109,7 +110,7 @@ WSGI_APPLICATION = "Kenya_One.wsgi.application"
 #         "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
 #     }
 # }
-DATABASES = {
+DATABASES: dict = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "kenya_one_db",
@@ -120,6 +121,7 @@ DATABASES = {
     }
 }
 
+AUTH_USER_MODEL = "accounts.User"
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -137,19 +139,19 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE: str = "en-us"
 
-TIME_ZONE = "UTC"
+TIME_ZONE: str = "UTC"
 
-USE_I18N = True
+USE_I18N: bool = True
 
-USE_L10N = True
+USE_L10N: bool = True
 
-USE_TZ = True
+USE_TZ: bool = True
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = "/static/"
-CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_ALLOW_ALL: bool = True

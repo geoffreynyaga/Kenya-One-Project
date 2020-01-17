@@ -3,9 +3,6 @@
 source = .
 omit =
    *venv/*
-   *venv/bin/*
-   *venv/include/*
-   *venv/lib/*
    *templates/*
    *staticfiles/*
    */node_modules/*

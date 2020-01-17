@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding:utf-8 -*-
 ##################################################################################
-# File: c:\Projects\KENYA ONE PROJECT\accounts\api\urls.py                       #
-# Project: c:\Projects\KENYA ONE PROJECT\accounts\api                            #
-# Created Date: Sunday, January 12th 2020, 3:26:05 pm                            #
+# File: c:\Projects\KENYA ONE PROJECT\initial_sizing\admin.py                    #
+# Project: c:\Projects\KENYA ONE PROJECT\initial_sizing                          #
+# Created Date: Tuesday, January 14th 2020, 6:49:34 pm                           #
 # Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )                     #
 # -----                                                                          #
-# Last Modified: Sunday January 12th 2020 3:43:06 pm                             #
+# Last Modified: Tuesday January 14th 2020 6:49:34 pm                            #
 # Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )               #
 # -----                                                                          #
 # MIT License                                                                    #
@@ -34,8 +34,4 @@
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
 
-from django.conf.urls import url
-
-from .views import ExampleSimpleAPIView
-
-urlpatterns = [url(r"^example/$", ExampleSimpleAPIView.as_view(), name="example_api")]
+from django.contrib import admin

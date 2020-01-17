@@ -179,4 +179,3 @@ llt_full(mycombination[0], mycombination[1])
 
 
 write_to_db("CL_TO", initial_CL_TO)
-

@@ -37,9 +37,9 @@
 
 # In[1]:
 
-import numpy as np# type: ignore
-import pandas as pd# type: ignore
-import matplotlib.pylab as plt# type: ignore
+import numpy as np  # type: ignore
+import pandas as pd  # type: ignore
+import matplotlib.pylab as plt  # type: ignore
 import math
 
 

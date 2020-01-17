@@ -184,4 +184,3 @@ class flightEnvelope:
 
     def maxGustSpeed(self):
         pass
-
