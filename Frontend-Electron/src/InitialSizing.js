@@ -35,6 +35,16 @@
 import React, { Component } from "react";
 import "./App.css";
 
+// type Group = { status: string; image: string };
+
+// type AppState = {
+//   groups: Group | null;
+//   isLoading: boolean;
+// };
+// type AppProps = {};
+
+// class App extends Component<AppProps, AppState>
+
 class InitialSizing extends Component {
   constructor(props) {
     super(props);

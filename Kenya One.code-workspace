@@ -1,0 +1,105 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "psi-header.config": {
+      "license": "MIT"
+    },
+    "psi-header.changes-tracking": {
+      "isActive": true,
+      "modAuthor": "Modified By: ",
+      "modDate": "Last Modified: ",
+      "modDateFormat": "date",
+      "include": [],
+      "exclude": ["markdown", "json"],
+      "excludeGlob": ["out/**", "src/**/*.xyz"],
+      "autoHeader": "manualSave"
+    },
+    "psi-header.license-text": [
+      "This file can be copied and/or distributed without the express",
+      "permission of KENYA ONE PROJECT"
+    ],
+    "psi-header.variables": [
+      ["company", "KENYA ONE PROJECT"],
+      ["author", "Geoffrey Nyaga Kinyua"],
+      ["authoremail", "info@geoffreynyaga.com"]
+    ],
+    "psi-header.lang-config": [
+      {
+        "language": "lua",
+        "begin": "--[[",
+        "prefix": "--",
+        "end": "--]]",
+        "blankLinesAfter": 0
+      },
+      {
+        "language": "python",
+        "begin": "##################################################################################",
+        "prefix": "# ",
+        "suffix": "#",
+        "lineLength": 82,
+        "end": "##################################################################################",
+        "blankLinesAfter": 0,
+        "beforeHeader": ["#!/usr/bin/env python3", "# -*- coding:utf-8 -*-"]
+      },
+      {
+        "language": "javascript",
+        "begin": "/**",
+        "prefix": " * ",
+        "end": " */",
+        "blankLinesAfter": 0,
+        "forceToTop": false
+      },
+      {
+        "language": "typescript",
+        "mapTo": "javascript"
+      }
+    ],
+    "psi-header.templates": [
+      {
+        "language": "*",
+        "template": [
+          "File: <<filepath>>",
+          "Project: <<projectpath>>",
+          "Created Date: <<filecreated('dddd, MMMM Do YYYY, h:mm:ss a')>>",
+          "Author: <<author>> ( <<<authoremail>>> )",
+          "-----",
+          "Last Modified: <<filecreated('dddd MMMM Do YYYY h:mm:ss a')>>",
+          "Modified By:  <<author>> ( <<<authoremail>>> )",
+          "-----",
+          "<<licensetext>>",
+          "-----",
+          "Copyright (c) <<year>> <<company>>"
+        ],
+        "changeLogCaption": "HISTORY:",
+        "changeLogHeaderLineCount": 2,
+        "changeLogEntryTemplate": [
+          "<<dateformat('YYYY-MM-DD')>>\t<<initials>>\t"
+        ]
+      },
+      {
+        "language": "javascript",
+        "template": [
+          "File: <<filepath>>",
+          "Project: <<projectpath>>",
+          "Created Date: <<filecreated('dddd, MMMM Do YYYY, h:mm:ss a')>>",
+          "Author: <<author>> ( <<<authoremail>>> )",
+          "-----",
+          "Last Modified: <<filecreated('dddd MMMM Do YYYY h:mm:ss a')>>",
+          "Modified By:  <<author>> ( <<<authoremail>>> )",
+          "-----",
+          "Copyright (c) <<year>> <<company>>",
+          "-----",
+          "<<licensetext>>"
+        ]
+      },
+      {
+        "language": "typescript",
+        "mapTo": "javascript"
+      }
+    ]
+  }
+}

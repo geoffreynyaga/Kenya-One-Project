@@ -108,6 +108,3 @@ ENV/
 
 #database_schema files
 .database_schemas
-
-#file editor
-.vscode
