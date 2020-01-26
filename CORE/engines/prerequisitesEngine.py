@@ -85,3 +85,84 @@ rateOfClimb: float = 5  # m/s
 
 cruise_altitude: int = 10000
 # write_to_db("cruise_altitude", cruise_altitude)
+
+
+# from Raymer 6th Ed
+def get_equivalent_aspect_ratio(aircraft_type: str) -> float:
+
+    """
+    This function takes in a General Aviation aircraft type and
+    returns its equivalent aspect ratio
+        :param aircraft_type:
+    """
+
+    if aircraft_type == "Homebuilt":
+        return 6.0
+    elif aircraft_type == "GA_Single":
+        return 7.6
+    elif aircraft_type == "GA_Twin":
+        return 7.8
+    elif aircraft_type == "Agricultural":
+        return 7.5
+    elif aircraft_type == "Twin_Turboprop":
+        return 9.2
+    elif aircraft_type == "Flying_Boat":
+        return 8.0
+    else:
+        return 0.0
+
+    # #TODO:
+    # elif aircraft_type == "Sailplane":
+    #     # =  0.1 9 (best L/D) l.3
+    #     pass
+
+    # # Equivalent Aspect Ratio = aMmax^C
+    # elif aircraft_type == "Jet_Aircraft":
+    #     pass
+    # elif aircraft_type == "Jet_Trainer":
+    #     pass
+    # elif aircraft_type == "Jet_Dogfighter":
+    #     pass
+    # elif aircraft_type == "Jet_Fighter_other":
+    #     pass
+    # elif aircraft_type == "Military_cargo_or_bomber":
+    #     pass
+    # elif aircraft_type == "Jet_Transport":
+    #     pass
+
+
+def get_empty_weight_constants(aircraft_type: str) -> dict:
+
+    """
+    This function takes in a General Aviation aircraft type and
+    returns its equivalent aspect ratio
+        :param aircraftType:
+    """
+    if aircraft_type == "SailPlane_Unpowered":
+        return {"a": 0.86, "c": -0.05}
+    elif aircraft_type == "SailPlane_Powered":
+        return {"a": 0.91, "c": -0.05}
+    elif aircraft_type == "Homebuilt_Metal_or_Wood":
+        return {"a": 1.19, "c": -0.09}
+    elif aircraft_type == "Homebuilt_Composite":
+        return {"a": 0.99, "c": -0.05}
+    elif aircraft_type == "GA_Single":
+        return {"a": 2.36, "c": -0.18}
+    elif aircraft_type == "GA_Twin":
+        return {"a": 1.51, "c": -0.10}
+    elif aircraft_type == "Agricultural":
+        return {"a": 0.74, "c": -0.03}
+    elif aircraft_type == "Twin_Turboprop":
+        return {"a": 0.96, "c": -0.05}
+    elif aircraft_type == "Flying_Boat":
+        return {"a": 1.09, "c": -0.05}
+    elif aircraft_type == "Jet_Trainer":
+        return {"a": 1.59, "c": -0.10}
+    elif aircraft_type == "Jet_Fighter":
+        return {"a": 2.34, "c": -0.13}
+    elif aircraft_type == "Military_cargo_or_bomber":
+        return {"a": 0.93, "c": -0.07}
+    elif aircraft_type == "Jet_Transport":
+        return {"a": 1.02, "c": -0.06}
+    else:
+        return {"a": 0.0, "c": 0.00}
