@@ -86,6 +86,7 @@ def sample_return() -> dict:
 
 
 def MTOW_estimate(
+    aircraft_type,
     pax,
     paxWeight,
     crew,
@@ -97,9 +98,18 @@ def MTOW_estimate(
     cbhp,
     fuelAllowance,
     propEff,
+    xAxisLimits,
 ) -> dict:
 
-    wtoGuess = np.arange(2000, 6500)
+    print(xAxisLimits, "xAxisLimits in sizing function")
+
+    if len(xAxisLimits) != 0:
+        print("ITS NOT EMPTY")
+        wtoGuess = np.arange(xAxisLimits[0], xAxisLimits[1])
+    else:
+        print("ITS   EMPTY")
+        wtoGuess = np.arange(2000, 6500)  # TODO: Make this dynamic
+
     # Gudmundsson
     # weWtoGud = 0.4074 + 0.0253 * np.log(wtoGuess)
     # print(weWtoGud)
@@ -142,13 +152,21 @@ def MTOW_estimate(
 
     print(wfWto, "wfWto")
 
-    a: float = 1.51
-    b: float = -0.1
+    # from CORE.engines.prerequisitesEngine import
+
+    from CORE.engines.prerequisitesEngine import get_empty_weight_constants
+
+    empty_weight_constants = get_empty_weight_constants(aircraft_type)
+
+    print(empty_weight_constants, "empty weight constants")
+
+    a: float = empty_weight_constants["a"]
+    b: float = empty_weight_constants["c"]
 
     # Raymer
     weWto = a * (wtoGuess ** b)
     wtoYaxisRaymer = (payload + crewTotal) / (1 - wfWtoRaymer - weWto)
-
+    # print(wtoYaxisRaymer, "wtoYaxisRaymer is this ")
     # Roskam
     wtoYaxisRoskam = (payload + crewTotal) / (1 - wfWtoRoskam - weWto)
 
@@ -158,54 +176,79 @@ def MTOW_estimate(
     # Gudmundsson
     wtoYaxisGud = (payload + crewTotal) / (1 - wfWtoGud - weWto)
 
-    fig = plt.figure()
-    plt.plot(wtoGuess, wtoGuess)
-    plt.plot(wtoGuess, wtoYaxisRaymer, label="Raymer")
-    plt.plot(wtoGuess, wtoYaxisGud, label="Gudmundsson")
-    plt.plot(wtoGuess, wtoYaxisRoskam, label="Roskam")
-    plt.plot(wtoGuess, wtoYaxisSadraey, label="Sadraey")
+    # fig = plt.figure()
+    # plt.plot(wtoGuess, wtoGuess)
+    # plt.plot(wtoGuess, wtoYaxisRaymer, label="Raymer")
+    # plt.plot(wtoGuess, wtoYaxisGud, label="Gudmundsson")
+    # plt.plot(wtoGuess, wtoYaxisRoskam, label="Roskam")
+    # plt.plot(wtoGuess, wtoYaxisSadraey, label="Sadraey")
 
-    idx = np.argwhere(np.diff(np.sign(wtoGuess - wtoYaxisRaymer)) != 0).reshape(-1) + 0
-    plt.plot(wtoGuess[idx], wtoYaxisRaymer[idx], "ro")
-
-    idx = np.argwhere(np.diff(np.sign(wtoGuess - wtoYaxisGud)) != 0).reshape(-1) + 0
-    plt.plot(wtoGuess[idx], wtoYaxisGud[idx], "ro")
-
-    idx = np.argwhere(np.diff(np.sign(wtoGuess - wtoYaxisRoskam)) != 0).reshape(-1) + 0
-    plt.plot(wtoGuess[idx], wtoYaxisRoskam[idx], "ro")
-
-    idx = np.argwhere(np.diff(np.sign(wtoGuess - wtoYaxisSadraey)) != 0).reshape(-1) + 0
-    plt.plot(wtoGuess[idx], wtoYaxisSadraey[idx], "ro")
-
-    plt.xlabel("Wto Guess")
-    plt.ylabel("Wto")
-    plt.title(
-        "WEIGHT SIZING CONSIDERING VARIOUS FUEL FRACTIONS \n But the sizing constants are Raymer's "
+    raymer_idx = (
+        np.argwhere(np.diff(np.sign(wtoGuess - wtoYaxisRaymer)) != 0).reshape(-1) + 0
     )
-    plt.legend()
+    # plt.plot(wtoGuess[raymer_idx], wtoYaxisRaymer[raymer_idx], "ro")
+
+    gudmundsson_idx = (
+        np.argwhere(np.diff(np.sign(wtoGuess - wtoYaxisGud)) != 0).reshape(-1) + 0
+    )
+    # plt.plot(wtoGuess[gudmundsson_idx], wtoYaxisGud[gudmundsson_idx], "ro")
+
+    roskam_idx = (
+        np.argwhere(np.diff(np.sign(wtoGuess - wtoYaxisRoskam)) != 0).reshape(-1) + 0
+    )
+    # plt.plot(wtoGuess[roskam_idx], wtoYaxisRoskam[roskam_idx], "ro")
+
+    sadraey_idx = (
+        np.argwhere(np.diff(np.sign(wtoGuess - wtoYaxisSadraey)) != 0).reshape(-1) + 0
+    )
+    # plt.plot(wtoGuess[sadraey_idx], wtoYaxisSadraey[sadraey_idx], "ro")
+
+    # plt.xlabel("Wto Guess")
+    # plt.ylabel("Wto")
+    # plt.title(
+    #     "WEIGHT SIZING CONSIDERING VARIOUS FUEL FRACTIONS \n But the sizing constants are Raymer's "
+    # )
+    # plt.legend()
     # plt.show()
 
     # plt.plot(range(10))
-    figdata = io.BytesIO()
-    fig.savefig(figdata, format="png")
-    plt.close(fig)
-    # figdata.close()
-    import base64
+    # figdata = io.BytesIO()
+    # fig.savefig(figdata, format="png")
+    # plt.close(fig)
 
-    image_base64 = (
-        base64.b64encode(figdata.getvalue()).decode("utf-8").replace("\n", "")
-    )
+    # import base64
 
-    d = wtoYaxisRaymer[idx]
-    e = wtoYaxisGud[idx]
-    f = wtoYaxisRoskam[idx]
-    g = wtoYaxisSadraey[idx]
+    # image_base64 = (
+    #     base64.b64encode(figdata.getvalue()).decode("utf-8").replace("\n", "")
+    # )
+
+    d = wtoYaxisRaymer[raymer_idx]
+    e = wtoYaxisGud[gudmundsson_idx]
+    f = wtoYaxisRoskam[roskam_idx]
+    g = wtoYaxisSadraey[sadraey_idx]
 
     h = np.array([d, e, f, g])
     finalMTOW = np.mean(h)
 
-    print(d, e, f, g)
-    print("\n")
+    # print(d, e, f, g)
+    # print("\n")
     print(finalMTOW, "LBS <<-- final MTOW")
 
-    return {"finalMTOW": finalMTOW, "image": image_base64}
+    return {
+        "finalMTOW": finalMTOW,
+        # "image": image_base64,
+        "wtoGuess": wtoGuess,
+        "wtoYaxisRaymer": wtoYaxisRaymer,
+        "wtoYaxisGud": wtoYaxisGud,
+        "wtoYaxisRoskam": wtoYaxisRoskam,
+        "wtoYaxisSadraey": wtoYaxisSadraey,
+        "raymerIntersect": d,
+        "raymer_idx": wtoGuess[raymer_idx],
+        "gudmundssonIntersect": e,
+        "gudmundsson_idx": wtoGuess[gudmundsson_idx],
+        "roskamIntersect": f,
+        "roskam_idx": wtoGuess[roskam_idx],
+        "sadraeyIntersect": g,
+        "sadraey_idx": wtoGuess[sadraey_idx],
+    }
+
