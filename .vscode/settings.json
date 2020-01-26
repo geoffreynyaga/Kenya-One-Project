@@ -1,5 +1,7 @@
 {
-  "python.testing.pytestArgs": ["."],
+  "python.testing.pytestArgs": [
+    "."
+  ],
   "python.testing.unittestEnabled": false,
   "python.testing.nosetestsEnabled": false,
   "python.testing.pytestEnabled": true,
@@ -97,6 +99,6 @@
       "mapTo": "javascript"
     }
   ],
-  "python.pythonPath": "c:\\Projects\\KENYA ONE PROJECT\\venv\\Scripts\\python.exe",
+  "python.pythonPath": "venv\\Scripts\\python.exe",
   "python.linting.enabled": true
 }
