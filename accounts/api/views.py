@@ -39,26 +39,34 @@ from rest_framework.response import Response
 
 
 class ExampleSimpleAPIView(APIView):
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         print("===== ExampleSimpleAPIView ===")
+        # print(dir(self.request.data), "self.request.data")
+        pax = self.request.data["pax"]
+        # print(self.request.data["pax"], "self.request.data[pax]")
+        # print(type(self.request.data["pax"]), "type self.request.data[pax]")
+        aircraft_type = self.request.data["aircraft_type"]
+
+        crew = self.request.data["crew"]
+        Range = self.request.data["range"]
+        propEff = self.request.data["propellerEfficiency"]
+
+        xAxisLimits = self.request.data["xAxisLimits"]
+        print(xAxisLimits, "should be xAxisLimits")
 
         from CORE.engines import Try_GA_Sizing
         from CORE.engines.prerequisitesEngine import (
-            pax,
             paxWeight,
-            crew,
             crewWeight,
             payloadPax,
-            Range,
             ldMax,
             Vc,
             cbhp,
             fuelAllowance,
-            propEff,
         )
 
-        # x = Try_GA_Sizing.sample_return()
         x = Try_GA_Sizing.MTOW_estimate(
+            aircraft_type,
             pax,
             paxWeight,
             crew,
@@ -70,14 +78,36 @@ class ExampleSimpleAPIView(APIView):
             cbhp,
             fuelAllowance,
             propEff,
+            xAxisLimits,
         )
         # print(x, "x")
         return Response(
             {
                 "Status": "Success",
-                # "result1": x["a"],
-                # "result2": x["b"],
-                "image": x["image"],
+                # "image": x["image"],
+                "wtoGuess": x["wtoGuess"],
+                "wtoYaxisRaymer": x["wtoYaxisRaymer"],
+                "wtoYaxisGud": x["wtoYaxisGud"],
+                "wtoYaxisRoskam": x["wtoYaxisRoskam"],
+                "wtoYaxisSadraey": x["wtoYaxisSadraey"],
+                "raymerIntersect": x["raymerIntersect"],
+                "gudmundssonIntersect": x["gudmundssonIntersect"],
+                "roskamIntersect": x["roskamIntersect"],
+                "sadraeyIntersect": x["sadraeyIntersect"],
+                "raymer_idx": x["raymer_idx"],
+                "gudmundsson_idx": x["gudmundsson_idx"],
+                "roskam_idx": x["roskam_idx"],
+                "sadraey_idx": x["sadraey_idx"],
             },
-            content_type="image/png",
+            # content_type="image/png",
+        )
+
+    def get(self, request, *args, **kwargs):
+        """
+
+        return empty for now
+        """
+        return Response(
+            {"Status": "Cannot use GET method for now"},
+            # content_type="image/png",
         )
