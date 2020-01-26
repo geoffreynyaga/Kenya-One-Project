@@ -41,15 +41,43 @@ import InitialSizing from "./InitialSizing";
 import InitialValues from "./InitialValues";
 
 class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      data: {},
+      axisRange: []
+    };
+  }
+
+  handleDataInChildren = data => {
+    this.setState({
+      data
+    });
+  };
+
+  handleGottenAxisDataInChild = data => {
+    console.log(data, "data in handleGottenAxisDataInChild");
+    this.setState({
+      axisRange: data
+    });
+  };
+
   render() {
+    console.log(this.state.axisRange, "this.state.axisRange");
     return (
       <Container className="dr-example-container">
         <Row>
           <Col>
-            <InitialSizing />
+            <InitialSizing
+              getAxisChangeData={this.handleGottenAxisDataInChild}
+              data={this.state ? this.state.data : null}
+            />
           </Col>
           <Col>
-            <InitialValues />
+            <InitialValues
+              axisRange={this.state.axisRange}
+              getChildData={this.handleDataInChildren}
+            />
           </Col>
         </Row>
       </Container>
