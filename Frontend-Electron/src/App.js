@@ -32,57 +32,63 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React, { Component } from "react";
+import React, { useState } from "react";
 import { Container, Row, Col } from "shards-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "shards-ui/dist/css/shards.min.css";
 
 import InitialSizing from "./InitialSizing";
 import InitialValues from "./InitialValues";
+import { SliderValueContext } from "./SliderValueContext";
 
-class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      data: {},
-      axisRange: []
-    };
-  }
+const App = () => {
+  const [data, setData] = useState({});
+  const [axisRange, setAxisRange] = useState([2000, 6000]);
 
-  handleDataInChildren = data => {
-    this.setState({
-      data
-    });
+  const handleDataInChildren = childData => {
+    console.log(childData, "step 4");
+    setData(childData);
+    // this.setState({
+    //   data
+    // });
   };
 
-  handleGottenAxisDataInChild = data => {
-    console.log(data, "data in handleGottenAxisDataInChild");
-    this.setState({
-      axisRange: data
-    });
+  const handleGottenAxisDataInChild = incomingData => {
+    console.log(
+      incomingData,
+      "incoming data from childdata in handleGottenAxisDataInChild"
+    );
+
+    setAxisRange(incomingData);
+    // this.setState({
+    //   axisRange: data
+    // });
   };
 
-  render() {
-    console.log(this.state.axisRange, "this.state.axisRange");
-    return (
+  console.log(axisRange, "axisRange before render");
+
+  // const sliderXValue = axisRange.length > 0 ? axisRange : [3000, 8000];
+
+  return (
+    <SliderValueContext.Provider value={axisRange}>
       <Container className="dr-example-container">
         <Row>
           <Col>
             <InitialSizing
-              getAxisChangeData={this.handleGottenAxisDataInChild}
-              data={this.state ? this.state.data : null}
+              getAxisChangeData={handleGottenAxisDataInChild}
+              data={data ? data : null}
             />
           </Col>
           <Col>
             <InitialValues
-              axisRange={this.state.axisRange}
-              getChildData={this.handleDataInChildren}
+              axisRange={axisRange}
+              getChildData={handleDataInChildren}
             />
           </Col>
         </Row>
       </Container>
-    );
-  }
-}
+    </SliderValueContext.Provider>
+  );
+};
 
 export default App;

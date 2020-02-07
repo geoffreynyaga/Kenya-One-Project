@@ -32,7 +32,7 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React, { Component } from "react";
+import React, { useState, useEffect } from "react";
 
 import {
   Card,
@@ -46,258 +46,277 @@ import {
   FormSelect
 } from "shards-react";
 
-class InitialValues extends Component {
-  constructor(props) {
-    super(props);
-    console.log(this.props.axisRange, "axisRange in constructor");
-    this.state = {
-      yAxisLimits: this.props.axisRange.length > 0 ? this.props.axisRange : [],
-      xAxisLimits: this.props.axisRange.length > 0 ? this.props.axisRange : [],
+const InitialValues = props => {
+  console.log(props, "INITIAL VALUES PROPS");
+  // yAxisLimits: props.axisRange.length > 0 ? props.axisRange : [],
+  // xAxisLimits: props.axisRange.length > 0 ? props.axisRange : [],
 
-      aircraft_type: "GA_Twin",
+  const [isLoading, setIsLoading] = useState(false);
+  const [yAxisLimits, setYAxisLimits] = useState(props.axisRange);
+  const [xAxisLimits, setXAxisLimits] = useState(props.axisRange);
+  const [aircraft_type, setAircraftType] = useState("GA_Twin");
+  const [altitude, setAltitude] = useState(10000);
+  const [pax, setPax] = useState(4);
+  const [propellerEfficiency, setPropellerEfficiency] = useState(0.78);
+  const [range, setRange] = useState(1200);
+  const [aspectRatio, setAspectRatio] = useState(7.8);
+  const [crew, setCrew] = useState(2);
+  // const [data, setData] = useState(null);
 
-      altitude: 10000,
-      pax: 4,
-      propellerEfficiency: 0.78,
-      range: 1200,
-      aspectRatio: 7.8,
-      crew: 2,
+  const handleLangChange = serverData => {
+    console.log(serverData, "step 3, passing to parent");
 
-      data: null,
-      isLoading: false
-    };
-  }
+    props.getChildData(serverData);
+  };
 
-  fetchMTOWPlot = () => {
-    let thisComp = this;
+  console.log(props.axisRange, "Should be new axis change");
 
-    console.log(JSON.stringify(thisComp.state), "JSON.stringify(this.state)");
+  const fetchMTOWPlot = () => {
+    console.log(
+      {
+        yAxisLimits: yAxisLimits,
+        xAxisLimits: xAxisLimits,
+        aircraft_type: aircraft_type,
+        altitude: altitude,
+        pax: pax,
+        propellerEfficiency: propellerEfficiency,
+        range: range,
+        aspectRatio: aspectRatio,
+        crew: crew
+      },
+      "state to be sent"
+    );
 
     fetch("http://localhost:8000/api/accounts/example/", {
       method: "POST", // or 'PUT'
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(thisComp.state)
+      body: JSON.stringify({
+        yAxisLimits: yAxisLimits,
+        xAxisLimits: xAxisLimits,
+        aircraft_type: aircraft_type,
+        altitude: altitude,
+        pax: pax,
+        propellerEfficiency: propellerEfficiency,
+        range: range,
+        aspectRatio: aspectRatio,
+        crew: crew
+      })
     })
       .then(response => response.json())
-      .then(data => {
-        console.log("data from server:", data);
-        thisComp.setState(
-          {
-            data: data,
-            isLoading: false
-          },
-          thisComp.handleLangChange(data)
-        );
+      .then(serverData => {
+        console.log(" step 2, data from server:", serverData);
+
+        // setData(serverData);
+        setIsLoading(false);
+        handleLangChange(serverData);
+
+        // thisComp.setState(
+        //   {
+        //     data: data,
+        //     isLoading: false
+        //   },
+        //   thisComp.handleLangChange(data)
+        // );
       })
       .catch(error => {
         console.log(error, "error in fetchMTOWPlot");
       });
   };
 
-  handleLangChange = data => {
-    console.log(data, "i have been called and will pass the above data");
+  useEffect(() => {
+    console.log(props.axisRange, "inside UseEffect");
+    setYAxisLimits(props.axisRange);
+    setXAxisLimits(props.axisRange);
 
-    this.props.getChildData(data);
-  };
+    setIsLoading(true);
+    fetchMTOWPlot();
 
-  componentDidMount() {
-    this.setState(
-      {
-        isLoading: true
-      },
-      this.fetchMTOWPlot()
-    );
-  }
+    // return () => {
+    //   // cleanup
+    // };
+  }, [props.axisRange]);
 
-  shouldComponentUpdate(nextProps, nextState, nextContext) {
-    console.log(nextProps, "nextProps");
-    console.log(nextState, "nextState");
+  console.log("----InitialValues Render Method ---------");
+  // console.log(state, "state");
+  return (
+    <Card style={{ maxWidth: "300px" }}>
+      <CardHeader>
+        <CardTitle>Initial Estimates</CardTitle>
+      </CardHeader>
+      <CardBody>
+        <Form>
+          {/* Selected Aircraft */}
+          <label htmlFor="#aircraftType">Aircraft Type</label>
+          <FormSelect
+            onChange={e => {
+              console.log(e.target.value, "Selected Aircraft");
 
-    if (nextProps !== this.props) {
-      this.setState({
-        yAxisLimits: this.props.axisRange ? this.props.axisRange : [],
-        xAxisLimits: this.props.axisRange ? this.props.axisRange : [],
-        isLoading: false
-      });
-      return true;
-    } else if (this.state !== nextState) {
-      return true;
-    } else {
-      return false;
-    }
-  }
+              setAircraftType(e.target.value);
+              setIsLoading(false);
 
-  render() {
-    console.log("----InitialValues Render Method ---------");
-    // console.log(this.state, "state");
-    return (
-      <Card style={{ maxWidth: "300px" }}>
-        <CardHeader>
-          <CardTitle>Initial Estimates</CardTitle>
-        </CardHeader>
-        <CardBody>
-          <Form>
-            {/* Selected Aircraft */}
-            <label htmlFor="#aircraftType">Aircraft Type</label>
-            <FormSelect
+              // setState({
+              //   aircraft_type: e.target.value,
+              //   isLoading: false
+              // });
+            }}
+          >
+            <option value="SailPlane_Unpowered">SailPlane (Unpowered)</option>
+            <option value="SailPlane_Powered">SailPlane (Powered)</option>
+            <option value="Homebuilt_Metal_or_Wood">
+              Homebuilt - Metal/Wood.
+            </option>
+            <option value="Homebuilt_Composite">Homebuilt - Composite</option>
+            <option value="GA_Single">General Aviation - Single Engine</option>
+            <option value="GA_Twin">General Aviation - Twin Engine</option>
+            <option value="Agricultural">Agricultural</option>
+            <option value="Twin_Turboprop">Twin Turboprop</option>
+            <option value="Flying_Boat">Flying Boat</option>
+            <option value="Jet_Trainer">Jet Trainer</option>
+            <option value="Jet_Fighter">Jet Fighter</option>
+            <option value="Military_cargo_or_bomber">
+              Military (cargo/bomber)
+            </option>
+            <option value="Jet_Transport">Jet Transport</option>
+          </FormSelect>
+
+          {/* Passengers */}
+          <FormGroup>
+            <label htmlFor="#pax">Passengers</label>
+            <FormInput
+              type="number"
+              id="#pax"
+              placeholder="Number of Passengers"
+              // value={2}
               onChange={e => {
-                console.log(e.target.value, "Selected Aircraft");
-                this.setState({
-                  aircraft_type: e.target.value,
-                  isLoading: false
-                });
+                e.preventDefault();
+                console.log(e.target.value, "passenger number");
+                setPax(parseInt(e.target.value));
+                // setState({
+                //   pax: parseInt(e.target.value)
+                // });
               }}
-            >
-              <option value="SailPlane_Unpowered">SailPlane (Unpowered)</option>
-              <option value="SailPlane_Powered">SailPlane (Powered)</option>
-              <option value="Homebuilt_Metal_or_Wood">
-                Homebuilt - Metal/Wood.
-              </option>
-              <option value="Homebuilt_Composite">Homebuilt - Composite</option>
-              <option value="GA_Single">
-                General Aviation - Single Engine
-              </option>
-              <option value="GA_Twin">General Aviation - Twin Engine</option>
-              <option value="Agricultural">Agricultural</option>
-              <option value="Twin_Turboprop">Twin Turboprop</option>
-              <option value="Flying_Boat">Flying Boat</option>
-              <option value="Jet_Trainer">Jet Trainer</option>
-              <option value="Jet_Fighter">Jet Fighter</option>
-              <option value="Military_cargo_or_bomber">
-                Military (cargo/bomber)
-              </option>
-              <option value="Jet_Transport">Jet Transport</option>
-            </FormSelect>
+            />
+          </FormGroup>
 
-            {/* Passengers */}
-            <FormGroup>
-              <label htmlFor="#pax">Passengers</label>
-              <FormInput
-                type="number"
-                id="#pax"
-                placeholder="Number of Passengers"
-                // value={2}
-                onChange={e => {
-                  e.preventDefault();
-                  console.log(e.target.value, "passenger number");
-                  this.setState({
-                    pax: parseInt(e.target.value)
-                  });
-                }}
-              />
-            </FormGroup>
-
-            {/* Range */}
-            <FormGroup>
-              <label htmlFor="#range">Range</label>
-              <FormInput
-                type="number"
-                id="#range"
-                placeholder="Range (kms)"
-                onChange={e => {
-                  e.preventDefault();
-                  console.log(e.target.value, "Range");
-                  this.setState({
-                    range: parseInt(e.target.value)
-                  });
-                }}
-              />
-            </FormGroup>
-
-            {/* Estimated Propeller efficiency */}
-            <FormGroup>
-              <label htmlFor="#propellerEfficiency">
-                Estimated Propeller efficiency
-              </label>
-              <FormInput
-                type="number"
-                id="#propellerEfficiency"
-                placeholder="Estimated Propeller efficiency (.45 - .85)"
-                onChange={e => {
-                  e.preventDefault();
-                  console.log(e.target.value, "Estimated Propeller Efficiency");
-                  this.setState({
-                    propellerEfficiency: parseFloat(e.target.value)
-                  });
-                }}
-              />
-            </FormGroup>
-
-            {/* Cruise Altitude */}
-            <FormGroup>
-              <label htmlFor="#altitude">Cruise Altitude</label>
-              <FormInput
-                type="number"
-                id="#altitude"
-                placeholder="Cruise Altitude (ft)"
-                onChange={e => {
-                  e.preventDefault();
-                  console.log(e.target.value, "Altitude");
-                  this.setState({
-                    altitude: parseInt(e.target.value)
-                  });
-                }}
-              />
-            </FormGroup>
-            {/* Crew */}
-            <FormGroup>
-              <label htmlFor="#crew">Crew</label>
-              <FormInput
-                type="number"
-                id="#crew"
-                placeholder="Number of crew"
-                onChange={e => {
-                  e.preventDefault();
-                  console.log(e.target.value, "Crew  number");
-                  this.setState({
-                    crew: parseInt(e.target.value)
-                  });
-                }}
-              />
-            </FormGroup>
-
-            {/* Aspect Ratio */}
-            <FormGroup>
-              <label htmlFor="#aspectRatio">Aspect Ratio</label>
-              <FormInput
-                type="number"
-                id="#aspectRatio"
-                placeholder="Aspect Ratio (6-8)"
-                onChange={e => {
-                  e.preventDefault();
-                  console.log(e.target.value, "Aspect Ratio");
-                  this.setState({
-                    aspectRatio: parseFloat(e.target.value)
-                  });
-                }}
-              />
-            </FormGroup>
-          </Form>
-
-          {/* <Button>SUBMIT</Button> */}
-
-          {!this.state.isLoading ? (
-            <Button
-              onClick={() => {
-                this.setState(
-                  {
-                    isLoading: true
-                  },
-                  this.fetchMTOWPlot()
-                );
+          {/* Range */}
+          <FormGroup>
+            <label htmlFor="#range">Range</label>
+            <FormInput
+              type="number"
+              id="#range"
+              placeholder="Range (kms)"
+              onChange={e => {
+                e.preventDefault();
+                console.log(e.target.value, "Range");
+                setRange(parseInt(e.target.value));
+                // setState({
+                //   range: parseInt(e.target.value)
+                // });
               }}
-            >
-              SUBMIT
-            </Button>
-          ) : (
-            ""
-          )}
-        </CardBody>
-      </Card>
-    );
-  }
-}
+            />
+          </FormGroup>
+
+          {/* Estimated Propeller efficiency */}
+          <FormGroup>
+            <label htmlFor="#propellerEfficiency">
+              Estimated Propeller efficiency
+            </label>
+            <FormInput
+              type="number"
+              id="#propellerEfficiency"
+              placeholder="Estimated Propeller efficiency (.45 - .85)"
+              onChange={e => {
+                e.preventDefault();
+                console.log(e.target.value, "Estimated Propeller Efficiency");
+                setPropellerEfficiency(parseFloat(e.target.value));
+                // setState({
+                //   propellerEfficiency: parseFloat(e.target.value)
+                // });
+              }}
+            />
+          </FormGroup>
+
+          {/* Cruise Altitude */}
+          <FormGroup>
+            <label htmlFor="#altitude">Cruise Altitude</label>
+            <FormInput
+              type="number"
+              id="#altitude"
+              placeholder="Cruise Altitude (ft)"
+              onChange={e => {
+                e.preventDefault();
+                console.log(e.target.value, "Altitude");
+
+                setAltitude(parseInt(e.target.value));
+                // setState({
+                //   altitude: parseInt(e.target.value)
+                // });
+              }}
+            />
+          </FormGroup>
+          {/* Crew */}
+          <FormGroup>
+            <label htmlFor="#crew">Crew</label>
+            <FormInput
+              type="number"
+              id="#crew"
+              placeholder="Number of crew"
+              onChange={e => {
+                e.preventDefault();
+                console.log(e.target.value, "Crew  number");
+
+                setCrew(parseInt(e.target.value));
+                // setState({
+                //   crew: parseInt(e.target.value)
+                // });
+              }}
+            />
+          </FormGroup>
+
+          {/* Aspect Ratio */}
+          <FormGroup>
+            <label htmlFor="#aspectRatio">Aspect Ratio</label>
+            <FormInput
+              type="number"
+              id="#aspectRatio"
+              placeholder="Aspect Ratio (6-8)"
+              onChange={e => {
+                e.preventDefault();
+                console.log(e.target.value, "Aspect Ratio");
+                setAspectRatio(parseFloat(e.target.value));
+                // setState({
+                //   aspectRatio: parseFloat(e.target.value)
+                // });
+              }}
+            />
+          </FormGroup>
+        </Form>
+
+        {/* <Button>SUBMIT</Button> */}
+
+        {!isLoading ? (
+          <Button
+            onClick={() => {
+              setIsLoading(true);
+              fetchMTOWPlot();
+              // setState(
+              //   {
+              //     isLoading: true
+              //   },
+              //   fetchMTOWPlot()
+              // );
+            }}
+          >
+            SUBMIT
+          </Button>
+        ) : (
+          ""
+        )}
+      </CardBody>
+    </Card>
+  );
+};
 
 export default InitialValues;
