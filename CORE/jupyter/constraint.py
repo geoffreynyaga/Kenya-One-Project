@@ -1,9 +1,11 @@
 import math
-from aerocalc import std_atm as ISA
+from aerocalc import std_atm as ISA  # type: ignore
 import numpy as np  # type: ignore
 import matplotlib  # type: ignore
 import matplotlib.pylab as pylab  # type: ignore
 import matplotlib.pyplot as plt  # type: ignore
+
+from intersection import get_intersection_index
 
 
 from typing import Any
@@ -355,8 +357,6 @@ class AndrasConstraint:
         WSlistCR_kgm2 = [x * 0.101971621 for x in WSlistCR_Pa]
         CruisePoly = self.ConstraintPoly(WSlistCR_kgm2, TWlistCR, "red", 0.1)
 
-        # In[75]:
-
         figCruise = plt.figure()
         self.PlotSetUp(
             0, self.WSmax_kgm2, 0, self.TWmax, "$W/S\,[\,kg/m^2]$", "$T/W\,[\,\,]$"
@@ -407,6 +407,9 @@ class AndrasConstraint:
             color,
             color_alfa,
         ) = self.constant_velocity_turn_constraint()["combined_data"]
+
+        velocity_TW_Array = TW_Array
+
         ConstVeloTurnPoly = self.ConstraintPoly(WS_Array, TW_Array, color, color_alfa)
 
         axCOMP.add_patch(ConstVeloTurnPoly)
@@ -498,8 +501,6 @@ class AndrasConstraint:
             i = i + 1
         WSlistROC_kgm2 = [x * 0.101971621 for x in WSlistROC_Pa]
 
-        # In[87]:
-
         WSlistGR_Pa = np.linspace(self.Start_Pa, 8500, self.Resolution)
         PlistGR_kW = []
         i = 0
@@ -522,8 +523,6 @@ class AndrasConstraint:
             i = i + 1
         WSlistGR_kgm2 = [x * 0.101971621 for x in WSlistGR_Pa]
 
-        # In[88]:
-
         WSlistCR_Pa = np.linspace(self.Start_Pa, 8500, self.Resolution)
         PlistCR_kW = []
         i = 0
@@ -545,8 +544,6 @@ class AndrasConstraint:
             i = i + 1
         WSlistCR_kgm2 = [x * 0.101971621 for x in WSlistCR_Pa]
 
-        # In[89]:
-
         WSlistAPP_kgm2 = [
             self.WS_APP_kgm2,
             self.WSmax_kgm2,
@@ -556,19 +553,37 @@ class AndrasConstraint:
         ]
         PlistAPP_kW = [0, 0, self.Pmax_kW, self.Pmax_kW, 0]
 
-        # In[91]:
-
         figCOMP = plt.figure(figsize=(10, 10))
         self.PlotSetUp(
             0, self.WSmax_kgm2, 0, self.Pmax_kW, "$W/S\,[\,kg/m^2]$", "$P\,[\,kW]$"
         )
         axCOMP = figCOMP.add_subplot(111)
         ConstVeloTurnPoly = self.ConstraintPoly(
-            WSlistCVT_kgm2, PlistCVT_kW, "magenta", 0.1
+            WSlistCVT_kgm2, PlistCVT_kW, "magenta", 0.6
         )
         axCOMP.add_patch(ConstVeloTurnPoly)
-        RateOfClimbPoly = self.ConstraintPoly(WSlistROC_kgm2, PlistROC_kW, "blue", 0.1)
+        RateOfClimbPoly = self.ConstraintPoly(WSlistROC_kgm2, PlistROC_kW, "blue", 0.6)
         axCOMP.add_patch(RateOfClimbPoly)
+
+        if np.array(PlistCVT_kW).shape < np.array(PlistROC_kW).shape:
+            truncate_value, = np.array(PlistCVT_kW).shape
+            PlistROC_kW = PlistROC_kW[:truncate_value]
+        else:
+            truncate_value, = np.array(PlistROC_kW).shape
+
+            PlistCVT_kW = PlistCVT_kW[:truncate_value]
+
+        intersect_value = get_intersection_index(
+            np.array(PlistCVT_kW), np.array(PlistROC_kW)
+        )
+
+        print(intersect_value, "<<<<<<<<<<<<<<<< intersect_value")
+        print(WSlistROC_kgm2[intersect_value], "WSlistROC_kgm2[intersect_value] ")
+        print(WSlistCVT_kgm2[intersect_value], "WSlistCVT_kgm2[intersect_value] ")
+
+        print(PlistCVT_kW[intersect_value], "PlistCVT_kW[intersect_value] ")
+        print(PlistROC_kW[intersect_value], "velocity_TW_Array[intersect_value] ")
+
         TORunPoly = self.ConstraintPoly(WSlistGR_kgm2, PlistGR_kW, "green", 0.1)
         axCOMP.add_patch(TORunPoly)
         CruisePoly = self.ConstraintPoly(WSlistCR_kgm2, PlistCR_kW, "red", 0.1)
