@@ -3,7 +3,7 @@
 <div style="text-align:center"><img src="./docs/images/logo512.png" alt="drawing" width="200"  padding="200px"/>
 </div>
 
-> This is an opensource project (implemented in a python/>Django backend and an Electron Frontend for GUI) that was >conceived in the `Aerospace Department at the Technical >University of Kenya`. This project was initially used for >the conceptual and detailed design of the aircraft shown >below.
+> This is an opensource project (implemented in a python/Django backend and an Electron Frontend for GUI) that was conceived in the `Aerospace Department at the Technical University of Kenya`. This project was initially used for the conceptual and detailed design of the aircraft shown below.
 
 <div style="text-align:center"><img src="https://d2t1xqejof9utc.cloudfront.net/screenshots/pics/142095da28472cc6409d4e2ec85673cc/large.jpg" alt="drawing" height="200"  padding="200px"/>
 </div>
