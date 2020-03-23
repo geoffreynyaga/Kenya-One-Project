@@ -33,7 +33,7 @@
  */
 
 import React, { useState, useContext } from "react";
-import { Slider } from "shards-react";
+import { Slider, FormInput } from "shards-react";
 // import Plot from "react-plotly.js";
 
 import Plotly from "plotly.js-basic-dist";
@@ -72,6 +72,11 @@ const InitialSizing = props => {
     //   omp.handleAxisRangeChange([parseFloat(e[0]), parseFloat(e[1])])
     // );
   };
+
+  const pushMinMaxDataToParent = () => {
+    handleAxisRangeChange(valueX);
+  };
+
   console.log("+++++++++ InitialSizing +++++++++++");
 
   const { wtoGuess } = props.data ? props.data : [];
@@ -92,10 +97,14 @@ const InitialSizing = props => {
 
   return (
     <div>
-      <h1>data</h1>
+      {/* <h1>data</h1> */}
 
-      <div>Lower Value {sliderValue[0]}</div>
+      {/* <div>Lower Value {sliderValue[0]}</div>
       <div>Higher Value {sliderValue[1]}</div>
+
+      <div>Lower Value {valueX[0]}</div>
+      <div>Higher Value {valueX[1]}</div> */}
+      {/* <div>ALL {valueX}</div> */}
 
       {isLoading ? <p>Calculating....</p> : ""}
       {props.data !== null && !props.isLoading ? (
@@ -104,15 +113,44 @@ const InitialSizing = props => {
               src={`data:image/png;base64,${data.image}`}
               alt="mtow-plot"
             /> */}
-
-          <p>ValueX: {JSON.stringify(valueX)}</p>
-
+          {/* <p>ValueX: {JSON.stringify(valueX)}</p> */}
           <Slider
             connect
             pips={{ mode: "steps", stepped: true, density: 3 }}
             onSlide={handleSlideX}
             start={valueX}
             range={{ min: 10, max: 15000 }}
+          />
+          <FormInput
+            placeholder="Min Value"
+            // value={valueX[0]}
+            onChange={e => {
+              e.preventDefault();
+              console.log(e.target.value, "Minimum Value");
+              console.log(valueX, "Minimum Value");
+              let oldValue = valueX;
+              console.log(oldValue, "oldValue");
+
+              console.log(parseInt(e.target.value), "parseInt(e.target.value)");
+
+              setValueX([(parseInt(e.target.value), oldValue[1])]);
+              // pushMinMaxDataToParent();
+            }}
+          />
+
+          <FormInput
+            placeholder="Max Value"
+            onChange={e => {
+              e.preventDefault();
+              // value={valueX[1]}
+
+              console.log(e.target.value, "Max Value");
+
+              let oldValue = valueX;
+
+              setValueX([(oldValue[0], parseInt(e.target.value))]);
+              // pushMinMaxDataToParent();
+            }}
           />
 
           <Plot
