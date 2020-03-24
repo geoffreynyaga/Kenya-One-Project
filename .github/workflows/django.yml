@@ -55,4 +55,4 @@ jobs:
           pip install -r requirements.txt
       - name: Run Tests
         run: |
-          pytest --ds=Kenya_One.github_settings -v --nomigrations
+          pytest --ds=Kenya_One.settings.github_testing -v --nomigrations
