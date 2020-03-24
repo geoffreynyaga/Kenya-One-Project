@@ -1,5 +1,7 @@
 ## Welcome to `Kenya One: ✈️ Aircraft Design Software` documentation
 
+![](https://github.com/geoffreynyaga/KENYA-ONE-PROJECT/workflows/Pytest%20CI/badge.svg)
+
 <div style="text-align:center"><img src="./docs/images/banner.png" alt="drawing" width="800"  padding="200px"/>
 </div>
 
