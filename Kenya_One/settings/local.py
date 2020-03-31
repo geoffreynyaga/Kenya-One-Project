@@ -102,8 +102,11 @@ TEMPLATES = [
 WSGI_APPLICATION: str = "Kenya_One.wsgi.application"
 
 
-# Database
+# ======= DATABASE SECTION  ========
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
+
+# Uncomment the settings below if you want to use SQLITE,
+# don't forget to comment out the settings that follow
 
 # DATABASES = {
 #     "default": {
@@ -111,6 +114,8 @@ WSGI_APPLICATION: str = "Kenya_One.wsgi.application"
 #         "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
 #     }
 # }
+
+# REMEMBER: Comment out the database settings below if using SQLITE
 DATABASES: dict = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",

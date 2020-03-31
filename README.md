@@ -136,7 +136,7 @@ activate.bat
 └── venv #python virtual env
 ```
 
-5. Create a postgres database on called "anga_utm" or equivalently give it a custom name and make sure to change the value in the local.py settings file
+5. Rename the `.env.sample` file to a `.env` file. Create a postgres database on called "kenya_one_db" or equivalently give it a custom name and make sure to change the value in the .env file. NOTE: If you don't have/use postgres, go to the local.py file in `Kenya_One/settings/` and in the Databases Section, uncomment the sqlite database settings and comment out the postgres settings. The SQLite database will be automaticall created when you run the following commands.
 
 a) `run migrations`
 
