@@ -83,31 +83,31 @@ activate.bat
 
 4. Install the requirements
 
-   a) Install python packages and AeroCalc
+a) Install python packages and AeroCalc
 
-   ```bash
-      wget https://github.com/chengdi123000/aerocalc/archive/v0.11-py3.tar.gz
+```bash
+   wget https://github.com/chengdi123000/aerocalc/archive/v0.11-py3.tar.gz
 
-      tar xf v0.11-py3.tar.gz
+   tar xf v0.11-py3.tar.gz
 
-      cd aerocalc-0.11-py3
+   cd aerocalc-0.11-py3
 
-      python setup.py install
+   python setup.py install
 
-      cd ../
+   cd ../
 
-      sudo rm -rf aerocalc-0.11-py3/
+   sudo rm -rf aerocalc-0.11-py3/
 
-      pip install -r requirements.txt
-   ```
+   pip install -r requirements.txt
+```
 
-   b) Install npm packages
+b) Install npm packages
 
-   ```bash
-   cd Frontend-Electron
+```bash
+cd Frontend-Electron
 
-   npm install
-   ```
+npm install
+```
 
 ### Project layout
 
@@ -136,7 +136,7 @@ activate.bat
 └── venv #python virtual env
 ```
 
-5. Rename the `.env.sample` file to a `.env` file. Create a postgres database on called "kenya_one_db" or equivalently give it a custom name and make sure to change the value in the .env file. NOTE: If you don't have/use postgres, go to the local.py file in `Kenya_One/settings/` and in the Databases Section, uncomment the sqlite database settings and comment out the postgres settings. The SQLite database will be automaticall created when you run the following commands.
+5. Rename the `.env.sample` file to a `.env` file. Create a postgres database on called "kenya_one_db" or equivalently give it a custom name and make sure to change the value in the .env file. NOTE: If you don't have/use postgres, go to the local.py file in `Kenya_One/settings/` and in the Databases Section, uncomment the sqlite database settings and comment out the postgres settings. The SQLite database will be automatically created when you run the following commands.
 
 a) `run migrations`
 
@@ -150,7 +150,7 @@ b) `create superuser`
   python manage.py createsuperuser
 ```
 
-5. Running the app
+6. Running the app
 
 ```bash
 cd Frontend-Electron
