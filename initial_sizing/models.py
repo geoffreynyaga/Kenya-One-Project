@@ -231,7 +231,7 @@ class Detailed_Weights(models.Model):
     integral_tanks_fuel = models.IntegerField(
         default=0
     )  # FUEL IN EACH INTEGRAL TANK  FINT
-    integral_tanks__total_fuel = models.IntegerField(
+    integral_tanks_total_fuel = models.IntegerField(
         default=0
     )  # TOTAL FUEL IN ALL INTEGRAL TANKS  TFINT
 
