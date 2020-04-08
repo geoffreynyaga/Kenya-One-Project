@@ -32,62 +32,58 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React, { useState } from "react";
+import React from "react";
 import { Container, Row, Col } from "shards-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "shards-ui/dist/css/shards.min.css";
+import { Switch, Route } from "react-router-dom";
 
-import InitialSizing from "./InitialSizing";
-import InitialValues from "./InitialValues";
-import { SliderValueContext } from "./SliderValueContext";
+import RightNavPerformance from "./navigation/RightNavPerformance";
+import RightNavSizing from "./navigation/RightNavSizing";
+import RightNavControlSurfaces from "./navigation/RightNavControlSurfaces";
+import MTOWSizing from "./containers/InitialSizing/MTOW";
 
 const App = () => {
-  const [data, setData] = useState({});
-  const [axisRange, setAxisRange] = useState([2000, 6000]);
-
-  const handleDataInChildren = childData => {
-    console.log(childData, "step 4");
-    setData(childData);
-    // this.setState({
-    //   data
-    // });
-  };
-
-  const handleGottenAxisDataInChild = incomingData => {
-    console.log(
-      incomingData,
-      "incoming data from childdata in handleGottenAxisDataInChild"
-    );
-
-    setAxisRange(incomingData);
-    // this.setState({
-    //   axisRange: data
-    // });
-  };
-
-  console.log(axisRange, "axisRange before render");
-
-  // const sliderXValue = axisRange.length > 0 ? axisRange : [3000, 8000];
+  const routes = [
+    {
+      path: "/",
+      exact: true,
+      main: () => <MTOWSizing />,
+    },
+    {
+      path: "/sref",
+      main: () => <h2>sref</h2>,
+    },
+    {
+      path: "/detailed-weights",
+      main: () => <h2>detailed-weights</h2>,
+    },
+  ];
 
   return (
-    <SliderValueContext.Provider value={axisRange}>
-      <Container className="dr-example-container">
-        <Row>
-          <Col>
-            <InitialSizing
-              getAxisChangeData={handleGottenAxisDataInChild}
-              data={data ? data : null}
-            />
-          </Col>
-          <Col>
-            <InitialValues
-              axisRange={axisRange}
-              getChildData={handleDataInChildren}
-            />
-          </Col>
-        </Row>
-      </Container>
-    </SliderValueContext.Provider>
+    <Container fluid>
+      <Row>
+        <Col sm="2" lg="2">
+          <RightNavSizing />
+          <RightNavPerformance />
+          <RightNavControlSurfaces />
+        </Col>
+        <Col sm="10" lg="10">
+          <Switch>
+            {routes.map((route, index) => (
+              // Render more <Route>s with the same paths as
+              // above, but different components this time.
+              <Route
+                key={index}
+                path={route.path}
+                exact={route.exact}
+                children={<route.main />}
+              />
+            ))}
+          </Switch>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 
