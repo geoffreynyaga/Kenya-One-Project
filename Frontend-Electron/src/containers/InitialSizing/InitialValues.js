@@ -43,10 +43,10 @@ import {
   Form,
   FormInput,
   FormGroup,
-  FormSelect
+  FormSelect,
 } from "shards-react";
 
-const InitialValues = props => {
+const InitialValues = (props) => {
   console.log(props, "INITIAL VALUES PROPS");
   // yAxisLimits: props.axisRange.length > 0 ? props.axisRange : [],
   // xAxisLimits: props.axisRange.length > 0 ? props.axisRange : [],
@@ -63,7 +63,7 @@ const InitialValues = props => {
   const [crew, setCrew] = useState(2);
   // const [data, setData] = useState(null);
 
-  const handleLangChange = serverData => {
+  const handleLangChange = (serverData) => {
     console.log(serverData, "step 3, passing to parent");
 
     props.getChildData(serverData);
@@ -82,7 +82,7 @@ const InitialValues = props => {
         propellerEfficiency: propellerEfficiency,
         range: range,
         aspectRatio: aspectRatio,
-        crew: crew
+        crew: crew,
       },
       "state to be sent"
     );
@@ -90,7 +90,7 @@ const InitialValues = props => {
     fetch("http://localhost:8000/api/accounts/example/", {
       method: "POST", // or 'PUT'
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         yAxisLimits: yAxisLimits,
@@ -101,26 +101,18 @@ const InitialValues = props => {
         propellerEfficiency: propellerEfficiency,
         range: range,
         aspectRatio: aspectRatio,
-        crew: crew
-      })
+        crew: crew,
+      }),
     })
-      .then(response => response.json())
-      .then(serverData => {
+      .then((response) => response.json())
+      .then((serverData) => {
         console.log(" step 2, data from server:", serverData);
 
         // setData(serverData);
         setIsLoading(false);
         handleLangChange(serverData);
-
-        // thisComp.setState(
-        //   {
-        //     data: data,
-        //     isLoading: false
-        //   },
-        //   thisComp.handleLangChange(data)
-        // );
       })
-      .catch(error => {
+      .catch((error) => {
         console.log(error, "error in fetchMTOWPlot");
       });
   };
@@ -141,7 +133,7 @@ const InitialValues = props => {
   console.log("----InitialValues Render Method ---------");
   // console.log(state, "state");
   return (
-    <Card style={{ maxWidth: "300px" }}>
+    <Card>
       <CardHeader>
         <CardTitle>Initial Estimates</CardTitle>
       </CardHeader>
@@ -150,16 +142,11 @@ const InitialValues = props => {
           {/* Selected Aircraft */}
           <label htmlFor="#aircraftType">Aircraft Type</label>
           <FormSelect
-            onChange={e => {
+            onChange={(e) => {
               console.log(e.target.value, "Selected Aircraft");
 
               setAircraftType(e.target.value);
               setIsLoading(false);
-
-              // setState({
-              //   aircraft_type: e.target.value,
-              //   isLoading: false
-              // });
             }}
           >
             <option value="SailPlane_Unpowered">SailPlane (Unpowered)</option>
@@ -189,7 +176,7 @@ const InitialValues = props => {
               id="#pax"
               placeholder="Number of Passengers"
               // value={2}
-              onChange={e => {
+              onChange={(e) => {
                 e.preventDefault();
                 console.log(e.target.value, "passenger number");
                 setPax(parseInt(e.target.value));
@@ -207,7 +194,7 @@ const InitialValues = props => {
               type="number"
               id="#range"
               placeholder="Range (kms)"
-              onChange={e => {
+              onChange={(e) => {
                 e.preventDefault();
                 console.log(e.target.value, "Range");
                 setRange(parseInt(e.target.value));
@@ -227,7 +214,7 @@ const InitialValues = props => {
               type="number"
               id="#propellerEfficiency"
               placeholder="Estimated Propeller efficiency (.45 - .85)"
-              onChange={e => {
+              onChange={(e) => {
                 e.preventDefault();
                 console.log(e.target.value, "Estimated Propeller Efficiency");
                 setPropellerEfficiency(parseFloat(e.target.value));
@@ -245,7 +232,7 @@ const InitialValues = props => {
               type="number"
               id="#altitude"
               placeholder="Cruise Altitude (ft)"
-              onChange={e => {
+              onChange={(e) => {
                 e.preventDefault();
                 console.log(e.target.value, "Altitude");
 
@@ -263,7 +250,7 @@ const InitialValues = props => {
               type="number"
               id="#crew"
               placeholder="Number of crew"
-              onChange={e => {
+              onChange={(e) => {
                 e.preventDefault();
                 console.log(e.target.value, "Crew  number");
 
@@ -282,7 +269,7 @@ const InitialValues = props => {
               type="number"
               id="#aspectRatio"
               placeholder="Aspect Ratio (6-8)"
-              onChange={e => {
+              onChange={(e) => {
                 e.preventDefault();
                 console.log(e.target.value, "Aspect Ratio");
                 setAspectRatio(parseFloat(e.target.value));
