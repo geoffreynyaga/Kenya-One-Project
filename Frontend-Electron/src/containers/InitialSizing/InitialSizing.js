@@ -5,7 +5,7 @@
  * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * Last Modified: Sunday January 12th 2020 6:19:50 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
+ * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
  * -----
  * MIT License
  *
@@ -44,15 +44,15 @@ import {
   Card,
 } from "shards-react";
 
-// import Plot from "react-plotly.js";
+import PropTypes from "prop-types";
 
 import Plotly from "plotly.js-basic-dist";
-
 import createPlotlyComponent from "react-plotly.js/factory";
+
 import { SliderValueContext } from "./SliderValueContext";
 const Plot = createPlotlyComponent(Plotly);
 
-const InitialSizing = (props) => {
+export default function InitialSizing(props) {
   console.log(props, "initial sizing props");
 
   const sliderValue = useContext(SliderValueContext);
@@ -74,10 +74,6 @@ const InitialSizing = (props) => {
   const handleSlideX = (e) => {
     setValueX([parseFloat(e[0]), parseFloat(e[1])]);
     handleAxisRangeChange([parseFloat(e[0]), parseFloat(e[1])]);
-  };
-
-  const pushMinMaxDataToParent = () => {
-    handleAxisRangeChange(valueX);
   };
 
   console.log("+++++++++ InitialSizing +++++++++++");
@@ -259,6 +255,10 @@ const InitialSizing = (props) => {
       )}
     </div>
   );
-};
+}
 
-export default InitialSizing;
+InitialSizing.propTypes = {
+  data: PropTypes.object.isRequired,
+  isLoading: PropTypes.bool.isRequired,
+  getAxisChangeData: PropTypes.func.isRequired,
+};

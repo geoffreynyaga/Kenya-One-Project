@@ -5,7 +5,7 @@
  * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * Last Modified: Wednesday April 8th 2020 2:40:17 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
+ * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
  * -----
  * MIT License
  *
@@ -41,7 +41,7 @@ import { SliderValueContext } from "./SliderValueContext";
 import InitialSizing from "./InitialSizing";
 import InitialValues from "./InitialValues";
 
-export default function MTOWSizing(props) {
+function MTOWSizing(props) {
   const [data, setData] = useState({});
   const [axisRange, setAxisRange] = useState([2000, 6000]);
 
@@ -81,3 +81,6 @@ export default function MTOWSizing(props) {
     </SliderValueContext.Provider>
   );
 }
+MTOWSizing.displayName = "MTOWSizing";
+
+export default MTOWSizing;

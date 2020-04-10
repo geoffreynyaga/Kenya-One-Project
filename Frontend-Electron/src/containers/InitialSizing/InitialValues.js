@@ -5,7 +5,7 @@
  * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * Last Modified: Friday January 24th 2020 8:11:26 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
+ * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
  * -----
  * MIT License
  *
@@ -46,11 +46,9 @@ import {
   FormSelect,
 } from "shards-react";
 
-const InitialValues = (props) => {
-  console.log(props, "INITIAL VALUES PROPS");
-  // yAxisLimits: props.axisRange.length > 0 ? props.axisRange : [],
-  // xAxisLimits: props.axisRange.length > 0 ? props.axisRange : [],
+import PropTypes from "prop-types";
 
+const InitialValues = (props) => {
   const [isLoading, setIsLoading] = useState(false);
   const [yAxisLimits, setYAxisLimits] = useState(props.axisRange);
   const [xAxisLimits, setXAxisLimits] = useState(props.axisRange);
@@ -69,23 +67,23 @@ const InitialValues = (props) => {
     props.getChildData(serverData);
   };
 
-  console.log(props.axisRange, "Should be new axis change");
+  // console.log(props.axisRange, "Should be new axis change");
 
   const fetchMTOWPlot = () => {
-    console.log(
-      {
-        yAxisLimits: yAxisLimits,
-        xAxisLimits: xAxisLimits,
-        aircraft_type: aircraft_type,
-        altitude: altitude,
-        pax: pax,
-        propellerEfficiency: propellerEfficiency,
-        range: range,
-        aspectRatio: aspectRatio,
-        crew: crew,
-      },
-      "state to be sent"
-    );
+    // console.log(
+    //   {
+    //     yAxisLimits: yAxisLimits,
+    //     xAxisLimits: xAxisLimits,
+    //     aircraft_type: aircraft_type,
+    //     altitude: altitude,
+    //     pax: pax,
+    //     propellerEfficiency: propellerEfficiency,
+    //     range: range,
+    //     aspectRatio: aspectRatio,
+    //     crew: crew,
+    //   },
+    //   "state to be sent"
+    // );
 
     fetch("http://localhost:8000/api/accounts/example/", {
       method: "POST", // or 'PUT'
@@ -118,7 +116,6 @@ const InitialValues = (props) => {
   };
 
   useEffect(() => {
-    console.log(props.axisRange, "inside UseEffect");
     setYAxisLimits(props.axisRange);
     setXAxisLimits(props.axisRange);
 
@@ -143,8 +140,6 @@ const InitialValues = (props) => {
           <label htmlFor="#aircraftType">Aircraft Type</label>
           <FormSelect
             onChange={(e) => {
-              console.log(e.target.value, "Selected Aircraft");
-
               setAircraftType(e.target.value);
               setIsLoading(false);
             }}
@@ -178,11 +173,7 @@ const InitialValues = (props) => {
               // value={2}
               onChange={(e) => {
                 e.preventDefault();
-                console.log(e.target.value, "passenger number");
                 setPax(parseInt(e.target.value));
-                // setState({
-                //   pax: parseInt(e.target.value)
-                // });
               }}
             />
           </FormGroup>
@@ -196,11 +187,7 @@ const InitialValues = (props) => {
               placeholder="Range (kms)"
               onChange={(e) => {
                 e.preventDefault();
-                console.log(e.target.value, "Range");
                 setRange(parseInt(e.target.value));
-                // setState({
-                //   range: parseInt(e.target.value)
-                // });
               }}
             />
           </FormGroup>
@@ -216,11 +203,7 @@ const InitialValues = (props) => {
               placeholder="Estimated Propeller efficiency (.45 - .85)"
               onChange={(e) => {
                 e.preventDefault();
-                console.log(e.target.value, "Estimated Propeller Efficiency");
                 setPropellerEfficiency(parseFloat(e.target.value));
-                // setState({
-                //   propellerEfficiency: parseFloat(e.target.value)
-                // });
               }}
             />
           </FormGroup>
@@ -234,12 +217,7 @@ const InitialValues = (props) => {
               placeholder="Cruise Altitude (ft)"
               onChange={(e) => {
                 e.preventDefault();
-                console.log(e.target.value, "Altitude");
-
                 setAltitude(parseInt(e.target.value));
-                // setState({
-                //   altitude: parseInt(e.target.value)
-                // });
               }}
             />
           </FormGroup>
@@ -252,12 +230,7 @@ const InitialValues = (props) => {
               placeholder="Number of crew"
               onChange={(e) => {
                 e.preventDefault();
-                console.log(e.target.value, "Crew  number");
-
                 setCrew(parseInt(e.target.value));
-                // setState({
-                //   crew: parseInt(e.target.value)
-                // });
               }}
             />
           </FormGroup>
@@ -271,29 +244,18 @@ const InitialValues = (props) => {
               placeholder="Aspect Ratio (6-8)"
               onChange={(e) => {
                 e.preventDefault();
-                console.log(e.target.value, "Aspect Ratio");
                 setAspectRatio(parseFloat(e.target.value));
-                // setState({
-                //   aspectRatio: parseFloat(e.target.value)
-                // });
               }}
             />
           </FormGroup>
         </Form>
 
         {/* <Button>SUBMIT</Button> */}
-
         {!isLoading ? (
           <Button
             onClick={() => {
               setIsLoading(true);
               fetchMTOWPlot();
-              // setState(
-              //   {
-              //     isLoading: true
-              //   },
-              //   fetchMTOWPlot()
-              // );
             }}
           >
             SUBMIT
@@ -307,3 +269,8 @@ const InitialValues = (props) => {
 };
 
 export default InitialValues;
+
+InitialValues.propTypes = {
+  axisRange: PropTypes.array.isRequired,
+  getChildData: PropTypes.func.isRequired,
+};
