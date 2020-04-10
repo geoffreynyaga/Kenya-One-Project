@@ -1,0 +1,58 @@
+name: Pytest CI
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+    branches: [master, develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+      matrix:
+        python-version: [3.6]
+
+    services:
+      postgres:
+        image: postgres
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: kenya_one_test_db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 3
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Make a .env file
+        run: |
+          cp .env.sample .env
+      - name: install aerocalc
+        run: |
+          wget https://github.com/chengdi123000/aerocalc/archive/v0.11-py3.tar.gz
+
+          tar xf v0.11-py3.tar.gz
+
+          cd aerocalc-0.11-py3
+
+          python setup.py install
+
+          cd ../
+
+          sudo rm -rf aerocalc-0.11-py3/
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run Tests
+        run: |
+          pytest --ds=Kenya_One.settings.github_testing -v --nomigrations

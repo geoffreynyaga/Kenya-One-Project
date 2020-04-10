@@ -5,7 +5,7 @@
  * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * Last Modified: Sunday January 12th 2020 3:43:06 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
+ * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
  * -----
  * MIT License
  *
@@ -32,57 +32,83 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React, { Component } from "react";
+import React from "react";
 import { Container, Row, Col } from "shards-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "shards-ui/dist/css/shards.min.css";
 
-import InitialSizing from "./InitialSizing";
-import InitialValues from "./InitialValues";
+import { Switch, Route } from "react-router-dom";
 
-class App extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      data: {},
-      axisRange: []
-    };
-  }
+import RightNavPerformance from "./navigation/RightNavPerformance";
+import RightNavSizing from "./navigation/RightNavSizing";
+import RightNavControlSurfaces from "./navigation/RightNavControlSurfaces";
+import MTOWSizing from "./containers/initialSizing/MTOW";
+import SrefAndPowerSizing from "./containers/sref/SrefAndPowerSizing";
+import PerformanceConstraints from "./containers/performanceConstraints/PerformanceConstraints";
+import DetailedWeights from "./containers/detailedWeights/DetailedWeights";
+import VnDiagram from "./containers/vn/VnDiagram";
+import WingAndAirfoil from "./containers/wingAndAirfoil/WingAndAirfoil";
 
-  handleDataInChildren = data => {
-    this.setState({
-      data
-    });
+const App = () => {
+  const text = () => {
+    return <MTOWSizing />;
   };
+  text.displayName = "text";
 
-  handleGottenAxisDataInChild = data => {
-    console.log(data, "data in handleGottenAxisDataInChild");
-    this.setState({
-      axisRange: data
-    });
-  };
+  const routes = [
+    {
+      path: "/",
+      exact: true,
+      main: () => text(),
+    },
+    {
+      path: "/sref",
+      main: () => <SrefAndPowerSizing />,
+    },
+    {
+      path: "/performance-constraints",
+      main: () => <PerformanceConstraints />,
+    },
 
-  render() {
-    console.log(this.state.axisRange, "this.state.axisRange");
-    return (
-      <Container className="dr-example-container">
-        <Row>
-          <Col>
-            <InitialSizing
-              getAxisChangeData={this.handleGottenAxisDataInChild}
-              data={this.state ? this.state.data : null}
-            />
-          </Col>
-          <Col>
-            <InitialValues
-              axisRange={this.state.axisRange}
-              getChildData={this.handleDataInChildren}
-            />
-          </Col>
-        </Row>
-      </Container>
-    );
-  }
-}
+    {
+      path: "/detailed-weights",
+      main: () => <DetailedWeights />,
+    },
+    {
+      path: "/vn-diagram",
+      main: () => <VnDiagram />,
+    },
+    {
+      path: "/wing-and-airfoil",
+      main: () => <WingAndAirfoil />,
+    },
+  ];
 
+  return (
+    <Container fluid>
+      <Row>
+        <Col sm="2" lg="2">
+          <RightNavSizing />
+          <RightNavPerformance />
+          <RightNavControlSurfaces />
+        </Col>
+        <Col sm="10" lg="10">
+          <Switch>
+            {routes.map((route, index) => (
+              // Render more <Route>s with the same paths as
+              // above, but different components this time.
+              <Route
+                key={index}
+                path={route.path}
+                exact={route.exact}
+                children={<route.main />}
+              />
+            ))}
+          </Switch>
+        </Col>
+      </Row>
+    </Container>
+  );
+};
+App.displayName = "App";
 export default App;
