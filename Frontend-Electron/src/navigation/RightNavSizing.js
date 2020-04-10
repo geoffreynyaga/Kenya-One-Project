@@ -5,7 +5,7 @@
  * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * Last Modified: Wednesday April 8th 2020 1:55:24 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
+ * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
  * -----
  * MIT License
  *
@@ -49,10 +49,10 @@ export default function RightNavSizing() {
           <NavLink href="/sref">Sref & Power</NavLink>
         </NavItem>
         <NavItem>
-          <NavLink href="/detailed-weights">Detailed Weights</NavLink>
+          <NavLink href="/performance-constraints">Mission Constraints</NavLink>
         </NavItem>
         <NavItem>
-          <NavLink href="#">Mission Constraints</NavLink>
+          <NavLink href="/detailed-weights">Detailed Weights</NavLink>
         </NavItem>
         <NavItem>
           <NavLink href="#">V-n</NavLink>
