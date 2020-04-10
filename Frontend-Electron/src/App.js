@@ -5,7 +5,7 @@
  * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * Last Modified: Sunday January 12th 2020 3:43:06 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
+ * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
  * -----
  * MIT License
  *
@@ -36,27 +36,41 @@ import React from "react";
 import { Container, Row, Col } from "shards-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "shards-ui/dist/css/shards.min.css";
+
 import { Switch, Route } from "react-router-dom";
 
 import RightNavPerformance from "./navigation/RightNavPerformance";
 import RightNavSizing from "./navigation/RightNavSizing";
 import RightNavControlSurfaces from "./navigation/RightNavControlSurfaces";
-import MTOWSizing from "./containers/InitialSizing/MTOW";
+import MTOWSizing from "./containers/initialSizing/MTOW";
+import SrefAndPowerSizing from "./containers/sref/SrefAndPowerSizing";
+import PerformanceConstraints from "./containers/performanceConstraints/PerformanceConstraints";
+import DetailedWeights from "./containers/detailedWeights/DetailedWeights";
 
 const App = () => {
+  const text = () => {
+    return <MTOWSizing />;
+  };
+  text.displayName = "text";
+
   const routes = [
     {
       path: "/",
       exact: true,
-      main: () => <MTOWSizing />,
+      main: () => text(),
     },
     {
       path: "/sref",
-      main: () => <h2>sref</h2>,
+      main: () => <SrefAndPowerSizing />,
     },
     {
+      path: "/performance-constraints",
+      main: () => <PerformanceConstraints />,
+    },
+
+    {
       path: "/detailed-weights",
-      main: () => <h2>detailed-weights</h2>,
+      main: () => <DetailedWeights />,
     },
   ];
 
@@ -86,5 +100,5 @@ const App = () => {
     </Container>
   );
 };
-
+App.displayName = "App";
 export default App;
