@@ -46,6 +46,8 @@ import MTOWSizing from "./containers/initialSizing/MTOW";
 import SrefAndPowerSizing from "./containers/sref/SrefAndPowerSizing";
 import PerformanceConstraints from "./containers/performanceConstraints/PerformanceConstraints";
 import DetailedWeights from "./containers/detailedWeights/DetailedWeights";
+import VnDiagram from "./containers/vn/VnDiagram";
+import WingAndAirfoil from "./containers/wingAndAirfoil/WingAndAirfoil";
 
 const App = () => {
   const text = () => {
@@ -71,6 +73,14 @@ const App = () => {
     {
       path: "/detailed-weights",
       main: () => <DetailedWeights />,
+    },
+    {
+      path: "/vn-diagram",
+      main: () => <VnDiagram />,
+    },
+    {
+      path: "/wing-and-airfoil",
+      main: () => <WingAndAirfoil />,
     },
   ];
 
