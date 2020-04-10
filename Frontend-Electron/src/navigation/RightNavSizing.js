@@ -55,16 +55,16 @@ export default function RightNavSizing() {
           <NavLink href="/detailed-weights">Detailed Weights</NavLink>
         </NavItem>
         <NavItem>
-          <NavLink href="#">V-n</NavLink>
+          <NavLink href="/vn-diagram">V-n</NavLink>
+        </NavItem>
+        <NavItem>
+          <NavLink href="/wing-and-airfoil">Aerofoil Selection</NavLink>
         </NavItem>
         <NavItem>
           <NavLink href="#">Drag Analysis</NavLink>
         </NavItem>
         <NavItem>
           <NavLink href="#">Wing Structural Analysis</NavLink>
-        </NavItem>
-        <NavItem>
-          <NavLink href="#">Aerofoil Selection</NavLink>
         </NavItem>
         <NavItem>
           <NavLink href="#">Cost Analysis</NavLink>
