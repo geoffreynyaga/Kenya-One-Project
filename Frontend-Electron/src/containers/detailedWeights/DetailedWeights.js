@@ -534,6 +534,7 @@ function DetailedWeights(props) {
                 </p>
               </Col>
             </Row>
+            {/* FINAL MTOW */}
             <Row
               style={{
                 flexDirection: "column",
@@ -547,6 +548,13 @@ function DetailedWeights(props) {
               <h5 style={{ textAlign: "center", marginTop: 10 }}>FINAL MTOW</h5>
               <p style={{ fontSize: 22, marginBottom: 6, textAlign: "center" }}>
                 MTOW <Badge theme="success"> 3546 lbs</Badge>
+              </p>
+              <hr />
+              <p style={{ fontSize: 14, marginBottom: 6, textAlign: "center" }}>
+                Old MTOW Estimate <Badge theme="info"> 3546 lbs</Badge>
+              </p>
+              <p style={{ fontSize: 14, marginBottom: 6, textAlign: "center" }}>
+                Error <Badge theme="danger"> 3546 lbs</Badge>
               </p>
             </Row>
           </InputCard>
