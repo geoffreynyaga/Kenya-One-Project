@@ -49,7 +49,7 @@ import VnDiagram from "./containers/vn/VnDiagram";
 import WingAndAirfoil from "./containers/wingAndAirfoil/WingAndAirfoil";
 import DragAnalysis from "./containers/drag/DragAnalysis";
 import WingStructural from "./containers/wingAndAirfoil/WingStructural";
-import MTOWSizing from "./containers/initialSizing/MTOW";
+import MTOWSizing from "./containers/initialSizing/MTOWSizing";
 
 const App = () => {
   // const text = () => {
