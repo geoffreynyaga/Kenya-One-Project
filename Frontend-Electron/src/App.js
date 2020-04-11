@@ -42,7 +42,6 @@ import { Switch, Route } from "react-router-dom";
 import RightNavPerformance from "./navigation/RightNavPerformance";
 import RightNavSizing from "./navigation/RightNavSizing";
 import RightNavControlSurfaces from "./navigation/RightNavControlSurfaces";
-import MTOWSizing from "./containers/initialSizing/MTOW";
 import SrefAndPowerSizing from "./containers/sref/SrefAndPowerSizing";
 import PerformanceConstraints from "./containers/performanceConstraints/PerformanceConstraints";
 import DetailedWeights from "./containers/detailedWeights/DetailedWeights";
@@ -50,18 +49,23 @@ import VnDiagram from "./containers/vn/VnDiagram";
 import WingAndAirfoil from "./containers/wingAndAirfoil/WingAndAirfoil";
 import DragAnalysis from "./containers/drag/DragAnalysis";
 import WingStructural from "./containers/wingAndAirfoil/WingStructural";
+import MTOWSizing from "./containers/initialSizing/MTOW";
 
 const App = () => {
-  const text = () => {
-    return <MTOWSizing />;
-  };
-  text.displayName = "text";
+  // const text = () => {
+  //   return <MTOWSizing />;
+  // };
+  // text.displayName = "text";
 
+  // {
+  //   path: "/",
+  //   exact: true,
+  //   main: () => text(),
+  // },
   const routes = [
     {
       path: "/",
-      exact: true,
-      main: () => text(),
+      main: () => <MTOWSizing />,
     },
     {
       path: "/sref",

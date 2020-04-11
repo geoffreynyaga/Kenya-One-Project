@@ -40,7 +40,8 @@ import os
 from decouple import config  # type: ignore
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 # Quick-start development settings - unsuitable for production
@@ -175,7 +176,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 STATIC_URL = "/static/"
 
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "staticfiles")]
-STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), "static-cdn-local")
+STATIC_ROOT = os.path.join(BASE_DIR, "static-cdn-local")
 
 
 AWS_ACCESS_KEY_ID = config("AWS_ACCESS_KEY_ID")
