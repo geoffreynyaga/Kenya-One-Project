@@ -5,7 +5,7 @@
  * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * Last Modified: Saturday April 11th 2020 11:54:41 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
+ * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
  * -----
  * MIT License
  *
@@ -49,13 +49,12 @@ import VnDiagram from "./containers/vn/VnDiagram";
 import WingAndAirfoil from "./containers/wingAndAirfoil/WingAndAirfoil";
 import DragAnalysis from "./containers/drag/DragAnalysis";
 import WingStructural from "./containers/wingAndAirfoil/WingStructural";
-// import MTOWSizing from "./containers/initialSizing/MTOWSizing";
-
+import MTOWSizing from "./containers/InitialSizing/MTOWSizing";
 const App = () => {
-  // const text = () => {
-  //   return <MTOWSizing />;
-  // };
-  // text.displayName = "text";
+  const text = () => {
+    return <MTOWSizing />;
+  };
+  text.displayName = "text";
 
   // {
   //   path: "/",
@@ -65,7 +64,8 @@ const App = () => {
   const routes = [
     {
       path: "/",
-      main: () => <div>Hey</div>,
+      exact: true,
+      main: () => text(),
     },
     {
       path: "/sref",
