@@ -85,20 +85,9 @@ activate.bat
 
 4. Install the requirements
 
-a) Install python packages and AeroCalc
+a) Install python packages
 
 ```bash
-   wget https://github.com/chengdi123000/aerocalc/archive/v0.11-py3.tar.gz
-
-   tar xf v0.11-py3.tar.gz
-
-   cd aerocalc-0.11-py3
-
-   python setup.py install
-
-   cd ../
-
-   sudo rm -rf aerocalc-0.11-py3/
 
    pip install -r requirements.txt
 ```
