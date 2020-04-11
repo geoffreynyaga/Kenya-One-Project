@@ -108,3 +108,6 @@ ENV/
 
 #database_schema files
 .database_schemas
+
+
+static-cdn-local/
