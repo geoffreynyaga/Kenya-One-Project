@@ -1,5 +1,5 @@
 import math
-from aerocalc import std_atm as ISA  # type: ignore
+from aerocalc3 import std_atm as ISA  # type: ignore
 import numpy as np  # type: ignore
 import matplotlib  # type: ignore
 import matplotlib.pylab as pylab  # type: ignore
