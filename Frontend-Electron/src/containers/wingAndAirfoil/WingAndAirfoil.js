@@ -5,7 +5,7 @@
  * Author: Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
  * -----
  * Last Modified: Friday April 10th 2020 10:29:23 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
+ * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * This file should not be copied and/or distributed without the express
  * permission of MFUKO PAYMENTS SERVICES Ltd.
@@ -18,31 +18,27 @@ import { Container, Row, Col, Badge, Card, InputGroup } from "shards-react";
 import MyInputGroup from "../utils/InputGroup";
 import InputCard from "../utils/InputCard";
 
-import Plotly from "plotly.js-basic-dist";
-import createPlotlyComponent from "react-plotly.js/factory";
-
-const Plot = createPlotlyComponent(Plotly);
-function renderTable() {
-  const items = [
-    { name: "VA", speed: 1234, units: "kcas", xValue: 3.8 },
-    { name: "vs", speed: 1234, units: "kcas", xValue: 1 },
-    { name: "vs1", speed: 1234, units: "kcas", xValue: -1 },
-    { name: "vj", speed: 1234, units: "kcas", xValue: -3 },
-    { name: "vf", speed: 1234, units: "kcas", xValue: 3.8 },
-  ];
-  return items.map((item, index) => {
-    return (
-      <tr key={index}>
-        <td>{item.name}</td>
-        <td>{item.speed}</td>
-        <td>{item.units}</td>
-        <td>{item.xValue}</td>
-      </tr>
-    );
-  });
-}
-
 function WingAndAirfoil(props) {
+  function renderTable() {
+    const items = [
+      { name: "VA", speed: 1234, units: "kcas", xValue: 3.8 },
+      { name: "vs", speed: 1234, units: "kcas", xValue: 1 },
+      { name: "vs1", speed: 1234, units: "kcas", xValue: -1 },
+      { name: "vj", speed: 1234, units: "kcas", xValue: -3 },
+      { name: "vf", speed: 1234, units: "kcas", xValue: 3.8 },
+    ];
+    return items.map((item, index) => {
+      return (
+        <tr key={index}>
+          <td>{item.name}</td>
+          <td>{item.speed}</td>
+          <td>{item.units}</td>
+          <td>{item.xValue}</td>
+        </tr>
+      );
+    });
+  }
+
   return (
     <Container>
       <div style={{ marginBottom: 15 }}>

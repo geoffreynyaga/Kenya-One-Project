@@ -5,7 +5,7 @@
  * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * Last Modified: Wednesday April 8th 2020 1:55:24 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
+ * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * MIT License
  *
@@ -61,10 +61,10 @@ export default function RightNavSizing() {
           <NavLink href="/wing-and-airfoil">Aerofoil Selection</NavLink>
         </NavItem>
         <NavItem>
-          <NavLink href="#">Drag Analysis</NavLink>
+          <NavLink href="/drag-analysis">Drag Analysis</NavLink>
         </NavItem>
         <NavItem>
-          <NavLink href="#">Wing Structural Analysis</NavLink>
+          <NavLink href="/wing-structural">Wing Structural Analysis</NavLink>
         </NavItem>
         <NavItem>
           <NavLink href="#">Cost Analysis</NavLink>

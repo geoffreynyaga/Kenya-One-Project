@@ -5,7 +5,7 @@
  * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * Last Modified: Sunday January 12th 2020 3:43:06 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
+ * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * MIT License
  *
@@ -48,6 +48,8 @@ import PerformanceConstraints from "./containers/performanceConstraints/Performa
 import DetailedWeights from "./containers/detailedWeights/DetailedWeights";
 import VnDiagram from "./containers/vn/VnDiagram";
 import WingAndAirfoil from "./containers/wingAndAirfoil/WingAndAirfoil";
+import DragAnalysis from "./containers/drag/DragAnalysis";
+import WingStructural from "./containers/wingAndAirfoil/WingStructural";
 
 const App = () => {
   const text = () => {
@@ -81,6 +83,14 @@ const App = () => {
     {
       path: "/wing-and-airfoil",
       main: () => <WingAndAirfoil />,
+    },
+    {
+      path: "/drag-analysis",
+      main: () => <DragAnalysis />,
+    },
+    {
+      path: "/wing-structural",
+      main: () => <WingStructural />,
     },
   ];
 
