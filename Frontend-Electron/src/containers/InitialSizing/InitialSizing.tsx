@@ -44,7 +44,6 @@ import {
   Card,
 } from "shards-react";
 
-import PropTypes from "prop-types";
 
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
@@ -52,7 +51,27 @@ import createPlotlyComponent from "react-plotly.js/factory";
 import { SliderValueContext } from "./SliderValueContext";
 const Plot = createPlotlyComponent(Plotly);
 
-export default function InitialSizing(props) {
+interface Props{
+  getAxisChangeData:([])=>void;
+  data:{
+    wtoGuess ?: number;
+    wtoYaxisRaymer ?:number;
+    wtoYaxisGud ?: number;
+    wtoYaxisRoskam ?:number;
+    wtoYaxisSadraey ?:number;
+    raymerIntersect ?:number;
+    gudmundssonIntersect ?:number;
+    roskamIntersect ?:number;
+    sadraeyIntersect ?:number;
+    raymer_idx ?:number;
+    gudmundsson_idx ?:number;
+    roskam_idx ?:number;
+    sadraey_idx ?:number;
+  };
+  isLoading ?: boolean;
+}
+
+export default function InitialSizing(props:Props) {
   console.log(props, "initial sizing props");
 
   const sliderValue = useContext(SliderValueContext);
@@ -60,10 +79,10 @@ export default function InitialSizing(props) {
   console.log(sliderValue, "sliderValue not in return");
 
   // const [data, setData] = useState(null);
-  const [isLoading, setLoading] = useState(false);
-  const [valueX, setValueX] = useState([2000, 6000]);
+  const [isLoading, setLoading] = useState<boolean>(false);
+  const [valueX, setValueX] = useState<number[]>([2000, 6000]);
 
-  const handleAxisRangeChange = (axisData) => {
+  const handleAxisRangeChange = (axisData:number[]) => {
     console.log(
       axisData,
       "handleAxisRangeChange have been called and will pass the above data"
@@ -71,28 +90,28 @@ export default function InitialSizing(props) {
     props.getAxisChangeData(axisData);
   };
 
-  const handleSlideX = (e) => {
+  const handleSlideX = (e:any) => {
     setValueX([parseFloat(e[0]), parseFloat(e[1])]);
     handleAxisRangeChange([parseFloat(e[0]), parseFloat(e[1])]);
   };
 
   console.log("+++++++++ InitialSizing +++++++++++");
 
-  const { wtoGuess } = props.data ? props.data : [];
-  const { wtoYaxisRaymer } = props.data ? props.data : [];
-  const { wtoYaxisGud } = props.data ? props.data : [];
-  const { wtoYaxisRoskam } = props.data ? props.data : [];
-  const { wtoYaxisSadraey } = props.data ? props.data : [];
+  const { wtoGuess } = props.data 
+  const { wtoYaxisRaymer } = props.data 
+  const { wtoYaxisGud } = props.data 
+  const { wtoYaxisRoskam } = props.data 
+  const { wtoYaxisSadraey } = props.data 
 
-  const { raymerIntersect } = props.data ? props.data : [];
-  const { gudmundssonIntersect } = props.data ? props.data : [];
-  const { roskamIntersect } = props.data ? props.data : [];
-  const { sadraeyIntersect } = props.data ? props.data : [];
+  const { raymerIntersect } = props.data 
+  const { gudmundssonIntersect } = props.data 
+  const { roskamIntersect } = props.data 
+  const { sadraeyIntersect } = props.data 
 
-  const { raymer_idx } = props.data ? props.data : [];
-  const { gudmundsson_idx } = props.data ? props.data : [];
-  const { roskam_idx } = props.data ? props.data : [];
-  const { sadraey_idx } = props.data ? props.data : [];
+  const { raymer_idx } = props.data 
+  const { gudmundsson_idx } = props.data 
+  const { roskam_idx } = props.data 
+  const { sadraey_idx } = props.data 
 
   return (
     <div>
@@ -116,12 +135,15 @@ export default function InitialSizing(props) {
                   placeholder="Min Value"
                   size="sm"
                   value={valueX[0] > 0 ? valueX[0] : ""}
-                  onChange={(e) => {
+                  onChange={(e:any) => {
                     e.preventDefault();
                     let oldValue = valueX;
-                    setValueX([parseInt(e.target.value), oldValue[1]]);
+                    // setValueX([parseInt(e.target.value), oldValue[1]]);
+                    // handleAxisRangeChange([parseInt(e.target.value), oldValue[1]]); 
+                    handleSlideX([parseInt(e.target.value), oldValue[1]])                 
                   }}
                 />
+                
               </InputGroup>
             </Col>
 
@@ -135,7 +157,7 @@ export default function InitialSizing(props) {
                   className="col-xs-8"
                   placeholder="Max Value"
                   value={valueX[1] > 0 ? valueX[1] : ""}
-                  onChange={(e) => {
+                  onChange={(e:any) => {
                     e.preventDefault();
                     let oldValue = valueX;
                     setValueX([oldValue[0], parseInt(e.target.value)]);
@@ -197,7 +219,7 @@ export default function InitialSizing(props) {
                     type: "scatter",
                     mode: "markers",
                     marker: { color: "red", size: 10 },
-                    name: `Raymer MTOW (${Math.floor(raymerIntersect)} lbs)`,
+                    name: raymerIntersect !== undefined ? `Raymer MTOW (${Math.floor(raymerIntersect)} lbs)` : "",
                   },
                   {
                     x: gudmundsson_idx,
@@ -205,9 +227,9 @@ export default function InitialSizing(props) {
                     type: "scatter",
                     mode: "markers",
                     marker: { color: "#2CA02C", size: 10 },
-                    name: `Gudmundsson MTOW (${Math.floor(
+                    name: gudmundssonIntersect !== undefined ? `Gudmundsson MTOW (${Math.floor(
                       gudmundssonIntersect
-                    )} lbs)`,
+                    )} lbs)` : "",
                   },
                   {
                     x: roskam_idx,
@@ -215,7 +237,7 @@ export default function InitialSizing(props) {
                     type: "scatter",
                     mode: "markers",
                     marker: { color: "#D62728", size: 10 },
-                    name: `Roskam MTOW (${Math.floor(roskamIntersect)} lbs)`,
+                    name: roskamIntersect !== undefined ? `Roskam MTOW (${Math.floor(roskamIntersect)} lbs)` : "",
                   },
 
                   {
@@ -224,7 +246,7 @@ export default function InitialSizing(props) {
                     type: "scatter",
                     mode: "markers",
                     marker: { color: "#A57FC8", size: 10 },
-                    name: `Sadraey MTOW (${Math.floor(sadraeyIntersect)} lbs)`,
+                    name: sadraeyIntersect !== undefined ? `Sadraey MTOW (${Math.floor(sadraeyIntersect)} lbs)` : "",
                   },
                 ]}
                 layout={{
@@ -257,8 +279,3 @@ export default function InitialSizing(props) {
   );
 }
 
-InitialSizing.propTypes = {
-  data: PropTypes.object.isRequired,
-  isLoading: PropTypes.bool.isRequired,
-  getAxisChangeData: PropTypes.func.isRequired,
-};

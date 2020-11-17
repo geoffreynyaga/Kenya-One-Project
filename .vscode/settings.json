@@ -99,6 +99,5 @@
       "mapTo": "javascript"
     }
   ],
-  "python.pythonPath": "venv\\Scripts\\python.exe",
   "python.linting.enabled": true
 }

@@ -46,22 +46,22 @@ import {
   FormSelect,
 } from "shards-react";
 
-import PropTypes from "prop-types";
+import {ServerData} from "./types"
 
 const InitialValues = (props) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [yAxisLimits, setYAxisLimits] = useState(props.axisRange);
-  const [xAxisLimits, setXAxisLimits] = useState(props.axisRange);
-  const [aircraft_type, setAircraftType] = useState("GA_Twin");
-  const [altitude, setAltitude] = useState(10000);
-  const [pax, setPax] = useState(4);
-  const [propellerEfficiency, setPropellerEfficiency] = useState(0.78);
-  const [range, setRange] = useState(1200);
-  const [aspectRatio, setAspectRatio] = useState(7.8);
-  const [crew, setCrew] = useState(2);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [yAxisLimits, setYAxisLimits] = useState<number[]>(props.axisRange);
+  const [xAxisLimits, setXAxisLimits] = useState<number[]>(props.axisRange);
+  const [aircraft_type, setAircraftType] = useState<string>("GA_Twin");
+  const [altitude, setAltitude] = useState<number>(10000);
+  const [pax, setPax] = useState<number>(4);
+  const [propellerEfficiency, setPropellerEfficiency] = useState<number>(0.78);
+  const [range, setRange] = useState<number>(1200);
+  const [aspectRatio, setAspectRatio] = useState<number>(7.8);
+  const [crew, setCrew] = useState<number>(2);
   // const [data, setData] = useState(null);
 
-  const handleLangChange = (serverData) => {
+  const handleLangChange = (serverData:ServerData) => {
     console.log(serverData, "step 3, passing to parent");
 
     props.getChildData(serverData);
@@ -139,7 +139,7 @@ const InitialValues = (props) => {
           {/* Selected Aircraft */}
           <label htmlFor="#aircraftType">Aircraft Type</label>
           <FormSelect
-            onChange={(e) => {
+            onChange={(e:any) => {
               setAircraftType(e.target.value);
               setIsLoading(false);
             }}
@@ -171,7 +171,7 @@ const InitialValues = (props) => {
               id="#pax"
               placeholder="Number of Passengers"
               // value={2}
-              onChange={(e) => {
+              onChange={(e:any) => {
                 e.preventDefault();
                 setPax(parseInt(e.target.value));
               }}
@@ -185,7 +185,7 @@ const InitialValues = (props) => {
               type="number"
               id="#range"
               placeholder="Range (kms)"
-              onChange={(e) => {
+              onChange={(e:any) => {
                 e.preventDefault();
                 setRange(parseInt(e.target.value));
               }}
@@ -201,7 +201,7 @@ const InitialValues = (props) => {
               type="number"
               id="#propellerEfficiency"
               placeholder="Estimated Propeller efficiency (.45 - .85)"
-              onChange={(e) => {
+              onChange={(e:any) => {
                 e.preventDefault();
                 setPropellerEfficiency(parseFloat(e.target.value));
               }}
@@ -215,7 +215,7 @@ const InitialValues = (props) => {
               type="number"
               id="#altitude"
               placeholder="Cruise Altitude (ft)"
-              onChange={(e) => {
+              onChange={(e:any) => {
                 e.preventDefault();
                 setAltitude(parseInt(e.target.value));
               }}
@@ -228,7 +228,7 @@ const InitialValues = (props) => {
               type="number"
               id="#crew"
               placeholder="Number of crew"
-              onChange={(e) => {
+              onChange={(e:any) => {
                 e.preventDefault();
                 setCrew(parseInt(e.target.value));
               }}
@@ -242,7 +242,7 @@ const InitialValues = (props) => {
               type="number"
               id="#aspectRatio"
               placeholder="Aspect Ratio (6-8)"
-              onChange={(e) => {
+              onChange={(e:any) => {
                 e.preventDefault();
                 setAspectRatio(parseFloat(e.target.value));
               }}
@@ -270,7 +270,4 @@ const InitialValues = (props) => {
 
 export default InitialValues;
 
-InitialValues.propTypes = {
-  axisRange: PropTypes.array.isRequired,
-  getChildData: PropTypes.func.isRequired,
-};
+

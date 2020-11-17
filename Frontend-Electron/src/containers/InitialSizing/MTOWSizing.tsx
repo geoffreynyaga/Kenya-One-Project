@@ -41,16 +41,18 @@ import { SliderValueContext } from "./SliderValueContext";
 import InitialSizing from "./InitialSizing";
 import InitialValues from "./InitialValues";
 
-export default function MTOWSizing(props) {
-  const [data, setData] = useState({});
-  const [axisRange, setAxisRange] = useState([2000, 6000]);
+import {ServerData} from "./types"
 
-  const handleDataInChildren = (childData) => {
+export default function MTOWSizing(props) {
+  const [data, setData] = useState<{}|null>({});
+  const [axisRange, setAxisRange] = useState<number[]>([2000, 6000]);
+
+  const handleDataInChildren = (childData:ServerData) => {
     console.log(childData, "step 4");
     setData(childData);
   };
 
-  const handleGottenAxisDataInChild = (incomingData) => {
+  const handleGottenAxisDataInChild = (incomingData:number[]) => {
     console.log(
       incomingData,
       "incoming data from childdata in handleGottenAxisDataInChild"
@@ -67,7 +69,7 @@ export default function MTOWSizing(props) {
           <Col sm="9" lg="9">
             <InitialSizing
               getAxisChangeData={handleGottenAxisDataInChild}
-              data={data ? data : null}
+              data={data ? data : {}}
             />
           </Col>
           <Col sm="3" lg="3">

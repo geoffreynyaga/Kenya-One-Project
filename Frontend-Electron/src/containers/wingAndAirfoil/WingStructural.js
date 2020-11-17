@@ -4,7 +4,7 @@
  * Created Date: Friday, April 10th 2020, 12:02:40 pm
  * Author: Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
  * -----
- * Last Modified: Saturday April 11th 2020 8:08:25 pm
+ * Last Modified: Saturday April 11th 2020 11:54:41 pm
  * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * This file should not be copied and/or distributed without the express
@@ -131,7 +131,7 @@ function WingStructural(props) {
               Mmax = <Badge theme="info"> {"163,279.1"} lbf </Badge>
             </p>
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
-              Acap > = <Badge theme="info"> {2.963719743} in2 </Badge>
+              Acap = <Badge theme="info"> {2.963719743} in2 </Badge>
             </p>
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
               IXX = <Badge theme="info"> {0.006586615} ft4 </Badge>
