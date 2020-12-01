@@ -35,36 +35,42 @@
 import React from "react";
 
 import { Nav, NavItem, NavLink } from "shards-react";
+import { useRouteMatch, Link } from "react-router-dom";
 
 export default function RightNavSizing() {
+  let { path, url } = useRouteMatch();
   return (
     <div style={{ marginTop: 20, backgroundColor: "#fccde2" }}>
       <Nav pills vertical>
         <NavItem>
-          <NavLink active href="/">
+          <NavLink active href={`${url}/mtow`}>
             MTOW & Weights
           </NavLink>
         </NavItem>
         <NavItem>
-          <NavLink href="/sref">Sref & Power</NavLink>
+          <NavLink href={`${url}/sref`}>Sref & Power</NavLink>
         </NavItem>
         <NavItem>
-          <NavLink href="/performance-constraints">Mission Constraints</NavLink>
+          <NavLink href={`${url}/performance-constraints`}>
+            Mission Constraints
+          </NavLink>
         </NavItem>
         <NavItem>
-          <NavLink href="/detailed-weights">Detailed Weights</NavLink>
+          <NavLink href={`${url}/detailed-weights`}>Detailed Weights</NavLink>
         </NavItem>
         <NavItem>
-          <NavLink href="/vn-diagram">V-n</NavLink>
+          <NavLink href={`${url}/vn-diagram`}>V-n</NavLink>
         </NavItem>
         <NavItem>
-          <NavLink href="/wing-and-airfoil">Aerofoil Selection</NavLink>
+          <NavLink href={`${url}/wing-and-airfoil`}>Aerofoil Selection</NavLink>
         </NavItem>
         <NavItem>
-          <NavLink href="/drag-analysis">Drag Analysis</NavLink>
+          <NavLink href={`${url}/drag-analysis`}>Drag Analysis</NavLink>
         </NavItem>
         <NavItem>
-          <NavLink href="/wing-structural">Wing Structural Analysis</NavLink>
+          <NavLink href={`${url}/wing-structural`}>
+            Wing Structural Analysis
+          </NavLink>
         </NavItem>
         <NavItem>
           <NavLink href="#">Cost Analysis</NavLink>

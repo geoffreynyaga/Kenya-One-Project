@@ -4,8 +4,8 @@
  * Created Date: Friday, January 24th 2020, 8:11:26 pm
  * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
- * Last Modified: Friday January 24th 2020 8:11:26 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
+ * Last Modified: Tuesday November 17th 2020 12:05:47 pm
+ * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * MIT License
  *
@@ -32,7 +32,7 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 
 import {
   Card,
@@ -45,8 +45,9 @@ import {
   FormGroup,
   FormSelect,
 } from "shards-react";
+import { SliderValueContext } from "./SliderValueContext";
 
-import {ServerData} from "./types"
+import { ServerData } from "./types";
 
 const InitialValues = (props) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -61,19 +62,24 @@ const InitialValues = (props) => {
   const [crew, setCrew] = useState<number>(2);
   // const [data, setData] = useState(null);
 
-  const handleLangChange = (serverData:ServerData) => {
+  const [context, setContext] = useContext(SliderValueContext);
+
+  const handleLangChange = (serverData: ServerData) => {
     console.log(serverData, "step 3, passing to parent");
 
     props.getChildData(serverData);
   };
 
-  // console.log(props.axisRange, "Should be new axis change");
+  console.log(
+    props.axisRange,
+    "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$Should be new axis change"
+  );
 
   const fetchMTOWPlot = () => {
     // console.log(
     //   {
-    //     yAxisLimits: yAxisLimits,
-    //     xAxisLimits: xAxisLimits,
+    //     yAxisLimits: context,
+    //     xAxisLimits: context,
     //     aircraft_type: aircraft_type,
     //     altitude: altitude,
     //     pax: pax,
@@ -82,7 +88,10 @@ const InitialValues = (props) => {
     //     aspectRatio: aspectRatio,
     //     crew: crew,
     //   },
-    //   "state to be sent"
+    //   "state to be sent",
+
+    //   context,
+    //   "context to replace"
     // );
 
     fetch("http://localhost:8000/api/accounts/example/", {
@@ -91,8 +100,8 @@ const InitialValues = (props) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        yAxisLimits: yAxisLimits,
-        xAxisLimits: xAxisLimits,
+        yAxisLimits: context,
+        xAxisLimits: context,
         aircraft_type: aircraft_type,
         altitude: altitude,
         pax: pax,
@@ -116,8 +125,14 @@ const InitialValues = (props) => {
   };
 
   useEffect(() => {
-    setYAxisLimits(props.axisRange);
-    setXAxisLimits(props.axisRange);
+    console.log(
+      "----------------",
+      props.axisRange,
+      "InitialValues: axis values have changed ----"
+    );
+
+    // setYAxisLimits(props.axisRange);
+    // setXAxisLimits(props.axisRange);
 
     setIsLoading(true);
     fetchMTOWPlot();
@@ -134,12 +149,13 @@ const InitialValues = (props) => {
       <CardHeader>
         <CardTitle>Initial Estimates</CardTitle>
       </CardHeader>
+      {/* <h2>{isLoading ? "Loading" : "Not Loading"}</h2> */}
       <CardBody>
         <Form>
           {/* Selected Aircraft */}
           <label htmlFor="#aircraftType">Aircraft Type</label>
           <FormSelect
-            onChange={(e:any) => {
+            onChange={(e: any) => {
               setAircraftType(e.target.value);
               setIsLoading(false);
             }}
@@ -171,7 +187,7 @@ const InitialValues = (props) => {
               id="#pax"
               placeholder="Number of Passengers"
               // value={2}
-              onChange={(e:any) => {
+              onChange={(e: any) => {
                 e.preventDefault();
                 setPax(parseInt(e.target.value));
               }}
@@ -185,7 +201,7 @@ const InitialValues = (props) => {
               type="number"
               id="#range"
               placeholder="Range (kms)"
-              onChange={(e:any) => {
+              onChange={(e: any) => {
                 e.preventDefault();
                 setRange(parseInt(e.target.value));
               }}
@@ -201,7 +217,7 @@ const InitialValues = (props) => {
               type="number"
               id="#propellerEfficiency"
               placeholder="Estimated Propeller efficiency (.45 - .85)"
-              onChange={(e:any) => {
+              onChange={(e: any) => {
                 e.preventDefault();
                 setPropellerEfficiency(parseFloat(e.target.value));
               }}
@@ -215,7 +231,7 @@ const InitialValues = (props) => {
               type="number"
               id="#altitude"
               placeholder="Cruise Altitude (ft)"
-              onChange={(e:any) => {
+              onChange={(e: any) => {
                 e.preventDefault();
                 setAltitude(parseInt(e.target.value));
               }}
@@ -228,7 +244,7 @@ const InitialValues = (props) => {
               type="number"
               id="#crew"
               placeholder="Number of crew"
-              onChange={(e:any) => {
+              onChange={(e: any) => {
                 e.preventDefault();
                 setCrew(parseInt(e.target.value));
               }}
@@ -242,7 +258,7 @@ const InitialValues = (props) => {
               type="number"
               id="#aspectRatio"
               placeholder="Aspect Ratio (6-8)"
-              onChange={(e:any) => {
+              onChange={(e: any) => {
                 e.preventDefault();
                 setAspectRatio(parseFloat(e.target.value));
               }}
@@ -269,5 +285,3 @@ const InitialValues = (props) => {
 };
 
 export default InitialValues;
-
-

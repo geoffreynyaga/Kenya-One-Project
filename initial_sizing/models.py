@@ -4,6 +4,12 @@ from django.db import models
 class MTOW_Sizing(models.Model):
     """Model definition for MTOW_SIZING."""
 
+    class Meta:
+        """Meta definition for MTOW_SIZING."""
+
+        verbose_name = "MTOW_SIZING"
+        verbose_name_plural = "MTOW_SIZINGs"
+
     aircraft = models.ForeignKey("accounts.Aircraft", on_delete=models.CASCADE)
 
     pax = models.IntegerField(blank=True, null=True)
@@ -30,12 +36,6 @@ class MTOW_Sizing(models.Model):
 
     date_created = models.DateTimeField(auto_now_add=True)
     date_modified = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        """Meta definition for MTOW_SIZING."""
-
-        verbose_name = "MTOW_SIZING"
-        verbose_name_plural = "MTOW_SIZINGs"
 
     def __str__(self) -> str:
         """Unicode representation of MTOW_SIZING."""

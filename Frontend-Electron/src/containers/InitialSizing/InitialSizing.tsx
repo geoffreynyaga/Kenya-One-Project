@@ -4,8 +4,8 @@
  * Created Date: Sunday, January 12th 2020, 6:19:50 pm
  * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
- * Last Modified: Sunday January 12th 2020 6:19:50 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
+ * Last Modified: Tuesday November 17th 2020 12:05:47 pm
+ * Modified By:  Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
  * -----
  * MIT License
  *
@@ -42,8 +42,8 @@ import {
   Row,
   Col,
   Card,
+  Button,
 } from "shards-react";
-
 
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
@@ -51,82 +51,97 @@ import createPlotlyComponent from "react-plotly.js/factory";
 import { SliderValueContext } from "./SliderValueContext";
 const Plot = createPlotlyComponent(Plotly);
 
-interface Props{
-  getAxisChangeData:([])=>void;
-  data:{
-    wtoGuess ?: number;
-    wtoYaxisRaymer ?:number;
-    wtoYaxisGud ?: number;
-    wtoYaxisRoskam ?:number;
-    wtoYaxisSadraey ?:number;
-    raymerIntersect ?:number;
-    gudmundssonIntersect ?:number;
-    roskamIntersect ?:number;
-    sadraeyIntersect ?:number;
-    raymer_idx ?:number;
-    gudmundsson_idx ?:number;
-    roskam_idx ?:number;
-    sadraey_idx ?:number;
+interface Props {
+  getAxisChangeData: ([]) => void;
+  data: {
+    wtoGuess?: number;
+    wtoYaxisRaymer?: number;
+    wtoYaxisGud?: number;
+    wtoYaxisRoskam?: number;
+    wtoYaxisSadraey?: number;
+    raymerIntersect?: number;
+    gudmundssonIntersect?: number;
+    roskamIntersect?: number;
+    sadraeyIntersect?: number;
+    raymer_idx?: number;
+    gudmundsson_idx?: number;
+    roskam_idx?: number;
+    sadraey_idx?: number;
   };
-  isLoading ?: boolean;
+  isLoading?: boolean;
 }
 
-export default function InitialSizing(props:Props) {
+export default function InitialSizing(props: Props) {
   console.log(props, "initial sizing props");
 
-  const sliderValue = useContext(SliderValueContext);
-
-  console.log(sliderValue, "sliderValue not in return");
+  // const sliderValue = useContext(SliderValueContext);
+  // console.log(sliderValue, "sliderValue not in return");
+  const [context, setContext] = useContext(SliderValueContext);
 
   // const [data, setData] = useState(null);
   const [isLoading, setLoading] = useState<boolean>(false);
-  const [valueX, setValueX] = useState<number[]>([2000, 6000]);
+  const [valueX, setValueX] = useState<number[]>([]);
 
-  const handleAxisRangeChange = (axisData:number[]) => {
-    console.log(
-      axisData,
-      "handleAxisRangeChange have been called and will pass the above data"
-    );
-    props.getAxisChangeData(axisData);
+  // const handleAxisRangeChange = (axisData:number[]) => {
+  //   console.log(
+  //     axisData,
+  //     "handleAxisRangeChange have been called and will pass the above data"
+  //   );
+  //   props.getAxisChangeData(axisData);
+  // };
+
+  const handleSlideX = (e: any) => {
+    // e.preventDefault();
+    setValueX([parseFloat(e[0]), parseFloat(e[1])]);
+    // setContext([parseFloat(e[0]), parseFloat(e[1])]);
+
+    // handleAxisRangeChange([parseFloat(e[0]), parseFloat(e[1])]);
   };
 
-  const handleSlideX = (e:any) => {
-    setValueX([parseFloat(e[0]), parseFloat(e[1])]);
-    handleAxisRangeChange([parseFloat(e[0]), parseFloat(e[1])]);
+  const handleAxisValuesSubmit = () => {
+    console.log("submit called");
+    console.log([valueX[0], valueX[1]], "[valueX[0], valueX[1]]");
+    // handleAxisRangeChange([valueX[0], valueX[1]]);
+    props.getAxisChangeData([valueX[0], valueX[1]]);
+
+    setContext(valueX);
   };
 
   console.log("+++++++++ InitialSizing +++++++++++");
 
-  const { wtoGuess } = props.data 
-  const { wtoYaxisRaymer } = props.data 
-  const { wtoYaxisGud } = props.data 
-  const { wtoYaxisRoskam } = props.data 
-  const { wtoYaxisSadraey } = props.data 
+  const { wtoGuess } = props.data;
+  const { wtoYaxisRaymer } = props.data;
+  const { wtoYaxisGud } = props.data;
+  const { wtoYaxisRoskam } = props.data;
+  const { wtoYaxisSadraey } = props.data;
 
-  const { raymerIntersect } = props.data 
-  const { gudmundssonIntersect } = props.data 
-  const { roskamIntersect } = props.data 
-  const { sadraeyIntersect } = props.data 
+  const { raymerIntersect } = props.data;
+  const { gudmundssonIntersect } = props.data;
+  const { roskamIntersect } = props.data;
+  const { sadraeyIntersect } = props.data;
 
-  const { raymer_idx } = props.data 
-  const { gudmundsson_idx } = props.data 
-  const { roskam_idx } = props.data 
-  const { sadraey_idx } = props.data 
+  const { raymer_idx } = props.data;
+  const { gudmundsson_idx } = props.data;
+  const { roskam_idx } = props.data;
+  const { sadraey_idx } = props.data;
 
   return (
     <div>
-      {isLoading ? <p>Calculating....</p> : ""}
+      {/* <h3>Initial Sizing Context: {context}</h3>
+      <h3>Initial Sizing state: {valueX}</h3> */}
+
+      {isLoading ? <p>Calculating....</p> : <p></p>}
       {props.data !== null && !props.isLoading ? (
         <div>
           <Slider
             connect
             pips={{ mode: "steps", stepped: true, density: 3 }}
             onSlide={handleSlideX}
-            start={valueX}
+            start={valueX[0] > 0 ? valueX : context}
             range={{ min: 10, max: 15000 }}
           />
           <Row>
-            <Col sm={6} xs={6}>
+            <Col sm={5} xs={5}>
               <InputGroup row={true} inline={true}>
                 <InputGroupAddon type="prepend">
                   <InputGroupText>Min Value</InputGroupText>
@@ -134,20 +149,21 @@ export default function InitialSizing(props:Props) {
                 <FormInput
                   placeholder="Min Value"
                   size="sm"
-                  value={valueX[0] > 0 ? valueX[0] : ""}
-                  onChange={(e:any) => {
+                  value={valueX[0] > 0 ? valueX[0] : context[0]}
+                  onChange={(e: any) => {
                     e.preventDefault();
-                    let oldValue = valueX;
-                    // setValueX([parseInt(e.target.value), oldValue[1]]);
-                    // handleAxisRangeChange([parseInt(e.target.value), oldValue[1]]); 
-                    handleSlideX([parseInt(e.target.value), oldValue[1]])                 
+                    // let oldValue = context;
+                    let oldValueY = valueX[1] > 0 ? valueX[1] : context[1];
+
+                    setValueX([parseInt(e.target.value), oldValueY]);
+
+                    // handleSlideX([parseInt(e.target.value), oldValue[1]])
                   }}
                 />
-                
               </InputGroup>
             </Col>
 
-            <Col sm={6} xs={6}>
+            <Col sm={5} xs={5}>
               <InputGroup row={true} inline={true}>
                 <InputGroupAddon type="prepend">
                   <InputGroupText>Max Value</InputGroupText>
@@ -156,14 +172,21 @@ export default function InitialSizing(props:Props) {
                   size="sm"
                   className="col-xs-8"
                   placeholder="Max Value"
-                  value={valueX[1] > 0 ? valueX[1] : ""}
-                  onChange={(e:any) => {
+                  value={valueX[1] > 0 ? valueX[1] : context[1]}
+                  onChange={(e: any) => {
                     e.preventDefault();
-                    let oldValue = valueX;
-                    setValueX([oldValue[0], parseInt(e.target.value)]);
+                    let oldValueX = valueX[0] > 0 ? valueX[0] : context[0];
+
+                    setValueX([oldValueX, parseInt(e.target.value)]);
                   }}
                 />
               </InputGroup>
+            </Col>
+
+            <Col sm={2} xs={2}>
+              <Button block onClick={handleAxisValuesSubmit}>
+                Reset
+              </Button>
             </Col>
           </Row>
 
@@ -219,7 +242,10 @@ export default function InitialSizing(props:Props) {
                     type: "scatter",
                     mode: "markers",
                     marker: { color: "red", size: 10 },
-                    name: raymerIntersect !== undefined ? `Raymer MTOW (${Math.floor(raymerIntersect)} lbs)` : "",
+                    name:
+                      raymerIntersect !== undefined
+                        ? `Raymer MTOW (${Math.floor(raymerIntersect)} lbs)`
+                        : "",
                   },
                   {
                     x: gudmundsson_idx,
@@ -227,9 +253,12 @@ export default function InitialSizing(props:Props) {
                     type: "scatter",
                     mode: "markers",
                     marker: { color: "#2CA02C", size: 10 },
-                    name: gudmundssonIntersect !== undefined ? `Gudmundsson MTOW (${Math.floor(
-                      gudmundssonIntersect
-                    )} lbs)` : "",
+                    name:
+                      gudmundssonIntersect !== undefined
+                        ? `Gudmundsson MTOW (${Math.floor(
+                            gudmundssonIntersect
+                          )} lbs)`
+                        : "",
                   },
                   {
                     x: roskam_idx,
@@ -237,7 +266,10 @@ export default function InitialSizing(props:Props) {
                     type: "scatter",
                     mode: "markers",
                     marker: { color: "#D62728", size: 10 },
-                    name: roskamIntersect !== undefined ? `Roskam MTOW (${Math.floor(roskamIntersect)} lbs)` : "",
+                    name:
+                      roskamIntersect !== undefined
+                        ? `Roskam MTOW (${Math.floor(roskamIntersect)} lbs)`
+                        : "",
                   },
 
                   {
@@ -246,7 +278,10 @@ export default function InitialSizing(props:Props) {
                     type: "scatter",
                     mode: "markers",
                     marker: { color: "#A57FC8", size: 10 },
-                    name: sadraeyIntersect !== undefined ? `Sadraey MTOW (${Math.floor(sadraeyIntersect)} lbs)` : "",
+                    name:
+                      sadraeyIntersect !== undefined
+                        ? `Sadraey MTOW (${Math.floor(sadraeyIntersect)} lbs)`
+                        : "",
                   },
                 ]}
                 layout={{
@@ -273,9 +308,8 @@ export default function InitialSizing(props:Props) {
           </Row>
         </div>
       ) : (
-        ""
+        <p></p>
       )}
     </div>
   );
 }
-
