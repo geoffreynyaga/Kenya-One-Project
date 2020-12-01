@@ -1,5 +1,5 @@
 /*
- * File: c:\Projects\KENYA ONE PROJECT\Frontend-Electron\src\App.js
+ * File: c:\Projects\KENYA ONE PROJECT\Frontend-Electron\src\ProjectDetail.js
  * Project: c:\Projects\KENYA ONE PROJECT\Frontend-Electron
  * Created Date: Sunday, January 12th 2020, 3:43:06 pm
  * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
@@ -37,78 +37,82 @@ import { Container, Row, Col } from "shards-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "shards-ui/dist/css/shards.min.css";
 
-import { Switch, Route } from "react-router-dom";
+import { Switch, Route, useRouteMatch } from "react-router-dom";
+import AuthScreen from "../authentication/authScreen";
+import SrefAndPowerSizing from "./sref/SrefAndPowerSizing";
+import PerformanceConstraints from "./performanceConstraints/PerformanceConstraints";
+import DetailedWeights from "./detailedWeights/DetailedWeights";
+import VnDiagram from "./vn/VnDiagram";
+import WingAndAirfoil from "./wingAndAirfoil/WingAndAirfoil";
+import DragAnalysis from "./drag/DragAnalysis";
+import WingStructural from "./wingAndAirfoil/WingStructural";
+import RightNavSizing from "../navigation/RightNavSizing";
+import RightNavControlSurfaces from "../navigation/RightNavControlSurfaces";
+import RightNavPerformance from "../navigation/RightNavPerformance";
+import MTOWSizing from "./InitialSizing/MTOWSizing";
 
-import RightNavPerformance from "./navigation/RightNavPerformance";
-import RightNavSizing from "./navigation/RightNavSizing";
-import RightNavControlSurfaces from "./navigation/RightNavControlSurfaces";
-import SrefAndPowerSizing from "./containers/sref/SrefAndPowerSizing";
-import PerformanceConstraints from "./containers/performanceConstraints/PerformanceConstraints";
-import DetailedWeights from "./containers/detailedWeights/DetailedWeights";
-import VnDiagram from "./containers/vn/VnDiagram";
-import WingAndAirfoil from "./containers/wingAndAirfoil/WingAndAirfoil";
-import DragAnalysis from "./containers/drag/DragAnalysis";
-import WingStructural from "./containers/wingAndAirfoil/WingStructural";
-import MTOWSizing from "./containers/InitialSizing/MTOWSizing";
-import AuthScreen from "./authentication/authScreen";
-import ProjectDetail from "./containers/projectDetail";
+const ProjectDetail = () => {
+  let { path, url } = useRouteMatch();
 
-const App = () => {
-  const text = () => {
-    return(
-      <AuthScreen />
-    )
-  };
-  text.displayName = "text";
-
-  // {
-  //   path: "/",
-  //   exact: true,
-  //   main: () => text(),
-  // },
   const routes = [
     {
-      path: "/",
+      path: "/projects/project1/mtow",
+
       exact: true,
-      main: () => text(),
-    },
-    {
-      path: "/sref",
-      main: () => <SrefAndPowerSizing />,
-    },
-    {
-      path: "/performance-constraints",
-      main: () => <PerformanceConstraints />,
+      component: MTOWSizing,
     },
 
     {
-      path: "/detailed-weights",
-      main: () => <DetailedWeights />,
+      path: "/projects/project1/sref",
+
+      exact: true,
+      component: SrefAndPowerSizing,
+      // main: () => <SrefAndPowerSizing />,
     },
     {
-      path: "/vn-diagram",
-      main: () => <VnDiagram />,
+      path: "/projects/project1/performance-constraints",
+      exact: true,
+
+      component: PerformanceConstraints,
+    },
+
+    {
+      path: "/projects/project1/detailed-weights",
+      exact: true,
+
+      component: DetailedWeights,
     },
     {
-      path: "/wing-and-airfoil",
-      main: () => <WingAndAirfoil />,
+      path: "/projects/project1/vn-diagram",
+      exact: true,
+
+      component: VnDiagram,
     },
     {
-      path: "/drag-analysis",
-      main: () => <DragAnalysis />,
+      path: "/projects/project1/wing-and-airfoil",
+      exact: true,
+
+      component: WingAndAirfoil,
     },
     {
-      path: "/wing-structural",
-      main: () => <WingStructural />,
+      path: "/projects/project1/drag-analysis",
+      exact: true,
+
+      component: DragAnalysis,
     },
     {
-      path: "/project1",
-      main: () => <ProjectDetail />,
+      path: "/projects/project1/wing-structural",
+      exact: true,
+
+      component: WingStructural,
     },
   ];
 
   return (
     <Container fluid>
+      {/* <div>
+        <p>Project Detail</p>
+      </div> */}
       <Row>
         <Col sm="2" lg="2">
           <RightNavSizing />
@@ -124,7 +128,8 @@ const App = () => {
                 key={index}
                 path={route.path}
                 exact={route.exact}
-                children={<route.main />}
+                // children={<route.main />}
+                component={route.component}
               />
             ))}
           </Switch>
@@ -133,5 +138,5 @@ const App = () => {
     </Container>
   );
 };
-App.displayName = "App";
-export default App;
+ProjectDetail.displayName = "ProjectDetail";
+export default ProjectDetail;

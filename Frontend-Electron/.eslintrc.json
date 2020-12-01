@@ -7,7 +7,7 @@
   "extends": [
     "eslint:recommended",
     "plugin:react/recommended",
-    "eslint:recommended"
+    "airbnb-typescript"
   ],
   "globals": {
     "Atomics": "readonly",
