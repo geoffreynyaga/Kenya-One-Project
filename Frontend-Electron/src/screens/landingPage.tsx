@@ -2,6 +2,8 @@ import React from "react";
 import { Link, Switch, Route } from "react-router-dom";
 
 import ProjectDetail from "../../src/containers/projectDetail";
+import AccountsPage from "./accountsPage";
+import SettingsPage from "./settingsPage";
 
 function MyComp() {
   return (
@@ -75,6 +77,12 @@ function LandingPage() {
         <Switch>
           <Route exact path="/">
             <MyComp />
+          </Route>
+          <Route exact path="/settings">
+            <SettingsPage />
+          </Route>
+          <Route exact path="/account">
+            <AccountsPage />
           </Route>
           <Route exact path="/projects/create">
             <CreateProject />

@@ -34,16 +34,33 @@
 import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
-import App from "./App";
+
+import { SWRConfig } from "swr";
+
 import * as serviceWorker from "./serviceWorker";
 
 import { BrowserRouter as Router } from "react-router-dom";
 import AuthScreen from "./authentication/authScreen";
 
+import { createStore } from "redux";
+import { Provider } from "react-redux";
+import rootReducer from "../src/reducers";
+
+const store = createStore(rootReducer);
+
 ReactDOM.render(
-  <Router>
-    <AuthScreen />
-  </Router>,
+  <Provider store={store}>
+    <Router>
+      <SWRConfig
+        value={{
+          refreshInterval: 30000,
+          fetcher: (arg: any, ...args: any) => fetch(arg, ...args),
+        }}
+      >
+        <AuthScreen />
+      </SWRConfig>
+    </Router>
+  </Provider>,
   document.getElementById("root")
 );
 

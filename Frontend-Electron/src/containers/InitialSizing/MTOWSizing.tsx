@@ -36,56 +36,39 @@ import React, { useState, useEffect } from "react";
 import { Container, Row, Col } from "shards-react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "shards-ui/dist/css/shards.min.css";
+import { useSelector } from "react-redux";
 
-import { SliderValueContext } from "./SliderValueContext";
 import InitialSizing from "./InitialSizing";
 import InitialValues from "./InitialValues";
 
 import { ServerData } from "./types";
 
-export default function MTOWSizing(props) {
+export default function MTOWSizing() {
   const [data, setData] = useState<{} | null>({});
-  // const [axisRange, setAxisRange] = useState<number[]>([2000, 6000]);
-  const [context, setContext] = useState([3000, 6000]);
+  const sliderValueRedux = useSelector((state) => state.sliderValue);
 
   useEffect(() => {
-    console.log(data, "MTOWSizing: axis values have changed");
+    // console.log(data, "MTOWSizing: axis values have changed");
   }, [data]);
 
   const handleDataInChildren = (childData: ServerData) => {
-    console.log(childData, "step 4");
     setData(childData);
   };
 
-  const handleGottenAxisDataInChild = (incomingData: number[]) => {
-    console.log(
-      incomingData,
-      "incoming data from childdata in handleGottenAxisDataInChild"
-    );
-    // setAxisRange(incomingData);
-  };
-
-  // console.log(axisRange, "axisRange before render");
-
   return (
-    <SliderValueContext.Provider value={[context, setContext]}>
-      <Container>
-        {/* <p> Main Context: {context}</p> */}
-        <Row>
-          <Col sm="9" lg="9">
-            <InitialSizing
-              getAxisChangeData={handleGottenAxisDataInChild}
-              data={data ? data : {}}
-            />
-          </Col>
-          <Col sm="3" lg="3">
-            <InitialValues
-              axisRange={context}
-              getChildData={handleDataInChildren}
-            />
-          </Col>
-        </Row>
-      </Container>
-    </SliderValueContext.Provider>
+    <Container>
+      {/* <p> Main Context: {context}</p> */}
+      <Row>
+        <Col sm="9" lg="9">
+          <InitialSizing data={data ? data : {}} />
+        </Col>
+        <Col sm="3" lg="3">
+          <InitialValues
+            axisRange={sliderValueRedux}
+            getChildData={handleDataInChildren}
+          />
+        </Col>
+      </Row>
+    </Container>
   );
 }

@@ -32,7 +32,37 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
+// const fetchMTOWPlot = () => {
+//   fetch("http://localhost:8000/api/accounts/example/", {
+//     method: "POST", // or 'PUT'
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify({
+//       yAxisLimits: context,
+//       xAxisLimits: context,
+//       aircraft_type: aircraft_type,
+//       altitude: altitude,
+//       pax: pax,
+//       propellerEfficiency: propellerEfficiency,
+//       range: range,
+//       aspectRatio: aspectRatio,
+//       crew: crew,
+//     }),
+//   })
+//     .then((response) => response.json())
+//     .then((serverData) => {
+//       console.log(" step 2, data from server:", serverData);
+
+//       setIsLoading(false);
+//       handleLangChange(serverData);
+//     })
+//     .catch((error) => {
+//       console.log(error, "error in fetchMTOWPlot");
+//     });
+// };
 import React, { useState, useEffect, useContext } from "react";
+import useSWR, { mutate } from "swr";
 
 import {
   Card,
@@ -45,7 +75,8 @@ import {
   FormGroup,
   FormSelect,
 } from "shards-react";
-import { SliderValueContext } from "./SliderValueContext";
+
+import { useSelector } from "react-redux";
 
 import { ServerData } from "./types";
 
@@ -60,92 +91,98 @@ const InitialValues = (props) => {
   const [range, setRange] = useState<number>(1200);
   const [aspectRatio, setAspectRatio] = useState<number>(7.8);
   const [crew, setCrew] = useState<number>(2);
-  // const [data, setData] = useState(null);
+  const [data1, setData1] = useState<null | number[]>(null);
 
-  const [context, setContext] = useContext(SliderValueContext);
+  const sliderValueRedux: number[] = useSelector((state) => state.sliderValue);
+
+  var bodyValues = {
+    yAxisLimits: sliderValueRedux,
+    xAxisLimits: sliderValueRedux,
+    aircraft_type: aircraft_type,
+    altitude: altitude,
+    pax: pax,
+    propellerEfficiency: propellerEfficiency,
+    range: range,
+    aspectRatio: aspectRatio,
+    crew: crew,
+  };
+
+  console.log(bodyValues, "[[[[[[[[[[[[[");
+
+  const post = (url: string, x: {}) => {
+    console.log("in get", x);
+
+    var lookupOptions = {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        // Authorization: "Token " + token,
+      },
+      body: JSON.stringify(x),
+    };
+    return fetch(url, lookupOptions).then((response) => {
+      return response.json();
+    });
+  };
+
+  const loadGroupsTrending = (x = bodyValues) => {
+    const endPoint = "http://localhost:8000/api/accounts/example/";
+
+    console.log(sliderValueRedux, data1, x, "loadGroupsTrending");
+    return post(endPoint, x);
+  };
+
+  const { data, error } = useSWR("loadGroupsTrending", loadGroupsTrending);
 
   const handleLangChange = (serverData: ServerData) => {
-    console.log(serverData, "step 3, passing to parent");
-
+    // console.log(serverData, "step 3, passing to parent");
     props.getChildData(serverData);
   };
 
-  console.log(
-    props.axisRange,
-    "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$Should be new axis change"
-  );
+  if (data !== undefined) {
+    handleLangChange(data);
+  }
 
-  const fetchMTOWPlot = () => {
-    // console.log(
-    //   {
-    //     yAxisLimits: context,
-    //     xAxisLimits: context,
-    //     aircraft_type: aircraft_type,
-    //     altitude: altitude,
-    //     pax: pax,
-    //     propellerEfficiency: propellerEfficiency,
-    //     range: range,
-    //     aspectRatio: aspectRatio,
-    //     crew: crew,
-    //   },
-    //   "state to be sent",
+  // useEffect(() => {
+  //   console.log(
+  //     " UseEffect: InitialValues ----------",
+  //     props.axisRange,
+  //     "InitialValues: axis values have changed ----"
+  //   );
 
-    //   context,
-    //   "context to replace"
-    // );
+  //   // setIsLoading(true);
+  //   // fetchMTOWPlot();
 
-    fetch("http://localhost:8000/api/accounts/example/", {
-      method: "POST", // or 'PUT'
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        yAxisLimits: context,
-        xAxisLimits: context,
-        aircraft_type: aircraft_type,
-        altitude: altitude,
-        pax: pax,
-        propellerEfficiency: propellerEfficiency,
-        range: range,
-        aspectRatio: aspectRatio,
-        crew: crew,
-      }),
-    })
-      .then((response) => response.json())
-      .then((serverData) => {
-        console.log(" step 2, data from server:", serverData);
-
-        // setData(serverData);
-        setIsLoading(false);
-        handleLangChange(serverData);
-      })
-      .catch((error) => {
-        console.log(error, "error in fetchMTOWPlot");
-      });
-  };
+  // }, [props.axisRange]);
 
   useEffect(() => {
-    console.log(
-      "----------------",
-      props.axisRange,
-      "InitialValues: axis values have changed ----"
-    );
+    console.log(data1, sliderValueRedux, "-useEffect 2");
 
-    // setYAxisLimits(props.axisRange);
-    // setXAxisLimits(props.axisRange);
+    // console.log("mutating....");
+    if (sliderValueRedux !== data1) {
+      setData1(sliderValueRedux);
+      mutate("loadGroupsTrending");
+    }
 
-    setIsLoading(true);
-    fetchMTOWPlot();
+    console.log(data1, "- + - useEffect for mutate");
+  }, [sliderValueRedux]);
 
-    // return () => {
-    //   // cleanup
-    // };
-  }, [props.axisRange]);
+  if (error) return <div>failed to load: {JSON.stringify(error)}</div>;
+  if (!data) return <div>loading...</div>;
 
-  console.log("----InitialValues Render Method ---------");
-  // console.log(state, "state");
+  if (sliderValueRedux !== data1) {
+    console.log(sliderValueRedux, "y2y2y2y2y2y2y2y2y2y2y2yyyyyyyy");
+
+    setData1(sliderValueRedux);
+  }
+
   return (
     <Card>
+      {/* <p>{data !== undefined ? JSON.stringify(data) : "undefined"}</p> */}
+      <p>data1: {data1}</p>
+      <p>sliderValueRedux: {sliderValueRedux}</p>
+
       <CardHeader>
         <CardTitle>Initial Estimates</CardTitle>
       </CardHeader>
@@ -157,7 +194,7 @@ const InitialValues = (props) => {
           <FormSelect
             onChange={(e: any) => {
               setAircraftType(e.target.value);
-              setIsLoading(false);
+              // setIsLoading(false);
             }}
           >
             <option value="SailPlane_Unpowered">SailPlane (Unpowered)</option>
@@ -267,18 +304,16 @@ const InitialValues = (props) => {
         </Form>
 
         {/* <Button>SUBMIT</Button> */}
-        {!isLoading ? (
-          <Button
-            onClick={() => {
-              setIsLoading(true);
-              fetchMTOWPlot();
-            }}
-          >
-            SUBMIT
-          </Button>
-        ) : (
-          ""
-        )}
+
+        <Button
+          onClick={() => {
+            // setIsLoading(true);
+            // fetchMTOWPlot();
+            mutate("loadGroupsTrending");
+          }}
+        >
+          SUBMIT
+        </Button>
       </CardBody>
     </Card>
   );

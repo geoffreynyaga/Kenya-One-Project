@@ -32,7 +32,7 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   Slider,
   FormInput,
@@ -45,14 +45,15 @@ import {
   Button,
 } from "shards-react";
 
+import { useSelector, useDispatch } from "react-redux";
+import allActions from "../../actions";
+
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
-import { SliderValueContext } from "./SliderValueContext";
 const Plot = createPlotlyComponent(Plotly);
 
 interface Props {
-  getAxisChangeData: ([]) => void;
   data: {
     wtoGuess?: number;
     wtoYaxisRaymer?: number;
@@ -74,43 +75,36 @@ interface Props {
 export default function InitialSizing(props: Props) {
   console.log(props, "initial sizing props");
 
-  // const sliderValue = useContext(SliderValueContext);
-  // console.log(sliderValue, "sliderValue not in return");
-  const [context, setContext] = useContext(SliderValueContext);
+  const counter = useSelector((state) => state.counter);
+  const sliderValueRedux = useSelector((state) => state.sliderValue);
+  const currentUser = useSelector((state) => state.currentUser);
 
-  // const [data, setData] = useState(null);
+  const dispatch = useDispatch();
+
+  const user = { name: "Rei" };
+
   const [isLoading, setLoading] = useState<boolean>(false);
   const [valueX, setValueX] = useState<number[]>([]);
 
-  // const handleAxisRangeChange = (axisData:number[]) => {
-  //   console.log(
-  //     axisData,
-  //     "handleAxisRangeChange have been called and will pass the above data"
-  //   );
-  //   props.getAxisChangeData(axisData);
-  // };
+  useEffect(() => {
+    dispatch(allActions.userActions.setUser(user));
+  }, []);
 
   const handleSlideX = (e: any) => {
-    // e.preventDefault();
     setValueX([parseFloat(e[0]), parseFloat(e[1])]);
-    // setContext([parseFloat(e[0]), parseFloat(e[1])]);
-
-    // handleAxisRangeChange([parseFloat(e[0]), parseFloat(e[1])]);
   };
 
   const handleAxisValuesSubmit = () => {
     console.log("submit called");
-    console.log([valueX[0], valueX[1]], "[valueX[0], valueX[1]]");
-    // handleAxisRangeChange([valueX[0], valueX[1]]);
-    props.getAxisChangeData([valueX[0], valueX[1]]);
-
-    setContext(valueX);
+    // console.log([valueX[0], valueX[1]], "[valueX[0], valueX[1]]");
+    dispatch(allActions.sliderValueAction.setSliderValueAction(valueX));
   };
 
-  console.log("+++++++++ InitialSizing +++++++++++");
+  // console.log("+++++++++ InitialSizing +++++++++++");
 
   const { wtoGuess } = props.data;
   const { wtoYaxisRaymer } = props.data;
+
   const { wtoYaxisGud } = props.data;
   const { wtoYaxisRoskam } = props.data;
   const { wtoYaxisSadraey } = props.data;
@@ -127,8 +121,45 @@ export default function InitialSizing(props: Props) {
 
   return (
     <div>
-      {/* <h3>Initial Sizing Context: {context}</h3>
-      <h3>Initial Sizing state: {valueX}</h3> */}
+      {/* <h3>Initial Sizing state: {valueX}</h3> */}
+      <div>
+        <p>sliderValueRedux:{sliderValueRedux}</p>
+        <>
+          <button
+            onClick={() =>
+              dispatch(
+                allActions.sliderValueAction.setSliderValueAction(valueX)
+              )
+            }
+          >
+            update slider Redux
+          </button>
+        </>
+        {currentUser.loggedIn ? (
+          <>
+            <h1>Hello, {currentUser.user.name}</h1>
+            <button onClick={() => dispatch(allActions.userActions.logOut())}>
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <h1>Login</h1>
+            <button
+              onClick={() => dispatch(allActions.userActions.setUser(user))}
+            >
+              Login as Rei
+            </button>
+          </>
+        )}
+        <h1>Counter: {counter}</h1>
+        <button onClick={() => dispatch(allActions.counterActions.increment())}>
+          Increase Counter
+        </button>
+        <button onClick={() => dispatch(allActions.counterActions.decrement())}>
+          Decrease Counter
+        </button>
+      </div>
 
       {isLoading ? <p>Calculating....</p> : <p></p>}
       {props.data !== null && !props.isLoading ? (
@@ -137,7 +168,7 @@ export default function InitialSizing(props: Props) {
             connect
             pips={{ mode: "steps", stepped: true, density: 3 }}
             onSlide={handleSlideX}
-            start={valueX[0] > 0 ? valueX : context}
+            start={valueX[0] > 0 ? valueX : sliderValueRedux}
             range={{ min: 10, max: 15000 }}
           />
           <Row>
@@ -149,15 +180,13 @@ export default function InitialSizing(props: Props) {
                 <FormInput
                   placeholder="Min Value"
                   size="sm"
-                  value={valueX[0] > 0 ? valueX[0] : context[0]}
+                  value={valueX[0] > 0 ? valueX[0] : sliderValueRedux[0]}
                   onChange={(e: any) => {
                     e.preventDefault();
-                    // let oldValue = context;
-                    let oldValueY = valueX[1] > 0 ? valueX[1] : context[1];
+                    let oldValueY =
+                      valueX[1] > 0 ? valueX[1] : sliderValueRedux[1];
 
                     setValueX([parseInt(e.target.value), oldValueY]);
-
-                    // handleSlideX([parseInt(e.target.value), oldValue[1]])
                   }}
                 />
               </InputGroup>
@@ -172,10 +201,11 @@ export default function InitialSizing(props: Props) {
                   size="sm"
                   className="col-xs-8"
                   placeholder="Max Value"
-                  value={valueX[1] > 0 ? valueX[1] : context[1]}
+                  value={valueX[1] > 0 ? valueX[1] : sliderValueRedux[1]}
                   onChange={(e: any) => {
                     e.preventDefault();
-                    let oldValueX = valueX[0] > 0 ? valueX[0] : context[0];
+                    let oldValueX =
+                      valueX[0] > 0 ? valueX[0] : sliderValueRedux[0];
 
                     setValueX([oldValueX, parseInt(e.target.value)]);
                   }}
