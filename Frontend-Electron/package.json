@@ -48,7 +48,7 @@
     "@types/react-router-dom": "^5.1.6",
     "@typescript-eslint/eslint-plugin": "^4.4.1",
     "concurrently": "^5.0.2",
-    "electron": "^7.1.8",
+    "electron": "^9.4.0",
     "electron-builder": "^21.2.0",
     "eslint": "^6.8.0",
     "eslint-config-airbnb-typescript": "^12.0.0",
