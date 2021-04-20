@@ -40,7 +40,7 @@ pathspec==0.7.0
 Pillow==7.0.0
 pluggy==0.13.1
 psycopg2-binary==2.8.4
-py==1.8.1
+py==1.10.0
 pyparsing==2.4.6
 pytest==5.3.2
 pytest-black==0.3.7
