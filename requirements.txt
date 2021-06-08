@@ -37,7 +37,7 @@ numpy==1.18.1
 packaging==20.0
 pandas==0.25.3
 pathspec==0.7.0
-Pillow==7.0.0
+Pillow==8.2.0
 pluggy==0.13.1
 psycopg2-binary==2.8.4
 py==1.8.1
