@@ -587,8 +587,7 @@ export default function CostAnalysis() {
       <div className="mx-auto max-w-[1540px]">
         <header className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-rule pb-4">
           <div>
-            <div className="font-mono text-label font-medium tracking-label text-ink-faint">SHEET 09 / COST ANALYSIS</div>
-            <h1 className="mt-2 text-sheet">Aircraft cost analysis — DAPCA IV</h1>
+            <h1 className="text-sheet">Aircraft cost analysis — DAPCA IV</h1>
           </div>
           <div className="max-w-[430px] text-right text-note leading-5 text-ink-muted">Workbook-parity estimates for development, production, break-even, annual operations, and financing.</div>
         </header>
