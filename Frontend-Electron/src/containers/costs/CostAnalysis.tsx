@@ -549,7 +549,7 @@ function CostResults({
 
         <ResultTable label="Development and production cost breakdown" rows={developmentRows} />
 
-        <details className="mt-3 border border-rule bg-panel">
+        <details className="mt-3 border border-rule bg-panel" open>
           <summary className="cursor-pointer px-[14px] py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
             COMMERCIAL LABOUR BASIS
           </summary>

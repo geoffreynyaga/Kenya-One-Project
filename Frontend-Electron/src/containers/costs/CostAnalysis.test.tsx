@@ -98,6 +98,9 @@ test("renders backend results and blocks incomplete inputs", async () => {
   expect(
     screen.getByRole("table", { name: "Commercial labour basis" })
   ).toHaveTextContent("Manufacturing");
+  expect(screen.getByText("COMMERCIAL LABOUR BASIS").closest("details")).toHaveAttribute(
+    "open"
+  );
   expect(screen.getByLabelText(/Engineering labour/)).toHaveValue(0);
   expect(screen.getByLabelText(/Manufacturer liability insurance/)).toHaveValue(
     300000
