@@ -68,6 +68,13 @@ def _validate(inputs: CostInputs) -> None:
         ("tooling_rate", development.tooling_rate),
         ("manufacturing_rate", development.manufacturing_rate),
         ("liability_insurance", development.liability_insurance),
+        (
+            "fixed_gear_discount_per_aircraft",
+            development.fixed_gear_discount_per_aircraft,
+        ),
+        ("engine_cost_factor", development.engine_cost_factor),
+        ("propeller_cost_factor", development.propeller_cost_factor),
+        ("avionics_cost_per_aircraft", development.avionics_cost_per_aircraft),
         ("engine_count", aircraft.engine_count),
         ("engine_power_hp", aircraft.engine_power_hp),
         ("pilot_count", aircraft.pilot_count),

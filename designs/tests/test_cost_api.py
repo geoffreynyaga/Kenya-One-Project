@@ -39,6 +39,28 @@ def test_cost_analysis_accepts_nested_assumption_overrides():
     }
 
 
+def test_cost_analysis_includes_paid_labour_when_rates_are_supplied():
+    response = APIClient().post(
+        "/api/designs/cost-analysis/",
+        {
+            "development": {
+                "engineering_rate": 85,
+                "tooling_rate": 70,
+                "manufacturing_rate": 50,
+            },
+            "operating": {"crew_rate": 65},
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    breakdown = response.data["data"]["development"]["breakdown"]
+    assert breakdown["engineering"] > 0
+    assert breakdown["tooling"] > 0
+    assert breakdown["manufacturing_labor"] > 0
+    assert response.data["data"]["operating"]["crew"] > 0
+
+
 def test_cost_analysis_returns_field_validation_errors():
     response = APIClient().post(
         "/api/designs/cost-analysis/",

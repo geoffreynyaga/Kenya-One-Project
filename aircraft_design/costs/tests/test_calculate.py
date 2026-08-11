@@ -5,6 +5,7 @@ from unittest import TestCase
 from aircraft_design.costs import (
     CostCalculationError,
     CostInputs,
+    DevelopmentAssumptions,
     FinancingAssumptions,
     OperatingAssumptions,
     calculate_costs,
@@ -76,6 +77,37 @@ class CalculateCostsParityTests(TestCase):
 
         self.assertEqual(result.financing.monthly_payment, 2_000)
         self.assertEqual(result.financing.annual_payment, 24_000)
+
+    def test_commercial_labour_rates_flow_into_every_labour_cost(self):
+        inputs = replace(
+            CostInputs(),
+            development=DevelopmentAssumptions(
+                engineering_rate=85,
+                tooling_rate=70,
+                manufacturing_rate=50,
+            ),
+            operating=OperatingAssumptions(crew_rate=65),
+        )
+
+        result = calculate_costs(inputs)
+        development = result.development
+
+        assert_close(
+            self,
+            development.breakdown.engineering,
+            2.0969 * development.engineering_hours * 85,
+        )
+        assert_close(
+            self,
+            development.breakdown.tooling,
+            2.0969 * development.tooling_hours * 70,
+        )
+        assert_close(
+            self,
+            development.breakdown.manufacturing_labor,
+            2.0969 * development.manufacturing_hours * 50,
+        )
+        assert_close(self, result.operating.crew, 65 * 2 * 1040)
 
     def test_unprofitable_selling_price_is_reported_as_infeasible(self):
         inputs = replace(CostInputs(), selling_prices=(500_000,))
