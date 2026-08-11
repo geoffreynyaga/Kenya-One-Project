@@ -33,13 +33,11 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Container, Row, Col } from "shards-react";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "shards-ui/dist/css/shards.min.css";
 
 import { SliderValueContext } from "./SliderValueContext";
 import InitialSizing from "./InitialSizing";
 import InitialValues from "./InitialValues";
+import VariantsRail from "./VariantsRail";
 
 import { ServerData } from "./types";
 
@@ -57,35 +55,19 @@ export default function MTOWSizing(props) {
     setData(childData);
   };
 
-  const handleGottenAxisDataInChild = (incomingData: number[]) => {
-    console.log(
-      incomingData,
-      "incoming data from childdata in handleGottenAxisDataInChild"
-    );
-    // setAxisRange(incomingData);
-  };
-
-  // console.log(axisRange, "axisRange before render");
-
   return (
     <SliderValueContext.Provider value={[context, setContext]}>
-      <Container>
-        {/* <p> Main Context: {context}</p> */}
-        <Row>
-          <Col sm="9" lg="9">
-            <InitialSizing
-              getAxisChangeData={handleGottenAxisDataInChild}
-              data={data ? data : {}}
-            />
-          </Col>
-          <Col sm="3" lg="3">
-            <InitialValues
-              axisRange={context}
-              getChildData={handleDataInChildren}
-            />
-          </Col>
-        </Row>
-      </Container>
+      {/* Sheet: input band across the top, one figure, variants rail. */}
+      <div className="flex min-h-0 flex-1 flex-col bg-paper bg-draft bg-grid-32 font-sans text-value text-ink">
+        <InitialValues
+          axisRange={context}
+          getChildData={handleDataInChildren}
+        />
+        <div className="grid min-h-0 flex-1 grid-cols-[1fr_300px]">
+          <InitialSizing data={data ? data : {}} />
+          <VariantsRail data={data ? data : {}} />
+        </div>
+      </div>
     </SliderValueContext.Provider>
   );
 }

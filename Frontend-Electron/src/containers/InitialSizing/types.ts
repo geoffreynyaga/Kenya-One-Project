@@ -1,13 +1,30 @@
- export interface ServerData{
-    Status: string;
-    sadraeyIntersect: (1)[];
-    wtoGuess: (4000) []; 
-    wtoYaxisRaymer: (4000) [];
-     wtoYaxisGud: (4000) []; 
-     wtoYaxisRoskam: (4000) [];
-      wtoYaxisSadraey: (4000) []; 
-      raymerIntersect: (1) []; 
-      gudmundssonIntersect: (1) []; 
-      roskamIntersect: (1) []; 
-     
- }
+export interface SizingWarning {
+  code: string;
+  field: string;
+  message: string;
+  requestedAxisLimits: number[];
+  suggestedAxisLimits: number[];
+}
+
+export interface ServerData {
+  Status: "Success" | "Error";
+  code?: string;
+  message?: string;
+  errors?: Record<string, string[]>;
+  warnings?: SizingWarning[];
+  finalMTOW?: number;
+  suggestedAxisLimits?: number[];
+  wtoGuess?: number[];
+  wtoYaxisRaymer?: number[];
+  wtoYaxisGud?: number[];
+  wtoYaxisRoskam?: number[];
+  wtoYaxisSadraey?: number[];
+  raymerIntersect?: number[];
+  gudmundssonIntersect?: number[];
+  roskamIntersect?: number[];
+  sadraeyIntersect?: number[];
+  raymer_idx?: number[];
+  gudmundsson_idx?: number[];
+  roskam_idx?: number[];
+  sadraey_idx?: number[];
+}

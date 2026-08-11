@@ -34,9 +34,144 @@
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
 
-from django.test import TestCase # type: ignore
-import pytest # type: ignore
+import numpy as np  # type: ignore
+from rest_framework.test import APIClient  # type: ignore
 
 
 def test_a_plus_b():
     assert 1 + 1 == 2
+
+
+def test_mtow_solve_is_independent_of_requested_plot_range():
+    response = APIClient().post(
+        "/api/accounts/example/",
+        {
+            "yAxisLimits": [3000, 6000],
+            "xAxisLimits": [3000, 6000],
+            "aircraft_type": "GA_Single",
+            "altitude": 10000,
+            "pax": 3,
+            "propellerEfficiency": 0.78,
+            "range": 1200,
+            "aspectRatio": 7.8,
+            "crew": 1,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 200
+    assert response.data["Status"] == "Success"
+
+    method_results = [
+        response.data["raymerIntersect"][0],
+        response.data["gudmundssonIntersect"][0],
+        response.data["roskamIntersect"][0],
+        response.data["sadraeyIntersect"][0],
+    ]
+    assert all(np.isfinite(result) for result in method_results)
+    assert all(2700 < result < 3000 for result in method_results)
+    assert 2800 < response.data["finalMTOW"] < 2900
+
+    assert response.data["suggestedAxisLimits"] == [2000, 4000]
+    assert len(response.data["wtoGuess"]) == 401
+    assert response.data["wtoGuess"][0] == 2000
+    assert response.data["wtoGuess"][-1] == 4000
+
+    assert response.data["warnings"] == [
+        {
+            "code": "MTOW_OUTSIDE_REQUESTED_RANGE",
+            "field": "xAxisLimits",
+            "message": (
+                "Calculated MTOW is below the requested 3,000 lbf minimum. "
+                "The suggested sweep is 2,000–4,000 lbf."
+            ),
+            "requestedAxisLimits": [3000, 6000],
+            "suggestedAxisLimits": [2000, 4000],
+        }
+    ]
+
+
+def test_mtow_api_returns_actionable_field_validation_errors():
+    response = APIClient().post(
+        "/api/accounts/example/",
+        {
+            "yAxisLimits": [2000, 4000],
+            "xAxisLimits": [4000, 2000],
+            "aircraft_type": "GA_Single",
+            "altitude": -1,
+            "pax": -1,
+            "propellerEfficiency": 1.2,
+            "range": 0,
+            "aspectRatio": 0,
+            "crew": 0,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.data == {
+        "Status": "Error",
+        "message": "Check the highlighted sizing inputs and try again.",
+        "errors": {
+            "xAxisLimits": ["Minimum sweep weight must be less than maximum."],
+            "altitude": ["Altitude cannot be negative."],
+            "pax": ["Passenger count cannot be negative."],
+            "propellerEfficiency": [
+                "Propeller efficiency must be greater than 0 and no more than 1."
+            ],
+            "range": ["Design range must be greater than 0 km."],
+            "aspectRatio": ["Aspect ratio must be greater than 0."],
+            "crew": ["At least one crew member is required."],
+        },
+    }
+
+
+def test_mtow_api_explains_when_inputs_have_no_physical_solution():
+    response = APIClient().post(
+        "/api/accounts/example/",
+        {
+            "yAxisLimits": [2000, 4000],
+            "xAxisLimits": [2000, 4000],
+            "aircraft_type": "GA_Single",
+            "altitude": 10000,
+            "pax": 3,
+            "propellerEfficiency": 0.5,
+            "range": 1_000_000,
+            "aspectRatio": 7.8,
+            "crew": 1,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 422
+    assert response.data == {
+        "Status": "Error",
+        "code": "NO_PHYSICAL_MTOW_SOLUTION",
+        "message": (
+            "No physical MTOW solution was found for these inputs. Reduce the "
+            "design range or review the propeller efficiency and payload."
+        ),
+    }
+
+
+def test_mtow_api_rejects_unknown_aircraft_types():
+    response = APIClient().post(
+        "/api/accounts/example/",
+        {
+            "yAxisLimits": [2000, 4000],
+            "xAxisLimits": [2000, 4000],
+            "aircraft_type": "Unknown",
+            "altitude": 10000,
+            "pax": 3,
+            "propellerEfficiency": 0.78,
+            "range": 1200,
+            "aspectRatio": 7.8,
+            "crew": 1,
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.data["errors"] == {
+        "aircraft_type": ["Select a supported aircraft category."]
+    }

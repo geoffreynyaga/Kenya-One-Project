@@ -17,17 +17,17 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
 import {
-  Row,
+  Badge,
+  Card,
+  CardTitle,
   Col,
+  Container,
+  FormInput,
   InputGroup,
   InputGroupAddon,
   InputGroupText,
-  FormInput,
-  Container,
-  Card,
-  CardTitle,
-  Badge,
-} from "shards-react";
+  Row,
+} from "../../components/shards";
 
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";

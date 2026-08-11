@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import LandingPage from "../screens/landingPage";
-import MainNavbar from "../screens/navbar";
+import GlobalBar from "../navigation/GlobalBar";
 import Login from "./login";
 
 function AuthScreen() {
@@ -23,8 +23,8 @@ function AuthScreen() {
     });
   }, [token]);
   return (
-    <div>
-      <MainNavbar />
+    <div className="flex min-h-screen flex-col">
+      <GlobalBar />
       {isAuthenticated ? <Login /> : <LandingPage />}
     </div>
   );

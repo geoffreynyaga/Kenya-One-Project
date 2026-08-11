@@ -15,7 +15,7 @@
 
 import React from "react";
 import PropTypes from "prop-types";
-import { Card, CardTitle } from "shards-react";
+import { Card, CardTitle } from "../../components/shards";
 
 function InputCard(props) {
   return (

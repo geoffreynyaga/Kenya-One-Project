@@ -34,7 +34,7 @@
 
 import React from "react";
 
-import { Nav, NavItem, NavLink } from "shards-react";
+import { Nav, NavItem, NavLink } from "../components/shards";
 
 export default function RightNavPerformance() {
   return (

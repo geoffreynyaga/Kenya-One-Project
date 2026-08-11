@@ -32,19 +32,25 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 import React from "react";
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import "./index.css";
-import App from "./App";
 import * as serviceWorker from "./serviceWorker";
 
 import { BrowserRouter as Router } from "react-router-dom";
 import AuthScreen from "./authentication/authScreen";
 
-ReactDOM.render(
+const rootElement = document.getElementById("root");
+
+if (!rootElement) {
+  throw new Error("Root element not found");
+}
+
+const root = createRoot(rootElement);
+
+root.render(
   <Router>
     <AuthScreen />
-  </Router>,
-  document.getElementById("root")
+  </Router>
 );
 
 // If you want your app to work offline and load faster, you can change

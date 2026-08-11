@@ -34,7 +34,7 @@
 
 import React from "react";
 
-import { Nav, NavItem, NavLink } from "shards-react";
+import { Nav, NavItem, NavLink } from "../components/shards";
 import { useRouteMatch, Link } from "react-router-dom";
 
 export default function RightNavSizing() {

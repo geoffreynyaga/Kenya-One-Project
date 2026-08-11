@@ -33,9 +33,7 @@
  */
 
 import React from "react";
-import { Container, Row, Col } from "shards-react";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "shards-ui/dist/css/shards.min.css";
+import { Col, Container, Row } from "./components/shards";
 
 import { Switch, Route } from "react-router-dom";
 

@@ -46,6 +46,10 @@ from matplotlib import pylab as plt  # type: ignore
 matplotlib.use("Agg")
 
 
+PLOT_SAMPLE_COUNT = 401
+MAX_MTOW_LBF = 10_000_000
+
+
 """
     By default matplotlib uses TK gui toolkit, when you're rendering an image without using
     the toolkit (i.e. into a file or a string), matplotlib still instantiates a window that
@@ -85,6 +89,121 @@ def sample_return() -> dict:
     return {"a": 1, "b": 2, "image": image_base64}
 
 
+def _estimated_mtow(
+    weight: float,
+    useful_load: float,
+    empty_weight_a: float,
+    empty_weight_exponent: float,
+    fuel_fraction: float,
+) -> float:
+    denominator = 1 - fuel_fraction - empty_weight_a * (weight**empty_weight_exponent)
+    if denominator <= 0:
+        return math.inf
+    return useful_load / denominator
+
+
+def _solve_mtow(
+    useful_load: float,
+    empty_weight_a: float,
+    empty_weight_exponent: float,
+    fuel_fraction: float,
+) -> float:
+    """Solve W = estimated W using an adaptive bracket and bisection."""
+    if not 0 < fuel_fraction < 1:
+        raise ValueError("Fuel fraction leaves no weight available for the aircraft.")
+
+    singularity = ((1 - fuel_fraction) / empty_weight_a) ** (1 / empty_weight_exponent)
+    lower = max(useful_load, singularity) * (1 + 1e-9)
+
+    def residual(weight: float) -> float:
+        return (
+            _estimated_mtow(
+                weight,
+                useful_load,
+                empty_weight_a,
+                empty_weight_exponent,
+                fuel_fraction,
+            )
+            - weight
+        )
+
+    upper = max(1000.0, lower * 2)
+    while residual(upper) > 0 and upper < MAX_MTOW_LBF:
+        upper *= 2
+
+    if upper >= MAX_MTOW_LBF and residual(upper) > 0:
+        raise ValueError("No physical MTOW solution was found within the safety limit.")
+
+    for _ in range(80):
+        midpoint = (lower + upper) / 2
+        if residual(midpoint) > 0:
+            lower = midpoint
+        else:
+            upper = midpoint
+
+    return (lower + upper) / 2
+
+
+def _nice_plot_limits(mtow_values: list[float]) -> list[int]:
+    raw_minimum = min(mtow_values) * 0.75
+    raw_maximum = max(mtow_values) * 1.25
+    rough_step = (raw_maximum - raw_minimum) / 6
+    magnitude = 10 ** math.floor(math.log10(rough_step))
+    normalized_step = rough_step / magnitude
+
+    if normalized_step <= 1:
+        multiplier = 1
+    elif normalized_step <= 2:
+        multiplier = 2
+    elif normalized_step <= 5:
+        multiplier = 5
+    else:
+        multiplier = 10
+
+    step = int(multiplier * magnitude)
+    minimum = max(step, math.floor(raw_minimum / step) * step)
+    maximum = math.ceil(raw_maximum / step) * step
+    return [minimum, maximum]
+
+
+def _range_warning(
+    requested_limits: list[float],
+    suggested_limits: list[int],
+    mtow_values: list[float],
+) -> list[dict]:
+    if len(requested_limits) != 2:
+        return []
+
+    requested_minimum, requested_maximum = requested_limits
+    calculated_minimum = min(mtow_values)
+    calculated_maximum = max(mtow_values)
+
+    if calculated_minimum < requested_minimum:
+        position = "below"
+        boundary = requested_minimum
+        boundary_name = "minimum"
+    elif calculated_maximum > requested_maximum:
+        position = "above"
+        boundary = requested_maximum
+        boundary_name = "maximum"
+    else:
+        return []
+
+    return [
+        {
+            "code": "MTOW_OUTSIDE_REQUESTED_RANGE",
+            "field": "xAxisLimits",
+            "message": (
+                f"Calculated MTOW is {position} the requested "
+                f"{boundary:,.0f} lbf {boundary_name}. The suggested sweep is "
+                f"{suggested_limits[0]:,.0f}–{suggested_limits[1]:,.0f} lbf."
+            ),
+            "requestedAxisLimits": requested_limits,
+            "suggestedAxisLimits": suggested_limits,
+        }
+    ]
+
+
 def MTOW_estimate(
     aircraft_type,
     pax,
@@ -100,32 +219,10 @@ def MTOW_estimate(
     propEff,
     xAxisLimits,
 ) -> dict:
-
-    print(xAxisLimits, "xAxisLimits in sizing function")
-
-    if len(xAxisLimits) != 0:
-        print("ITS NOT EMPTY")
-        wtoGuess = np.arange(xAxisLimits[0], xAxisLimits[1])
-    else:
-        print("ITS   EMPTY")
-        wtoGuess = np.arange(2000, 6500)  # TODO: Make this dynamic
-
-    # Gudmundsson
-    # weWtoGud = 0.4074 + 0.0253 * np.log(wtoGuess)
-    # print(weWtoGud)
-    # use this when using Gudmundsson sizing and constants
-
-    ## also in input  main file, decide what to import and from which file
-    # pax = 4
-    # paxWeight = 180
-    # crew = 2
-    # crewWeight = 200
-    # payloadPax = 50
-
-    ## also in input  main file, decide what to import and from which file
     paxTotal = pax * paxWeight
     payload = (payloadPax * pax) + paxTotal
     crewTotal = crew * crewWeight
+    useful_load = payload + crewTotal
 
     ## also in input  main file, decide what to import and from which file
     # Range = 1200
@@ -139,9 +236,6 @@ def MTOW_estimate(
     w3w2: float = 0.97
     w5w4: float = 0.99
     w6w5: float = 0.997
-    w6w1: float = w2w1 * w3w2 * w4w3 * w5w4 * w6w5
-
-    wfWto = ((100 + fuelAllowance) / 100) * (1 - w6w1)
 
     wfWtoRoskam = (1 + (fuelAllowance / 100)) * (
         1 - w4w3 * 0.992 * 0.992 * 0.996 * 0.99 * 0.992 * 0.992
@@ -150,105 +244,52 @@ def MTOW_estimate(
     wfWtoGud = (1 + (fuelAllowance / 100)) * (1 - w4w3 * 0.994 * 0.985 * 0.996 * 0.995)
     wfWtoSadraey = (1 + (fuelAllowance / 100)) * (1 - w2w1 * w3w2 * w4w3 * w5w4 * w6w5)
 
-    print(wfWto, "wfWto")
-
-    # from CORE.engines.prerequisitesEngine import
-
     from CORE.engines.prerequisitesEngine import get_empty_weight_constants
 
     empty_weight_constants = get_empty_weight_constants(aircraft_type)
-
-    print(empty_weight_constants, "empty weight constants")
-
     a: float = empty_weight_constants["a"]
     b: float = empty_weight_constants["c"]
 
-    # Raymer
-    weWto = a * (wtoGuess ** b)
+    raymer_mtow = _solve_mtow(useful_load, a, b, wfWtoRaymer)
+    gudmundsson_mtow = _solve_mtow(useful_load, a, b, wfWtoGud)
+    roskam_mtow = _solve_mtow(useful_load, a, b, wfWtoRoskam)
+    sadraey_mtow = _solve_mtow(useful_load, a, b, wfWtoSadraey)
+    mtow_values = [raymer_mtow, gudmundsson_mtow, roskam_mtow, sadraey_mtow]
+
+    suggested_axis_limits = _nice_plot_limits(mtow_values)
+    wtoGuess = np.linspace(
+        suggested_axis_limits[0],
+        suggested_axis_limits[1],
+        PLOT_SAMPLE_COUNT,
+    )
+
+    weWto = a * (wtoGuess**b)
     wtoYaxisRaymer = (payload + crewTotal) / (1 - wfWtoRaymer - weWto)
-    # print(wtoYaxisRaymer, "wtoYaxisRaymer is this ")
-    # Roskam
     wtoYaxisRoskam = (payload + crewTotal) / (1 - wfWtoRoskam - weWto)
-
-    # Sadraey
     wtoYaxisSadraey = (payload + crewTotal) / (1 - wfWtoSadraey - weWto)
-
-    # Gudmundsson
     wtoYaxisGud = (payload + crewTotal) / (1 - wfWtoGud - weWto)
 
-    # fig = plt.figure()
-    # plt.plot(wtoGuess, wtoGuess)
-    # plt.plot(wtoGuess, wtoYaxisRaymer, label="Raymer")
-    # plt.plot(wtoGuess, wtoYaxisGud, label="Gudmundsson")
-    # plt.plot(wtoGuess, wtoYaxisRoskam, label="Roskam")
-    # plt.plot(wtoGuess, wtoYaxisSadraey, label="Sadraey")
-
-    raymer_idx = (
-        np.argwhere(np.diff(np.sign(wtoGuess - wtoYaxisRaymer)) != 0).reshape(-1) + 0
-    )
-    # plt.plot(wtoGuess[raymer_idx], wtoYaxisRaymer[raymer_idx], "ro")
-
-    gudmundsson_idx = (
-        np.argwhere(np.diff(np.sign(wtoGuess - wtoYaxisGud)) != 0).reshape(-1) + 0
-    )
-    # plt.plot(wtoGuess[gudmundsson_idx], wtoYaxisGud[gudmundsson_idx], "ro")
-
-    roskam_idx = (
-        np.argwhere(np.diff(np.sign(wtoGuess - wtoYaxisRoskam)) != 0).reshape(-1) + 0
-    )
-    # plt.plot(wtoGuess[roskam_idx], wtoYaxisRoskam[roskam_idx], "ro")
-
-    sadraey_idx = (
-        np.argwhere(np.diff(np.sign(wtoGuess - wtoYaxisSadraey)) != 0).reshape(-1) + 0
-    )
-    # plt.plot(wtoGuess[sadraey_idx], wtoYaxisSadraey[sadraey_idx], "ro")
-
-    # plt.xlabel("Wto Guess")
-    # plt.ylabel("Wto")
-    # plt.title(
-    #     "WEIGHT SIZING CONSIDERING VARIOUS FUEL FRACTIONS \n But the sizing constants are Raymer's "
-    # )
-    # plt.legend()
-    # plt.show()
-
-    # plt.plot(range(10))
-    # figdata = io.BytesIO()
-    # fig.savefig(figdata, format="png")
-    # plt.close(fig)
-
-    # import base64
-
-    # image_base64 = (
-    #     base64.b64encode(figdata.getvalue()).decode("utf-8").replace("\n", "")
-    # )
-
-    d = wtoYaxisRaymer[raymer_idx]
-    e = wtoYaxisGud[gudmundsson_idx]
-    f = wtoYaxisRoskam[roskam_idx]
-    g = wtoYaxisSadraey[sadraey_idx]
-
-    h = np.array([d, e, f, g])
-    finalMTOW = np.mean(h)
-
-    # print(d, e, f, g)
-    # print("\n")
-    print(finalMTOW, "LBS <<-- final MTOW")
+    d = np.array([raymer_mtow])
+    e = np.array([gudmundsson_mtow])
+    f = np.array([roskam_mtow])
+    g = np.array([sadraey_mtow])
+    finalMTOW = float(np.mean(mtow_values))
 
     return {
         "finalMTOW": finalMTOW,
-        # "image": image_base64,
+        "suggestedAxisLimits": suggested_axis_limits,
+        "warnings": _range_warning(xAxisLimits, suggested_axis_limits, mtow_values),
         "wtoGuess": wtoGuess,
         "wtoYaxisRaymer": wtoYaxisRaymer,
         "wtoYaxisGud": wtoYaxisGud,
         "wtoYaxisRoskam": wtoYaxisRoskam,
         "wtoYaxisSadraey": wtoYaxisSadraey,
         "raymerIntersect": d,
-        "raymer_idx": wtoGuess[raymer_idx],
+        "raymer_idx": d,
         "gudmundssonIntersect": e,
-        "gudmundsson_idx": wtoGuess[gudmundsson_idx],
+        "gudmundsson_idx": e,
         "roskamIntersect": f,
-        "roskam_idx": wtoGuess[roskam_idx],
+        "roskam_idx": f,
         "sadraeyIntersect": g,
-        "sadraey_idx": wtoGuess[sadraey_idx],
+        "sadraey_idx": g,
     }
-
