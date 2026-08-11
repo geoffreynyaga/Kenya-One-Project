@@ -34,16 +34,16 @@
 
 import React, { useState, useContext } from "react";
 import {
-  Slider,
-  FormInput,
-  InputGroupText,
-  InputGroupAddon,
-  InputGroup,
-  Row,
-  Col,
-  Card,
   Button,
-} from "shards-react";
+  Card,
+  Col,
+  FormInput,
+  InputGroup,
+  InputGroupAddon,
+  InputGroupText,
+  Row,
+  Slider,
+} from "../../components/shards";
 
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";

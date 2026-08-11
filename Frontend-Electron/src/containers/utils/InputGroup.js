@@ -15,12 +15,7 @@
 
 import React from "react";
 import PropTypes from "prop-types";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupText,
-  FormInput,
-} from "shards-react";
+import { FormInput, InputGroup, InputGroupAddon, InputGroupText } from "../../components/shards";
 
 function MyInputGroup(props) {
   return (

@@ -15,7 +15,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import "../detailedWeights/componentWeights.css";
-import { Container, Row, Col, Badge, InputGroup } from "shards-react";
+import { Badge, Col, Container, InputGroup, Row } from "../../components/shards";
 import MyInputGroup from "../utils/InputGroup";
 import InputCard from "../utils/InputCard";
 

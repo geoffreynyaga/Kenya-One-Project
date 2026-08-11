@@ -35,16 +35,16 @@
 import React, { useState, useEffect, useContext } from "react";
 
 import {
+  Button,
   Card,
+  CardBody,
   CardHeader,
   CardTitle,
-  CardBody,
-  Button,
   Form,
-  FormInput,
   FormGroup,
+  FormInput,
   FormSelect,
-} from "shards-react";
+} from "../../components/shards";
 import { SliderValueContext } from "./SliderValueContext";
 
 import { ServerData } from "./types";

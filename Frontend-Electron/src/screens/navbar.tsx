@@ -2,22 +2,17 @@ import React from "react";
 // import { faSearch } from "@fortawesome/free-solid-svg-icons";
 // import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  Navbar,
-  NavbarToggler,
-  NavbarBrand,
-  Nav,
-  NavItem,
-  NavLink,
-  Dropdown,
-  DropdownToggle,
-  DropdownMenu,
-  DropdownItem,
+  FormInput,
   InputGroup,
   InputGroupAddon,
   InputGroupText,
-  FormInput,
-  Collapse,
-} from "shards-react";
+  Navbar,
+  NavbarBrand,
+  NavbarToggler,
+  Nav,
+  NavItem,
+  NavLink,
+} from "../components/shards";
 
 interface Istate {
   dropdownOpen: boolean;
@@ -67,7 +62,7 @@ export default class MainNavbar extends React.Component<Props, Istate> {
         <NavbarBrand href="/">Swift UAS Design</NavbarBrand>
         <NavbarToggler onClick={this.toggleNavbar} />
 
-        <Collapse open={this.state.collapseOpen} navbar>
+        <div className={this.state.collapseOpen ? "navbar-collapse" : "collapse navbar-collapse"}>
           <Nav navbar>
             <NavItem>
               <NavLink active href="/">
@@ -88,7 +83,7 @@ export default class MainNavbar extends React.Component<Props, Istate> {
               <FormInput className="border-0" placeholder="Search..." />
             </InputGroup>
           </Nav>
-        </Collapse>
+        </div>
       </Navbar>
     );
   }
