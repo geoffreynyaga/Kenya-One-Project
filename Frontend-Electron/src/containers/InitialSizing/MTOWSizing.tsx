@@ -33,11 +33,11 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { Col, Container, Row } from "../../components/shards";
 
 import { SliderValueContext } from "./SliderValueContext";
 import InitialSizing from "./InitialSizing";
 import InitialValues from "./InitialValues";
+import VariantsRail from "./VariantsRail";
 
 import { ServerData } from "./types";
 
@@ -67,23 +67,20 @@ export default function MTOWSizing(props) {
 
   return (
     <SliderValueContext.Provider value={[context, setContext]}>
-      <Container>
-        {/* <p> Main Context: {context}</p> */}
-        <Row>
-          <Col sm="9" lg="9">
-            <InitialSizing
-              getAxisChangeData={handleGottenAxisDataInChild}
-              data={data ? data : {}}
-            />
-          </Col>
-          <Col sm="3" lg="3">
-            <InitialValues
-              axisRange={context}
-              getChildData={handleDataInChildren}
-            />
-          </Col>
-        </Row>
-      </Container>
+      {/* Sheet: input band across the top, one figure, variants rail. */}
+      <div className="flex min-h-screen flex-col bg-paper bg-draft bg-grid-32 font-sans text-value text-ink">
+        <InitialValues
+          axisRange={context}
+          getChildData={handleDataInChildren}
+        />
+        <div className="grid min-h-0 flex-1 grid-cols-[1fr_300px]">
+          <InitialSizing
+            getAxisChangeData={handleGottenAxisDataInChild}
+            data={data ? data : {}}
+          />
+          <VariantsRail data={data ? data : {}} />
+        </div>
+      </div>
     </SliderValueContext.Provider>
   );
 }

@@ -34,20 +34,40 @@
 
 import React, { useState, useEffect, useContext } from "react";
 
-import {
-  Button,
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
-  Form,
-  FormGroup,
-  FormInput,
-  FormSelect,
-} from "../../components/shards";
 import { SliderValueContext } from "./SliderValueContext";
 
 import { ServerData } from "./types";
+
+const CELL =
+  "flex flex-col gap-[6px] bg-paper px-[14px] py-[10px] focus-within:shadow-edited";
+const CELL_LABEL =
+  "font-mono text-label tracking-band text-ink-label";
+const CELL_INPUT =
+  "w-full border-0 bg-transparent p-0 font-mono text-value text-ink outline-none";
+
+const AIRCRAFT_TYPES = [
+  ["SailPlane_Unpowered", "Sailplane (unpowered)"],
+  ["SailPlane_Powered", "Sailplane (powered)"],
+  ["Homebuilt_Metal_or_Wood", "Homebuilt — metal/wood"],
+  ["Homebuilt_Composite", "Homebuilt — composite"],
+  ["GA_Single", "GA — single engine"],
+  ["GA_Twin", "GA — twin engine"],
+  ["Agricultural", "Agricultural"],
+  ["Twin_Turboprop", "Twin turboprop"],
+  ["Flying_Boat", "Flying boat"],
+  ["Jet_Trainer", "Jet trainer"],
+  ["Jet_Fighter", "Jet fighter"],
+  ["Military_cargo_or_bomber", "Military — cargo/bomber"],
+  ["Jet_Transport", "Jet transport"],
+];
+
+/** Keep the last good value when a cell is cleared — a cell always reads. */
+const numeric = (raw: string, setter: (value: number) => void) => {
+  const parsed = parseFloat(raw);
+  if (Number.isFinite(parsed)) {
+    setter(parsed);
+  }
+};
 
 const InitialValues = (props) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -145,142 +165,107 @@ const InitialValues = (props) => {
   console.log("----InitialValues Render Method ---------");
   // console.log(state, "state");
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Initial Estimates</CardTitle>
-      </CardHeader>
-      {/* <h2>{isLoading ? "Loading" : "Not Loading"}</h2> */}
-      <CardBody>
-        <Form>
-          {/* Selected Aircraft */}
-          <label htmlFor="#aircraftType">Aircraft Type</label>
-          <FormSelect
-            onChange={(e: any) => {
-              setAircraftType(e.target.value);
-              setIsLoading(false);
-            }}
-          >
-            <option value="SailPlane_Unpowered">SailPlane (Unpowered)</option>
-            <option value="SailPlane_Powered">SailPlane (Powered)</option>
-            <option value="Homebuilt_Metal_or_Wood">
-              Homebuilt - Metal/Wood.
+    /* Input band — one cell per parameter, SOLVE at the end. */
+    <div className="grid flex-none grid-cols-[repeat(7,1fr)_128px] gap-px border-b border-rule-mid bg-rule-cell">
+      <label className={CELL} htmlFor="aircraftType">
+        <span className={CELL_LABEL}>TYPE</span>
+        <select
+          className={`${CELL_INPUT} font-sans`}
+          id="aircraftType"
+          value={aircraft_type}
+          onChange={(e) => {
+            setAircraftType(e.target.value);
+            setIsLoading(false);
+          }}
+        >
+          {AIRCRAFT_TYPES.map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
             </option>
-            <option value="Homebuilt_Composite">Homebuilt - Composite</option>
-            <option value="GA_Single">General Aviation - Single Engine</option>
-            <option value="GA_Twin">General Aviation - Twin Engine</option>
-            <option value="Agricultural">Agricultural</option>
-            <option value="Twin_Turboprop">Twin Turboprop</option>
-            <option value="Flying_Boat">Flying Boat</option>
-            <option value="Jet_Trainer">Jet Trainer</option>
-            <option value="Jet_Fighter">Jet Fighter</option>
-            <option value="Military_cargo_or_bomber">
-              Military (cargo/bomber)
-            </option>
-            <option value="Jet_Transport">Jet Transport</option>
-          </FormSelect>
+          ))}
+        </select>
+      </label>
 
-          {/* Passengers */}
-          <FormGroup>
-            <label htmlFor="#pax">Passengers</label>
-            <FormInput
-              type="number"
-              id="#pax"
-              placeholder="Number of Passengers"
-              // value={2}
-              onChange={(e: any) => {
-                e.preventDefault();
-                setPax(parseInt(e.target.value));
-              }}
-            />
-          </FormGroup>
+      <label className={CELL} htmlFor="pax">
+        <span className={CELL_LABEL}>PAX</span>
+        <input
+          className={CELL_INPUT}
+          id="pax"
+          type="number"
+          value={pax}
+          onChange={(e) => numeric(e.target.value, setPax)}
+        />
+      </label>
 
-          {/* Range */}
-          <FormGroup>
-            <label htmlFor="#range">Range</label>
-            <FormInput
-              type="number"
-              id="#range"
-              placeholder="Range (kms)"
-              onChange={(e: any) => {
-                e.preventDefault();
-                setRange(parseInt(e.target.value));
-              }}
-            />
-          </FormGroup>
+      <label className={CELL} htmlFor="crew">
+        <span className={CELL_LABEL}>CREW</span>
+        <input
+          className={CELL_INPUT}
+          id="crew"
+          type="number"
+          value={crew}
+          onChange={(e) => numeric(e.target.value, setCrew)}
+        />
+      </label>
 
-          {/* Estimated Propeller efficiency */}
-          <FormGroup>
-            <label htmlFor="#propellerEfficiency">
-              Estimated Propeller efficiency
-            </label>
-            <FormInput
-              type="number"
-              id="#propellerEfficiency"
-              placeholder="Estimated Propeller efficiency (.45 - .85)"
-              onChange={(e: any) => {
-                e.preventDefault();
-                setPropellerEfficiency(parseFloat(e.target.value));
-              }}
-            />
-          </FormGroup>
+      <label className={CELL} htmlFor="range">
+        <span className={CELL_LABEL}>RANGE km</span>
+        <input
+          className={CELL_INPUT}
+          id="range"
+          type="number"
+          value={range}
+          onChange={(e) => numeric(e.target.value, setRange)}
+        />
+      </label>
 
-          {/* Cruise Altitude */}
-          <FormGroup>
-            <label htmlFor="#altitude">Cruise Altitude</label>
-            <FormInput
-              type="number"
-              id="#altitude"
-              placeholder="Cruise Altitude (ft)"
-              onChange={(e: any) => {
-                e.preventDefault();
-                setAltitude(parseInt(e.target.value));
-              }}
-            />
-          </FormGroup>
-          {/* Crew */}
-          <FormGroup>
-            <label htmlFor="#crew">Crew</label>
-            <FormInput
-              type="number"
-              id="#crew"
-              placeholder="Number of crew"
-              onChange={(e: any) => {
-                e.preventDefault();
-                setCrew(parseInt(e.target.value));
-              }}
-            />
-          </FormGroup>
+      <label className={CELL} htmlFor="propellerEfficiency">
+        <span className={CELL_LABEL}>η PROP</span>
+        <input
+          className={CELL_INPUT}
+          id="propellerEfficiency"
+          type="number"
+          step="0.01"
+          value={propellerEfficiency}
+          onChange={(e) => numeric(e.target.value, setPropellerEfficiency)}
+        />
+      </label>
 
-          {/* Aspect Ratio */}
-          <FormGroup>
-            <label htmlFor="#aspectRatio">Aspect Ratio</label>
-            <FormInput
-              type="number"
-              id="#aspectRatio"
-              placeholder="Aspect Ratio (6-8)"
-              onChange={(e: any) => {
-                e.preventDefault();
-                setAspectRatio(parseFloat(e.target.value));
-              }}
-            />
-          </FormGroup>
-        </Form>
+      <label className={CELL} htmlFor="altitude">
+        <span className={CELL_LABEL}>ALT ft</span>
+        <input
+          className={CELL_INPUT}
+          id="altitude"
+          type="number"
+          value={altitude}
+          onChange={(e) => numeric(e.target.value, setAltitude)}
+        />
+      </label>
 
-        {/* <Button>SUBMIT</Button> */}
-        {!isLoading ? (
-          <Button
-            onClick={() => {
-              setIsLoading(true);
-              fetchMTOWPlot();
-            }}
-          >
-            SUBMIT
-          </Button>
-        ) : (
-          ""
-        )}
-      </CardBody>
-    </Card>
+      <label className={CELL} htmlFor="aspectRatio">
+        <span className={CELL_LABEL}>AR</span>
+        <input
+          className={CELL_INPUT}
+          id="aspectRatio"
+          type="number"
+          step="0.1"
+          value={aspectRatio}
+          onChange={(e) => numeric(e.target.value, setAspectRatio)}
+        />
+      </label>
+
+      <button
+        className="flex items-center justify-center bg-accent font-mono text-note font-medium tracking-band text-white disabled:bg-ink-faint"
+        type="button"
+        disabled={isLoading}
+        onClick={() => {
+          setIsLoading(true);
+          fetchMTOWPlot();
+        }}
+      >
+        {isLoading ? "SOLVING" : "SOLVE"}
+      </button>
+    </div>
   );
 };
 
