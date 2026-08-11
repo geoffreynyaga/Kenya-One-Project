@@ -72,6 +72,7 @@ type FormField =
 type FormValues = Record<FormField, string>;
 
 const DEFAULT_VALUES: FormValues = {
+  // #TODO: Import airframe structural weight from Initial Sizing once sheet-to-sheet data flow is wired.
   airframeWeight: "1740.136754",
   vmax: "170",
   productionQuantity: "1",
@@ -273,15 +274,15 @@ function InputCell({
   const errorId = `${field}-error`;
   return (
     <label
-      className={`grid grid-cols-[1fr_112px] items-center gap-3 border-b border-rule-cell px-3 py-2 focus-within:shadow-edited ${
-        errors[field] ? "bg-accent-wash" : "bg-paper"
+      className={`grid cursor-text grid-cols-[minmax(0,1fr)_96px] items-baseline gap-3 px-[18px] py-[7px] hover:bg-white/70 focus-within:bg-white focus-within:shadow-edited ${
+        errors[field] ? "bg-accent-wash" : ""
       }`}
       htmlFor={field}
     >
-      <span className="min-w-0 text-note text-ink-body">
+      <span className="min-w-0 text-body leading-[1.2] text-ink-muted">
         {label}
         {unit ? (
-          <span className="ml-1 font-mono text-label text-ink-faint">[{unit}]</span>
+          <span className="ml-1 font-mono text-micro text-ink-faint">[{unit}]</span>
         ) : null}
         {errors[field] ? (
           <span className="mt-1 block text-[10px] text-accent-dark" id={errorId}>
@@ -292,7 +293,7 @@ function InputCell({
       <input
         aria-describedby={errors[field] ? errorId : undefined}
         aria-invalid={Boolean(errors[field])}
-        className="min-w-0 border-0 bg-transparent p-0 text-right font-mono text-value text-ink outline-none"
+        className="min-w-0 border-0 border-b border-dashed border-ink-faint bg-transparent px-[1px] pb-[3px] text-right font-mono text-body leading-none text-ink outline-none hover:border-accent focus:border-accent"
         id={field}
         inputMode="decimal"
         onChange={(event) => onChange(field, event.target.value)}
@@ -311,8 +312,8 @@ interface SectionProps {
 
 function InputSection({ title, children }: SectionProps) {
   return (
-    <section className="border border-rule bg-paper">
-      <h2 className="border-b border-rule bg-panel px-3 py-[9px] font-mono text-meta font-medium tracking-band text-ink">
+    <section className="border-t border-rule-soft first:border-t-0">
+      <h2 className="px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label">
         {title}
       </h2>
       {children}
@@ -352,11 +353,11 @@ function ResultTable({ rows, label }: { rows: ResultRow[]; label: string }) {
   return (
     <div className="overflow-x-auto border border-rule bg-field">
       <table className="w-full border-collapse text-left" aria-label={label}>
-        <thead className="bg-panel font-mono text-label tracking-band text-ink-label">
+        <thead className="bg-ink font-mono text-micro tracking-band text-panel">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <th className="border-b border-rule px-3 py-2 font-medium" key={header.id}>
+                <th className="border-b border-rule px-[14px] py-2 font-medium" key={header.id}>
                   {flexRender(header.column.columnDef.header, header.getContext())}
                 </th>
               ))}
@@ -371,7 +372,7 @@ function ResultTable({ rows, label }: { rows: ResultRow[]; label: string }) {
             >
               {row.getVisibleCells().map((cell, index) => (
                 <td
-                  className={`border-b border-rule-hair px-3 py-[7px] ${
+                  className={`border-b border-rule-hair px-[14px] py-[7px] ${
                     index === 1 ? "text-right text-ink" : ""
                   }`}
                   key={cell.id}
@@ -426,7 +427,7 @@ function LabourBasisTable({ rows }: { rows: LabourRow[] }) {
   return (
     <div className="overflow-x-auto border border-rule bg-field">
       <table className="w-full border-collapse text-left" aria-label="Commercial labour basis">
-        <thead className="bg-panel font-mono text-label tracking-band text-ink-label">
+        <thead className="bg-ink font-mono text-micro tracking-band text-panel">
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
@@ -537,49 +538,35 @@ function CostResults({
   const chart = result.break_even.chart;
 
   return (
-    <div className="space-y-5">
-      <div className="grid border border-rule bg-field sm:grid-cols-3">
-        {[
-          ["MINIMUM SELLING PRICE", formatCurrency(breakdown.minimum_selling_price)],
-          ["BREAK-EVEN · BASE", result.break_even.scenarios[0].feasible ? `${formatNumber(result.break_even.scenarios[0].units ?? 0)} aircraft` : "Not feasible"],
-          ["COST / FLIGHT HOUR", formatCurrency(operating.cost_per_flight_hour, 2)],
-        ].map(([label, value], index) => (
-          <div className={`px-4 py-4 ${index < 2 ? "border-b border-rule sm:border-b-0 sm:border-r" : ""}`} key={label}>
-            <div className="font-mono text-label tracking-band text-ink-faint">{label}</div>
-            <div className="mt-2 font-mono text-value-lg text-ink">{value}</div>
-          </div>
-        ))}
-      </div>
-
-      <section>
-        <div className="mb-2 flex items-end justify-between gap-4">
-          <div>
-            <div className="font-mono text-label tracking-label text-ink-faint">DAPCA IV</div>
-            <h2 className="mt-1 text-[16px] font-medium text-ink">Development &amp; production</h2>
-          </div>
-          <div className="text-right font-mono text-label text-ink-faint">
+    <>
+      <section className="min-w-0 bg-paper px-[22px] pb-0 pt-[18px]">
+        <div className="mb-[10px] flex flex-wrap items-baseline justify-between gap-3">
+          <h1 className="text-sheet">Development &amp; production</h1>
+          <div className="font-mono text-micro text-ink-faint">
             {formatNumber(result.development.engineers_required)} engineers · {formatNumber(result.development.manufacturing_hours_per_aircraft, 0)} hr / aircraft
           </div>
         </div>
-        <div className="mb-4">
-          <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
-            <h3 className="font-mono text-meta font-medium tracking-band text-ink">
-              COMMERCIAL LABOUR BASIS
-            </h3>
-            <p className="max-w-[620px] text-right text-note leading-5 text-ink-muted">
-              DAPCA labour costs apply the workbook factor and CPI to the entered loaded rates. Crew cost is pilot-hours × crew rate.
-            </p>
-          </div>
-          <LabourBasisTable rows={labourRows} />
-        </div>
-        <ResultTable label="Development and production cost breakdown" rows={developmentRows} />
-      </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_260px]">
-        <div className="min-h-[390px] border border-rule bg-field p-3">
-          <div className="font-mono text-label tracking-label text-ink-faint">FIG. 9.1 · BREAK-EVEN</div>
+        <ResultTable label="Development and production cost breakdown" rows={developmentRows} />
+
+        <details className="mt-3 border border-rule bg-panel">
+          <summary className="cursor-pointer px-[14px] py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
+            COMMERCIAL LABOUR BASIS
+          </summary>
+          <div className="border-t border-rule-soft p-3">
+            <p className="mb-3 text-note leading-5 text-ink-muted">
+              DAPCA labour costs apply the workbook factor and CPI to loaded rates. Crew cost is pilot-hours × crew rate.
+            </p>
+            <LabourBasisTable rows={labourRows} />
+          </div>
+        </details>
+
+        <div className="relative mt-4 min-h-[300px] border border-rule bg-field px-2 pb-1 pt-3">
+          <div className="absolute right-[14px] top-[10px] z-10 font-mono text-label text-ink-faint">
+            FIG. 9.1 · BREAK-EVEN
+          </div>
           <Plot
-            className="h-[340px] w-full"
+            className="h-[300px] w-full"
             config={{ displayModeBar: false, responsive: true }}
             data={[
               {
@@ -613,52 +600,80 @@ function CostResults({
             ]}
             layout={{
               autosize: true,
-              margin: { l: 72, r: 18, t: 28, b: 70 },
+              margin: { l: 72, r: 18, t: 28, b: 68 },
               paper_bgcolor: tokens.colors.field,
               plot_bgcolor: tokens.colors.field,
               font: { family: MONO, size: 10, color: tokens.colors.ink.muted },
               xaxis: { title: "UNITS PRODUCED", gridcolor: tokens.colors.rule.grid, zeroline: false },
               yaxis: { title: "COST / REVENUE  [USD]", gridcolor: tokens.colors.rule.grid, zeroline: false },
-              legend: { orientation: "h", y: -0.22, x: 0 },
+              legend: { orientation: "h", y: -0.23, x: 0 },
             }}
-            style={{ width: "100%", height: "340px" }}
+            style={{ width: "100%", height: "300px" }}
             useResizeHandler
           />
         </div>
-        <div className="border border-rule bg-panel p-4">
-          <h2 className="font-mono text-meta font-medium tracking-band text-ink">BREAK-EVEN SCENARIOS</h2>
-          <div className="mt-4 space-y-4">
-            {result.break_even.scenarios.map((scenario, index) => (
-              <div className="border-b border-rule-cell pb-4 last:border-0" key={scenario.selling_price}>
-                <div className="font-mono text-label text-ink-faint">PRICE {index + 1}</div>
-                <div className="mt-1 font-mono text-value text-ink">{formatCurrency(scenario.selling_price)}</div>
-                <div className={`mt-2 text-note ${scenario.feasible ? "text-ink-body" : "text-accent-dark"}`}>
-                  {scenario.feasible ? `${formatNumber(scenario.units ?? 0)} aircraft to break even` : "Below variable cost — no break-even point"}
-                </div>
-              </div>
-            ))}
-          </div>
+
+        <div className="px-[2px] py-4 font-mono text-meta text-ink-muted">
+          DAPCA IV · 2012 USD BASE · <span className="text-accent">PRICED</span>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px]">
-        <div>
-          <div className="mb-2">
-            <div className="font-mono text-label tracking-label text-ink-faint">ANNUAL BASIS</div>
-            <h2 className="mt-1 text-[16px] font-medium text-ink">Aircraft operation costs</h2>
+      <aside className="flex flex-col bg-panel xl:border-l xl:border-rule-mid">
+        <h2 className="px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label">
+          BREAK-EVEN SCENARIOS
+        </h2>
+        {result.break_even.scenarios.map((scenario, index) => (
+          <div
+            className={`border-t border-rule-soft px-[18px] py-3 ${index === 0 ? "bg-field shadow-carried" : ""}`}
+            key={scenario.selling_price}
+          >
+            <div className="mb-2 font-mono text-label tracking-tab text-ink-faint">PRICE {index + 1}</div>
+            <div className="flex items-baseline justify-between gap-3 font-mono">
+              <span className={`text-value-lg ${index === 0 ? "text-accent" : "text-ink"}`}>
+                {formatCurrency(scenario.selling_price)}
+              </span>
+              <span className={`text-note ${scenario.feasible ? "text-ink-muted" : "text-accent-dark"}`}>
+                {scenario.feasible ? `${formatNumber(scenario.units ?? 0)} aircraft` : "No break-even"}
+              </span>
+            </div>
           </div>
-          <ResultTable label="Annual aircraft operating costs" rows={operatingRows} />
+        ))}
+
+        <div className="mt-[14px] flex items-baseline justify-between border-t border-rule-mid px-[18px] pb-[10px] pt-[15px]">
+          <h2 className="font-mono text-label font-medium tracking-label text-ink-label">OPERATION COSTS</h2>
+          <span className="font-mono text-label text-ink-faint">PER YEAR</span>
         </div>
-        <div className="border border-rule bg-panel p-4">
-          <div className="font-mono text-label tracking-label text-ink-faint">LOAN REPAYMENT</div>
-          <dl className="mt-4 space-y-4 font-mono text-note">
-            <div className="flex justify-between gap-4 border-b border-rule-cell pb-3"><dt className="text-ink-label">Principal</dt><dd className="text-ink">{formatCurrency(result.financing.principal)}</dd></div>
-            <div className="flex justify-between gap-4 border-b border-rule-cell pb-3"><dt className="text-ink-label">Monthly</dt><dd className="text-ink">{formatCurrency(result.financing.monthly_payment, 2)}</dd></div>
-            <div className="flex justify-between gap-4"><dt className="text-ink-label">Annual</dt><dd className="text-accent-dark">{formatCurrency(result.financing.annual_payment, 2)}</dd></div>
-          </dl>
+        <div className="mx-[18px] border border-rule-mid bg-field" aria-label="Annual aircraft operating costs">
+          {operatingRows.map((row) => (
+            <div
+              className={`flex items-baseline justify-between gap-3 border-b border-rule-hair px-3 py-[7px] last:border-b-0 ${row.total ? "bg-accent-wash shadow-carried" : ""}`}
+              key={row.label}
+            >
+              <span className="text-[12px] leading-[1.2] text-ink-body">{row.label}</span>
+              <span className={`whitespace-nowrap font-mono text-[12px] ${row.total ? "font-medium text-accent-dark" : "text-ink"}`}>
+                {formatCurrency(row.value, row.digits)}
+              </span>
+            </div>
+          ))}
         </div>
-      </section>
-    </div>
+
+        <h2 className="mt-[14px] border-t border-rule-mid px-[18px] pb-[10px] pt-[15px] font-mono text-label font-medium tracking-label text-ink-label">
+          LOAN REPAYMENT
+        </h2>
+        <dl className="space-y-[9px] px-[18px] pb-[14px] font-mono text-note">
+          <div className="flex justify-between gap-3"><dt className="text-ink-label">Principal</dt><dd className="text-ink">{formatCurrency(result.financing.principal)}</dd></div>
+          <div className="flex justify-between gap-3"><dt className="text-ink-label">Rate</dt><dd className="text-ink">{formatNumber(inputs.financing.annual_interest_percent)} %</dd></div>
+          <div className="flex justify-between gap-3"><dt className="text-ink-label">Term</dt><dd className="text-ink">{formatNumber(inputs.financing.loan_term_years)} yr</dd></div>
+          <div className="flex justify-between gap-3"><dt className="text-ink-label">Monthly</dt><dd className="text-ink">{formatCurrency(result.financing.monthly_payment, 2)}</dd></div>
+          <div className="flex justify-between gap-3"><dt className="text-ink-label">Annual</dt><dd className="text-accent-dark">{formatCurrency(result.financing.annual_payment, 2)}</dd></div>
+        </dl>
+
+        <div className="mt-auto space-y-[9px] border-t border-rule-mid px-[18px] py-[14px] font-mono text-note">
+          <div className="flex justify-between gap-3"><span className="text-ink-label">CARRIED FWD</span><span className="text-accent">{formatCurrency(breakdown.minimum_selling_price)}</span></div>
+          <div className="flex justify-between gap-3"><span className="text-ink-label">TO SHEET</span><span className="text-ink">REPORT</span></div>
+        </div>
+      </aside>
+    </>
   );
 }
 
@@ -742,66 +757,98 @@ export default function CostAnalysis() {
   };
 
   const inputProps = { values, errors, onChange: setField };
+  const summaryItems = query.data
+    ? [
+        [
+          "MINIMUM SELLING PRICE",
+          formatCurrency(query.data.development.breakdown.minimum_selling_price),
+        ],
+        [
+          "BREAK-EVEN · BASE",
+          query.data.break_even.scenarios[0].feasible
+            ? `${formatNumber(query.data.break_even.scenarios[0].units ?? 0)} aircraft`
+            : "Not feasible",
+        ],
+        [
+          "COST / FLIGHT HOUR",
+          formatCurrency(query.data.operating.cost_per_flight_hour, 2),
+        ],
+      ]
+    : [
+        ["MINIMUM SELLING PRICE", "—"],
+        ["BREAK-EVEN · BASE", "—"],
+        ["COST / FLIGHT HOUR", "—"],
+      ];
 
   return (
-    <main className="min-h-0 flex-1 overflow-auto bg-paper bg-draft bg-grid-32 px-4 py-5 font-sans text-ink sm:px-6">
-      <div className="mx-auto max-w-[1540px]">
-        <header className="mb-5 flex flex-wrap items-end justify-between gap-4 border-b border-rule pb-4">
-          <div>
-            <h1 className="text-sheet">Aircraft cost analysis — DAPCA IV</h1>
+    <main className="min-h-0 flex-1 overflow-auto bg-paper font-sans text-ink">
+      <h1 className="sr-only">Aircraft cost analysis</h1>
+      <div className="grid border-b border-rule-mid bg-rule-cell sm:grid-cols-3 sm:gap-px">
+        {summaryItems.map(([label, value], index) => (
+          <div
+            className={`flex flex-col gap-[7px] bg-paper px-[18px] py-[11px] ${index === 2 ? "shadow-edited" : ""}`}
+            key={label}
+          >
+            <span className="font-mono text-label tracking-tab text-ink-label">{label}</span>
+            <span className="font-mono text-[18px] font-medium leading-none text-ink">{value}</span>
           </div>
-          <div className="max-w-[430px] text-right text-note leading-5 text-ink-muted">Workbook-parity estimates for development, production, break-even, annual operations, and financing.</div>
-        </header>
+        ))}
+      </div>
 
-        <div className="grid items-start gap-5 xl:grid-cols-[430px_minmax(0,1fr)]">
-          <form className="space-y-4" onSubmit={submit}>
-            <InputSection title="DEVELOPMENT & PRODUCTION INPUTS">
+      <div className="grid min-h-0 xl:grid-cols-[296px_minmax(520px,1fr)_330px]">
+        <form className="bg-panel pb-0 xl:border-r xl:border-rule-mid" onSubmit={submit}>
+          <div className="px-[18px] pb-[11px] pt-[15px]">
+            <div className="font-mono text-label font-medium tracking-label text-ink-label">COST MODEL INPUTS</div>
+            <div className="mt-[7px] flex items-center gap-[7px] font-mono text-label text-ink-faint">
+              <span className="w-4 border-b border-dashed border-ink-faint" /> EDITABLE
+            </div>
+          </div>
+
+            <InputSection title="ENTRY · DEVELOPMENT">
               {developmentFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
             </InputSection>
 
-            <InputSection title="COST BASIS & ALLOWANCES">
+            <InputSection title="ENTRY · COST BASIS">
               {costBasisFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
-              <p className="bg-panel px-3 py-3 text-note leading-5 text-ink-muted">
-                Zero labour rates reproduce the university workbook. Enter loaded commercial rates and allowances here; zero-valued cost rows remain visible in the results.
-              </p>
             </InputSection>
 
-            <InputSection title="SELLING PRICE SCENARIOS">
+            <InputSection title="ENTRY · SELLING PRICE">
               <InputCell field="sellingPrice1" label="Scenario 1" unit="$" {...inputProps} />
               <InputCell field="sellingPrice2" label="Scenario 2" unit="$" {...inputProps} />
               <InputCell field="sellingPrice3" label="Scenario 3" unit="$" {...inputProps} />
             </InputSection>
 
-            <InputSection title="OPERATING INPUTS">
+            <InputSection title="ENTRY · OPERATING">
               {maintenanceFields.map((field, index) => <InputCell field={field} key={field} label={`${maintenanceLabels[index]} · F${index + 1}`} {...inputProps} />)}
               {operatingFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
             </InputSection>
 
-            <InputSection title="FINANCING INPUTS">
+            <InputSection title="ENTRY · FINANCING">
               <InputCell field="loanPrincipal" label="Loan principal — blank uses minimum price" unit="$" {...inputProps} />
               <InputCell field="loanTerm" label="Repayment term" unit="years" {...inputProps} />
               <InputCell field="interestRate" label="Annual interest" unit="%" {...inputProps} />
             </InputSection>
 
-            <button className="w-full border border-accent bg-accent px-4 py-3 font-mono text-meta font-medium tracking-tab text-white transition-colors hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-wait disabled:border-rule disabled:bg-panel disabled:text-ink-faint" disabled={query.isFetching} type="submit">
+            <button className="sticky bottom-0 mt-4 w-full border border-accent bg-accent px-4 py-3 font-mono text-meta font-medium tracking-tab text-white transition-colors hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-wait disabled:border-rule disabled:bg-panel disabled:text-ink-faint" disabled={query.isFetching} type="submit">
               {query.isFetching ? "SOLVING…" : "SOLVE COST MODEL"}
             </button>
           </form>
 
-          <div aria-live="polite" className="min-w-0">
+          <div aria-live="polite" className="min-w-0 xl:col-span-2">
             {query.isPending ? (
-              <div className="border border-rule bg-field p-8 font-mono text-note text-ink-muted">Calculating the workbook model…</div>
+              <div className="m-5 border border-rule bg-field p-8 font-mono text-note text-ink-muted">Calculating the workbook model…</div>
             ) : query.isError ? (
-              <div className="border border-accent bg-accent-wash p-5 text-body text-accent-dark" role="alert">
+              <div className="m-5 border border-accent bg-accent-wash p-5 text-body text-accent-dark" role="alert">
                 <div className="font-medium">Cost model unavailable</div>
                 <div className="mt-1 text-note">{query.error.message} Check that the Django server is running, then solve again.</div>
               </div>
             ) : query.data ? (
-              <CostResults inputs={submitted} result={query.data} />
+              <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_330px]">
+                <CostResults inputs={submitted} result={query.data} />
+              </div>
             ) : null}
           </div>
         </div>
-      </div>
     </main>
   );
 }
