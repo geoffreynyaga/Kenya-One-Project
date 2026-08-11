@@ -32,13 +32,12 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React, { useState, useContext } from "react";
+import React from "react";
 
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
 import tokens from "../../design-tokens";
-import { SliderValueContext } from "./SliderValueContext";
 import { formatValue, toNumber } from "./format";
 
 const Plot = createPlotlyComponent(Plotly);
@@ -62,54 +61,26 @@ const AXIS = {
 };
 
 interface Props {
-  getAxisChangeData: ([]) => void;
   data: {
-    wtoGuess?: number;
-    wtoYaxisRaymer?: number;
-    wtoYaxisGud?: number;
-    wtoYaxisRoskam?: number;
-    wtoYaxisSadraey?: number;
-    raymerIntersect?: number;
-    gudmundssonIntersect?: number;
-    roskamIntersect?: number;
-    sadraeyIntersect?: number;
-    raymer_idx?: number;
-    gudmundsson_idx?: number;
-    roskam_idx?: number;
-    sadraey_idx?: number;
+    suggestedAxisLimits?: number[];
+    wtoGuess?: number[];
+    wtoYaxisRaymer?: number[];
+    wtoYaxisGud?: number[];
+    wtoYaxisRoskam?: number[];
+    wtoYaxisSadraey?: number[];
+    raymerIntersect?: number[];
+    gudmundssonIntersect?: number[];
+    roskamIntersect?: number[];
+    sadraeyIntersect?: number[];
+    raymer_idx?: number[];
+    gudmundsson_idx?: number[];
+    roskam_idx?: number[];
+    sadraey_idx?: number[];
   };
   isLoading?: boolean;
 }
 
 export default function InitialSizing(props: Props) {
-  console.log(props, "initial sizing props");
-
-  // const sliderValue = useContext(SliderValueContext);
-  // console.log(sliderValue, "sliderValue not in return");
-  const [context, setContext] = useContext(SliderValueContext);
-
-  // const [data, setData] = useState(null);
-  const [valueX, setValueX] = useState<number[]>([]);
-
-  // const handleAxisRangeChange = (axisData:number[]) => {
-  //   console.log(
-  //     axisData,
-  //     "handleAxisRangeChange have been called and will pass the above data"
-  //   );
-  //   props.getAxisChangeData(axisData);
-  // };
-
-  const handleAxisValuesSubmit = () => {
-    console.log("submit called");
-    console.log([valueX[0], valueX[1]], "[valueX[0], valueX[1]]");
-    // handleAxisRangeChange([valueX[0], valueX[1]]);
-    props.getAxisChangeData([valueX[0], valueX[1]]);
-
-    setContext(valueX);
-  };
-
-  console.log("+++++++++ InitialSizing +++++++++++");
-
   const { wtoGuess } = props.data;
   const { wtoYaxisRaymer } = props.data;
   const { wtoYaxisGud } = props.data;
@@ -126,8 +97,8 @@ export default function InitialSizing(props: Props) {
   const { roskam_idx } = props.data;
   const { sadraey_idx } = props.data;
 
-  const sweepMin = valueX[0] > 0 ? valueX[0] : context[0];
-  const sweepMax = valueX[1] > 0 ? valueX[1] : context[1];
+  const [sweepMin = SWEEP_MIN, sweepMax = SWEEP_MAX] =
+    props.data.suggestedAxisLimits ?? [];
 
   // Position of a sweep bound on the bar, clamped to the domain.
   const asPercent = (value: number) => {
@@ -306,7 +277,7 @@ export default function InitialSizing(props: Props) {
         />
       </div>
 
-      {/* Sweep window and title line. */}
+      {/* Automatic sweep window and solve status. */}
       <div className="flex flex-none flex-wrap items-center gap-[14px] px-[2px] py-3">
         <span className="font-mono text-label tracking-tab text-ink-faint">
           SWEEP
@@ -320,48 +291,6 @@ export default function InitialSizing(props: Props) {
             }}
           />
         </div>
-
-        <label className="flex items-center gap-2" htmlFor="sweepMin">
-          <span className="font-mono text-label tracking-band text-ink-label">
-            MIN
-          </span>
-          <input
-            id="sweepMin"
-            type="number"
-            className="w-[76px] border border-rule bg-field px-2 py-1 text-right font-mono text-meta text-ink outline-none focus:shadow-edited"
-            value={sweepMin}
-            onChange={(e) => {
-              const parsed = parseInt(e.target.value, 10);
-              setValueX([Number.isFinite(parsed) ? parsed : 0, sweepMax]);
-            }}
-          />
-        </label>
-
-        <label className="flex items-center gap-2" htmlFor="sweepMax">
-          <span className="font-mono text-label tracking-band text-ink-label">
-            MAX
-          </span>
-          <input
-            id="sweepMax"
-            type="number"
-            className="w-[76px] border border-rule bg-field px-2 py-1 text-right font-mono text-meta text-ink outline-none focus:shadow-edited"
-            value={sweepMax}
-            onChange={(e) => {
-              const parsed = parseInt(e.target.value, 10);
-              setValueX([sweepMin, Number.isFinite(parsed) ? parsed : 0]);
-            }}
-          />
-        </label>
-
-        <button
-          type="button"
-          className="border border-rule px-[18px] py-[7px] font-mono text-meta tracking-band text-ink"
-          onClick={handleAxisValuesSubmit}
-        >
-          RESET
-        </button>
-
-        <span className="h-[14px] w-px bg-rule-cell" />
 
         <span className="font-mono text-meta text-ink-muted">
           SHEET 01 · lbf ·{" "}

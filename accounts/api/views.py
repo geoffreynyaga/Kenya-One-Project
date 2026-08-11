@@ -36,23 +36,31 @@
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
+
+from .serializers import InitialSizingRequestSerializer
 
 
 class ExampleSimpleAPIView(APIView):
     def post(self, request, *args, **kwargs):
-        print("===== ExampleSimpleAPIView ===")
-        # print(dir(self.request.data), "self.request.data")
-        pax = self.request.data["pax"]
-        # print(self.request.data["pax"], "self.request.data[pax]")
-        # print(type(self.request.data["pax"]), "type self.request.data[pax]")
-        aircraft_type = self.request.data["aircraft_type"]
+        serializer = InitialSizingRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "Status": "Error",
+                    "message": "Check the highlighted sizing inputs and try again.",
+                    "errors": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        crew = self.request.data["crew"]
-        Range = self.request.data["range"]
-        propEff = self.request.data["propellerEfficiency"]
-
-        xAxisLimits = self.request.data["xAxisLimits"]
-        print(xAxisLimits, "should be xAxisLimits")
+        sizing_inputs = serializer.validated_data
+        pax = sizing_inputs["pax"]
+        aircraft_type = sizing_inputs["aircraft_type"]
+        crew = sizing_inputs["crew"]
+        Range = sizing_inputs["range"]
+        propEff = sizing_inputs["propellerEfficiency"]
+        xAxisLimits = sizing_inputs["xAxisLimits"]
 
         from CORE.engines import Try_GA_Sizing
         from CORE.engines.prerequisitesEngine import (
@@ -65,25 +73,42 @@ class ExampleSimpleAPIView(APIView):
             fuelAllowance,
         )
 
-        x = Try_GA_Sizing.MTOW_estimate(
-            aircraft_type,
-            pax,
-            paxWeight,
-            crew,
-            crewWeight,
-            payloadPax,
-            Range,
-            ldMax,
-            Vc,
-            cbhp,
-            fuelAllowance,
-            propEff,
-            xAxisLimits,
-        )
+        try:
+            x = Try_GA_Sizing.MTOW_estimate(
+                aircraft_type,
+                pax,
+                paxWeight,
+                crew,
+                crewWeight,
+                payloadPax,
+                Range,
+                ldMax,
+                Vc,
+                cbhp,
+                fuelAllowance,
+                propEff,
+                xAxisLimits,
+            )
+        except ValueError:
+            return Response(
+                {
+                    "Status": "Error",
+                    "code": "NO_PHYSICAL_MTOW_SOLUTION",
+                    "message": (
+                        "No physical MTOW solution was found for these inputs. "
+                        "Reduce the design range or review the propeller efficiency "
+                        "and payload."
+                    ),
+                },
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
         # print(x, "x")
         return Response(
             {
                 "Status": "Success",
+                "finalMTOW": x["finalMTOW"],
+                "suggestedAxisLimits": x["suggestedAxisLimits"],
+                "warnings": x["warnings"],
                 # "image": x["image"],
                 "wtoGuess": x["wtoGuess"],
                 "wtoYaxisRaymer": x["wtoYaxisRaymer"],

@@ -61,61 +61,147 @@ const AIRCRAFT_TYPES = [
   ["Jet_Transport", "Jet transport"],
 ];
 
-/** Keep the last good value when a cell is cleared — a cell always reads. */
-const numeric = (raw: string, setter: (value: number) => void) => {
-  const parsed = parseFloat(raw);
-  if (Number.isFinite(parsed)) {
-    setter(parsed);
-  }
+type NumericField =
+  | "pax"
+  | "crew"
+  | "range"
+  | "propellerEfficiency"
+  | "altitude"
+  | "aspectRatio";
+
+type FieldErrors = Partial<Record<NumericField, string>>;
+
+interface Notice {
+  tone: "warning" | "error";
+  message: string;
+}
+
+interface FieldHeaderProps {
+  inputId: string;
+  label: string;
+  helpLabel: string;
+  help: string;
+}
+
+const FieldHeader = ({ inputId, label, helpLabel, help }: FieldHeaderProps) => {
+  const helpId = `${inputId}-help`;
+
+  return (
+    <div className="flex items-center gap-[6px]">
+      <label className={CELL_LABEL} htmlFor={inputId}>
+        {label}
+      </label>
+      <span className="group relative">
+        <button
+          aria-describedby={helpId}
+          aria-label={`Help for ${helpLabel}`}
+          className="flex h-4 w-4 items-center justify-center border border-rule bg-transparent font-mono text-[9px] text-ink-muted outline-none hover:border-ink focus:border-accent focus:text-accent"
+          data-testid={`help-${inputId}`}
+          title={help}
+          type="button"
+        >
+          ?
+        </button>
+        <span
+          aria-label={help}
+          className="invisible pointer-events-none absolute left-0 top-[calc(100%+6px)] z-50 w-[240px] border border-ink bg-ink px-3 py-2 font-sans text-note normal-case tracking-normal text-white opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+          id={helpId}
+          role="tooltip"
+        >
+          {help}
+        </span>
+      </span>
+    </div>
+  );
 };
 
 const InitialValues = (props) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [yAxisLimits, setYAxisLimits] = useState<number[]>(props.axisRange);
-  const [xAxisLimits, setXAxisLimits] = useState<number[]>(props.axisRange);
   const [aircraft_type, setAircraftType] = useState<string>("GA_Twin");
-  const [altitude, setAltitude] = useState<number>(10000);
-  const [pax, setPax] = useState<number>(4);
-  const [propellerEfficiency, setPropellerEfficiency] = useState<number>(0.78);
-  const [range, setRange] = useState<number>(1200);
-  const [aspectRatio, setAspectRatio] = useState<number>(7.8);
-  const [crew, setCrew] = useState<number>(2);
-  // const [data, setData] = useState(null);
-
-  const [context, setContext] = useContext(SliderValueContext);
+  const [altitude, setAltitude] = useState<string>("10000");
+  const [pax, setPax] = useState<string>("4");
+  const [propellerEfficiency, setPropellerEfficiency] =
+    useState<string>("0.78");
+  const [range, setRange] = useState<string>("1200");
+  const [aspectRatio, setAspectRatio] = useState<string>("7.8");
+  const [crew, setCrew] = useState<string>("2");
+  const [errors, setErrors] = useState<FieldErrors>({});
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [context] = useContext(SliderValueContext);
 
   const handleLangChange = (serverData: ServerData) => {
-    console.log(serverData, "step 3, passing to parent");
-
     props.getChildData(serverData);
   };
 
-  console.log(
-    props.axisRange,
-    "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$Should be new axis change"
-  );
+  const validateInputs = () => {
+    const nextErrors: FieldErrors = {};
+    const passengerCount = Number(pax);
+    const crewCount = Number(crew);
+    const designRange = Number(range);
+    const efficiency = Number(propellerEfficiency);
+    const cruiseAltitude = Number(altitude);
+    const ratio = Number(aspectRatio);
+
+    if (
+      pax.trim() === "" ||
+      !Number.isInteger(passengerCount) ||
+      passengerCount < 0
+    ) {
+      nextErrors.pax = "Enter a whole passenger count of 0 or more.";
+    }
+    if (crew.trim() === "" || !Number.isInteger(crewCount) || crewCount < 1) {
+      nextErrors.crew = "Enter at least one crew member.";
+    }
+    if (
+      range.trim() === "" ||
+      !Number.isFinite(designRange) ||
+      designRange <= 0
+    ) {
+      nextErrors.range = "Enter a design range greater than 0 km.";
+    }
+    if (
+      propellerEfficiency.trim() === "" ||
+      !Number.isFinite(efficiency) ||
+      efficiency <= 0 ||
+      efficiency > 1
+    ) {
+      nextErrors.propellerEfficiency =
+        "Enter a propeller efficiency greater than 0 and no more than 1.";
+    }
+    if (
+      altitude.trim() === "" ||
+      !Number.isFinite(cruiseAltitude) ||
+      cruiseAltitude < 0
+    ) {
+      nextErrors.altitude = "Enter an altitude of 0 ft or higher.";
+    }
+    if (aspectRatio.trim() === "" || !Number.isFinite(ratio) || ratio <= 0) {
+      nextErrors.aspectRatio = "Enter an aspect ratio greater than 0.";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const clearFieldError = (field: NumericField) => {
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
 
   const fetchMTOWPlot = () => {
-    // console.log(
-    //   {
-    //     yAxisLimits: context,
-    //     xAxisLimits: context,
-    //     aircraft_type: aircraft_type,
-    //     altitude: altitude,
-    //     pax: pax,
-    //     propellerEfficiency: propellerEfficiency,
-    //     range: range,
-    //     aspectRatio: aspectRatio,
-    //     crew: crew,
-    //   },
-    //   "state to be sent",
+    if (!validateInputs()) {
+      setIsLoading(false);
+      return;
+    }
 
-    //   context,
-    //   "context to replace"
-    // );
+    setNotice(null);
 
     fetch("http://localhost:8000/api/accounts/example/", {
-      method: "POST", // or 'PUT'
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
@@ -123,148 +209,256 @@ const InitialValues = (props) => {
         yAxisLimits: context,
         xAxisLimits: context,
         aircraft_type: aircraft_type,
-        altitude: altitude,
-        pax: pax,
-        propellerEfficiency: propellerEfficiency,
-        range: range,
-        aspectRatio: aspectRatio,
-        crew: crew,
+        altitude: Number(altitude),
+        pax: Number(pax),
+        propellerEfficiency: Number(propellerEfficiency),
+        range: Number(range),
+        aspectRatio: Number(aspectRatio),
+        crew: Number(crew),
       }),
     })
-      .then((response) => response.json())
-      .then((serverData) => {
-        console.log(" step 2, data from server:", serverData);
+      .then(async (response) => {
+        const serverData: ServerData = await response.json();
 
-        // setData(serverData);
-        setIsLoading(false);
+        if (!response.ok || serverData.Status === "Error") {
+          const backendErrors: FieldErrors = {};
+          Object.entries(serverData.errors ?? {}).forEach(([field, messages]) => {
+            if (
+              [
+                "pax",
+                "crew",
+                "range",
+                "propellerEfficiency",
+                "altitude",
+                "aspectRatio",
+              ].includes(field)
+            ) {
+              backendErrors[field as NumericField] = messages[0];
+            }
+          });
+          setErrors(backendErrors);
+          setNotice({
+            tone: "error",
+            message:
+              serverData.message ??
+              "The sizing service could not solve these inputs. Review them and try again.",
+          });
+          return;
+        }
+
+        const warning = serverData.warnings?.[0];
+        setNotice(
+          warning ? { tone: "warning", message: warning.message } : null
+        );
         handleLangChange(serverData);
       })
-      .catch((error) => {
-        console.log(error, "error in fetchMTOWPlot");
+      .catch(() => {
+        setNotice({
+          tone: "error",
+          message:
+            "Unable to reach the sizing service. Check the backend connection and try again.",
+        });
+      })
+      .finally(() => {
+        setIsLoading(false);
       });
   };
 
   useEffect(() => {
-    console.log(
-      "----------------",
-      props.axisRange,
-      "InitialValues: axis values have changed ----"
-    );
-
-    // setYAxisLimits(props.axisRange);
-    // setXAxisLimits(props.axisRange);
-
     setIsLoading(true);
     fetchMTOWPlot();
-
-    // return () => {
-    //   // cleanup
-    // };
   }, [props.axisRange]);
 
-  console.log("----InitialValues Render Method ---------");
-  // console.log(state, "state");
   return (
-    /* Input band — one cell per parameter, SOLVE at the end. */
-    <div className="grid flex-none grid-cols-[repeat(7,1fr)_128px] gap-px border-b border-rule-mid bg-rule-cell">
-      <label className={CELL} htmlFor="aircraftType">
-        <span className={CELL_LABEL}>TYPE</span>
-        <select
-          className={`${CELL_INPUT} font-sans`}
-          id="aircraftType"
-          value={aircraft_type}
-          onChange={(e) => {
-            setAircraftType(e.target.value);
-            setIsLoading(false);
+    <div className="flex flex-none flex-col">
+      {/* Input band — one cell per parameter, SOLVE at the end. */}
+      <div className="grid grid-cols-[repeat(7,1fr)_128px] gap-px border-b border-rule-mid bg-rule-cell">
+        <div className={CELL}>
+          <FieldHeader
+            help="Selects the empirical empty-weight model used on this sheet."
+            helpLabel="aircraft type"
+            inputId="aircraftType"
+            label="TYPE"
+          />
+          <select
+            className={`${CELL_INPUT} font-sans`}
+            id="aircraftType"
+            value={aircraft_type}
+            onChange={(e) => {
+              setAircraftType(e.target.value);
+              setIsLoading(false);
+            }}
+          >
+            {AIRCRAFT_TYPES.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className={CELL}>
+          <FieldHeader
+            help="Passengers carried. Use a whole number; 0 is allowed."
+            helpLabel="passengers"
+            inputId="pax"
+            label="PAX"
+          />
+          <input
+            aria-invalid={Boolean(errors.pax)}
+            className={CELL_INPUT}
+            id="pax"
+            type="number"
+            value={pax}
+            onChange={(e) => {
+              setPax(e.target.value);
+              clearFieldError("pax");
+            }}
+          />
+        </div>
+
+        <div className={CELL}>
+          <FieldHeader
+            help="Flight crew count. At least one crew member is required."
+            helpLabel="crew"
+            inputId="crew"
+            label="CREW"
+          />
+          <input
+            aria-invalid={Boolean(errors.crew)}
+            className={CELL_INPUT}
+            id="crew"
+            type="number"
+            value={crew}
+            onChange={(e) => {
+              setCrew(e.target.value);
+              clearFieldError("crew");
+            }}
+          />
+        </div>
+
+        <div className={CELL}>
+          <FieldHeader
+            help="Design mission range in kilometres. Must be greater than 0."
+            helpLabel="design range"
+            inputId="range"
+            label="RANGE km"
+          />
+          <input
+            aria-invalid={Boolean(errors.range)}
+            className={CELL_INPUT}
+            id="range"
+            type="number"
+            value={range}
+            onChange={(e) => {
+              setRange(e.target.value);
+              clearFieldError("range");
+            }}
+          />
+        </div>
+
+        <div className={CELL}>
+          <FieldHeader
+            help="Propeller efficiency, ηp. Typical preliminary range: 0.50–0.90; must not exceed 1.00."
+            helpLabel="propeller efficiency"
+            inputId="propellerEfficiency"
+            label="η PROP"
+          />
+          <input
+            aria-invalid={Boolean(errors.propellerEfficiency)}
+            className={CELL_INPUT}
+            id="propellerEfficiency"
+            step="0.01"
+            type="number"
+            value={propellerEfficiency}
+            onChange={(e) => {
+              setPropellerEfficiency(e.target.value);
+              clearFieldError("propellerEfficiency");
+            }}
+          />
+        </div>
+
+        <div className={CELL}>
+          <FieldHeader
+            help="Cruise altitude in feet. Recorded for downstream sizing; it is not used in this MTOW estimate."
+            helpLabel="cruise altitude"
+            inputId="altitude"
+            label="ALT ft"
+          />
+          <input
+            aria-invalid={Boolean(errors.altitude)}
+            className={CELL_INPUT}
+            id="altitude"
+            type="number"
+            value={altitude}
+            onChange={(e) => {
+              setAltitude(e.target.value);
+              clearFieldError("altitude");
+            }}
+          />
+        </div>
+
+        <div className={CELL}>
+          <FieldHeader
+            help="Wing aspect ratio. GA studies commonly start around 5–9. Recorded for downstream sizing; it is not used in this MTOW estimate."
+            helpLabel="aspect ratio"
+            inputId="aspectRatio"
+            label="AR"
+          />
+          <input
+            aria-invalid={Boolean(errors.aspectRatio)}
+            className={CELL_INPUT}
+            id="aspectRatio"
+            step="0.1"
+            type="number"
+            value={aspectRatio}
+            onChange={(e) => {
+              setAspectRatio(e.target.value);
+              clearFieldError("aspectRatio");
+            }}
+          />
+        </div>
+
+        <button
+          className="flex items-center justify-center bg-accent font-mono text-note font-medium tracking-band text-white disabled:bg-ink-faint"
+          disabled={isLoading}
+          type="button"
+          onClick={() => {
+            setIsLoading(true);
+            fetchMTOWPlot();
           }}
         >
-          {AIRCRAFT_TYPES.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
+          {isLoading ? "SOLVING" : "SOLVE"}
+        </button>
+      </div>
+
+      {Object.keys(errors).length > 0 && (
+        <div
+          className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-accent bg-accent-wash px-[14px] py-2 font-mono text-note text-accent-dark"
+          role="alert"
+        >
+          <span className="font-medium tracking-band">CHECK INPUT</span>
+          {Object.values(errors).map((message) => (
+            <span key={message}>{message}</span>
           ))}
-        </select>
-      </label>
+        </div>
+      )}
 
-      <label className={CELL} htmlFor="pax">
-        <span className={CELL_LABEL}>PAX</span>
-        <input
-          className={CELL_INPUT}
-          id="pax"
-          type="number"
-          value={pax}
-          onChange={(e) => numeric(e.target.value, setPax)}
-        />
-      </label>
-
-      <label className={CELL} htmlFor="crew">
-        <span className={CELL_LABEL}>CREW</span>
-        <input
-          className={CELL_INPUT}
-          id="crew"
-          type="number"
-          value={crew}
-          onChange={(e) => numeric(e.target.value, setCrew)}
-        />
-      </label>
-
-      <label className={CELL} htmlFor="range">
-        <span className={CELL_LABEL}>RANGE km</span>
-        <input
-          className={CELL_INPUT}
-          id="range"
-          type="number"
-          value={range}
-          onChange={(e) => numeric(e.target.value, setRange)}
-        />
-      </label>
-
-      <label className={CELL} htmlFor="propellerEfficiency">
-        <span className={CELL_LABEL}>η PROP</span>
-        <input
-          className={CELL_INPUT}
-          id="propellerEfficiency"
-          type="number"
-          step="0.01"
-          value={propellerEfficiency}
-          onChange={(e) => numeric(e.target.value, setPropellerEfficiency)}
-        />
-      </label>
-
-      <label className={CELL} htmlFor="altitude">
-        <span className={CELL_LABEL}>ALT ft</span>
-        <input
-          className={CELL_INPUT}
-          id="altitude"
-          type="number"
-          value={altitude}
-          onChange={(e) => numeric(e.target.value, setAltitude)}
-        />
-      </label>
-
-      <label className={CELL} htmlFor="aspectRatio">
-        <span className={CELL_LABEL}>AR</span>
-        <input
-          className={CELL_INPUT}
-          id="aspectRatio"
-          type="number"
-          step="0.1"
-          value={aspectRatio}
-          onChange={(e) => numeric(e.target.value, setAspectRatio)}
-        />
-      </label>
-
-      <button
-        className="flex items-center justify-center bg-accent font-mono text-note font-medium tracking-band text-white disabled:bg-ink-faint"
-        type="button"
-        disabled={isLoading}
-        onClick={() => {
-          setIsLoading(true);
-          fetchMTOWPlot();
-        }}
-      >
-        {isLoading ? "SOLVING" : "SOLVE"}
-      </button>
+      {notice && (
+        <div
+          className={`flex items-center gap-3 border-b px-[14px] py-2 font-mono text-note ${
+            notice.tone === "error"
+              ? "border-accent bg-accent-wash text-accent-dark"
+              : "border-rule-mid bg-panel text-ink"
+          }`}
+          role={notice.tone === "error" ? "alert" : "status"}
+        >
+          <span className="font-medium tracking-band">
+            {notice.tone === "error" ? "SOLVE ERROR" : "SWEEP ADJUSTED"}
+          </span>
+          <span>{notice.message}</span>
+        </div>
+      )}
     </div>
   );
 };

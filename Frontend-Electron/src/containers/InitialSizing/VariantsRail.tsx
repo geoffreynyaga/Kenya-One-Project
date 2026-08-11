@@ -13,10 +13,10 @@ import { formatDelta, formatValue, toNumber } from "./format";
 
 interface Props {
   data: {
-    raymerIntersect?: number;
-    gudmundssonIntersect?: number;
-    roskamIntersect?: number;
-    sadraeyIntersect?: number;
+    raymerIntersect?: number | number[];
+    gudmundssonIntersect?: number | number[];
+    roskamIntersect?: number | number[];
+    sadraeyIntersect?: number | number[];
   };
 }
 

@@ -12,6 +12,12 @@
  * number, or undefined when the sheet has not been solved yet.
  */
 export const toNumber = (value: unknown): number | undefined => {
+  if (Array.isArray(value)) {
+    if (value.length !== 1) return undefined;
+    value = value[0];
+  }
+  if (value === null || value === undefined || value === "") return undefined;
+
   const n = Number(value);
   return Number.isFinite(n) ? n : undefined;
 };

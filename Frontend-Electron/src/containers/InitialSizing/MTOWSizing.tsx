@@ -55,16 +55,6 @@ export default function MTOWSizing(props) {
     setData(childData);
   };
 
-  const handleGottenAxisDataInChild = (incomingData: number[]) => {
-    console.log(
-      incomingData,
-      "incoming data from childdata in handleGottenAxisDataInChild"
-    );
-    // setAxisRange(incomingData);
-  };
-
-  // console.log(axisRange, "axisRange before render");
-
   return (
     <SliderValueContext.Provider value={[context, setContext]}>
       {/* Sheet: input band across the top, one figure, variants rail. */}
@@ -74,10 +64,7 @@ export default function MTOWSizing(props) {
           getChildData={handleDataInChildren}
         />
         <div className="grid min-h-0 flex-1 grid-cols-[1fr_300px]">
-          <InitialSizing
-            getAxisChangeData={handleGottenAxisDataInChild}
-            data={data ? data : {}}
-          />
+          <InitialSizing data={data ? data : {}} />
           <VariantsRail data={data ? data : {}} />
         </div>
       </div>
