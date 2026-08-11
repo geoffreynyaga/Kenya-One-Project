@@ -19,4 +19,5 @@ from django.urls import path, include  # type: ignore
 urlpatterns: list = [
     path("admin/", admin.site.urls),
     path("api/accounts/", include("accounts.api.urls")),
+    path("api/designs/", include("designs.api.urls")),
 ]

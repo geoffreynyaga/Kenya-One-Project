@@ -68,6 +68,7 @@ INSTALLED_APPS: list = [
     "corsheaders",
     "accounts",
     "initial_sizing",
+    "designs",
 ]
 
 MIDDLEWARE: list = [
