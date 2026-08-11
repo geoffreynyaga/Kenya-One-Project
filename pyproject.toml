@@ -7,7 +7,7 @@
 
 [tool.black]
 line-length = 88
-target-version = ['py36']
+target-version = ['py312']
 include = '\.pyi?$'
 exclude = '(/(\.venv|migrations)|.*\/api_clean\.py.*|tests|Frontend|.pytest_cache|.vscode|.*\/migrations\.*/)'
 
