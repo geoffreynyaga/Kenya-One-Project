@@ -13,6 +13,7 @@ mixer
 mkdocs>=1.6,<2
 mypy>=1.17,<2
 numpy>=2.3,<3
+openpyxl>=3.1,<4
 pandas>=2.3,<3
 Pillow
 psycopg[binary]

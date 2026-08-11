@@ -1,0 +1,3966 @@
+{
+  "schema_version": 1,
+  "source": {
+    "file": "1. initial sizing.xlsx",
+    "sheet_content_sha256": "b5d7137430d25db2868c679521021c453bebb4f2da5160bf1e27cda0e2f93faa"
+  },
+  "sheet": {
+    "name": "Cost Analysis",
+    "dimension": "A1:X77",
+    "merged_ranges": [
+      "C30:G30",
+      "C47:F47",
+      "D1:L2",
+      "D3:K3",
+      "F14:I14"
+    ]
+  },
+  "defined_names": [],
+  "tables": [
+    {
+      "name": "Table28",
+      "display_name": "Table28",
+      "range": "I15:L29",
+      "columns": [
+        "Column1",
+        "Column2",
+        "Column3",
+        "Column4"
+      ]
+    },
+    {
+      "name": "Table29",
+      "display_name": "Table29",
+      "range": "S31:X53",
+      "columns": [
+        "Column1",
+        "Column2",
+        "Column3",
+        "Column4",
+        "Column5",
+        "Column6"
+      ]
+    },
+    {
+      "name": "Table30",
+      "display_name": "Table30",
+      "range": "J57:M63",
+      "columns": [
+        "Column1",
+        "Column2",
+        "Column3",
+        "Column4"
+      ]
+    },
+    {
+      "name": "Table31",
+      "display_name": "Table31",
+      "range": "A49:F77",
+      "columns": [
+        "Column1",
+        "Column2",
+        "Column3",
+        "Column4",
+        "Column5",
+        "Column6"
+      ]
+    },
+    {
+      "name": "Table32",
+      "display_name": "Table32",
+      "range": "C16:G24",
+      "columns": [
+        "Column1",
+        "Column2",
+        "Column3",
+        "Column4",
+        "Column5"
+      ]
+    },
+    {
+      "name": "Table33",
+      "display_name": "Table33",
+      "range": "A32:C40",
+      "columns": [
+        "Column1",
+        "Column2",
+        "Column3"
+      ]
+    }
+  ],
+  "constants": [
+    {
+      "cell": "D1",
+      "number_format": "General",
+      "style_id": 255,
+      "data_type": "s",
+      "value": "AIRCRAFT COST ANALYSIS - DAPCA IV METHOD"
+    },
+    {
+      "cell": "D3",
+      "number_format": "General",
+      "style_id": 258,
+      "data_type": "s",
+      "value": "Estimating Project Development Costs"
+    },
+    {
+      "cell": "L4",
+      "number_format": "General",
+      "style_id": 142,
+      "data_type": "s",
+      "value": "NB:- THE EASTLAKE METHOD WILL ALSO BE IMPLEMENTED"
+    },
+    {
+      "cell": "A5",
+      "number_format": "General",
+      "style_id": 183,
+      "data_type": "s",
+      "value": "Wairframe"
+    },
+    {
+      "cell": "C5",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "lbs weight of structural skeleton"
+    },
+    {
+      "cell": "G5",
+      "number_format": "General",
+      "style_id": 98,
+      "data_type": "s",
+      "value": "years"
+    },
+    {
+      "cell": "H5",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 1
+    },
+    {
+      "cell": "I5",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "Expected duration of project"
+    },
+    {
+      "cell": "L5",
+      "number_format": "General",
+      "style_id": 142,
+      "data_type": "s",
+      "value": "LATER FOR COMPARISON PURPOSES"
+    },
+    {
+      "cell": "A6",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "N"
+    },
+    {
+      "cell": "B6",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 1
+    },
+    {
+      "cell": "C6",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "no. of aircrafts to be produced over 5 years"
+    },
+    {
+      "cell": "G6",
+      "number_format": "General",
+      "style_id": 98,
+      "data_type": "s",
+      "value": "weeks"
+    },
+    {
+      "cell": "H6",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 48
+    },
+    {
+      "cell": "I6",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "working weeks per year "
+    },
+    {
+      "cell": "A7",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "FCERT"
+    },
+    {
+      "cell": "B7",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 1
+    },
+    {
+      "cell": "C7",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "certification factor(lsa=0.67,part 23=1)"
+    },
+    {
+      "cell": "G7",
+      "number_format": "General",
+      "style_id": 98,
+      "data_type": "s",
+      "value": "hrs/week"
+    },
+    {
+      "cell": "H7",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 24
+    },
+    {
+      "cell": "I7",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "working hours per week"
+    },
+    {
+      "cell": "A8",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "FCF"
+    },
+    {
+      "cell": "B8",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 1
+    },
+    {
+      "cell": "C8",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "complex flap factor(complex=1.03,simple=1)"
+    },
+    {
+      "cell": "A9",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "fcomp"
+    },
+    {
+      "cell": "B9",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 0
+    },
+    {
+      "cell": "C9",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "fraction of airframe made from composites"
+    },
+    {
+      "cell": "G9",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "NENG"
+    },
+    {
+      "cell": "I9",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "Engineers"
+    },
+    {
+      "cell": "J9",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "(no. of engineers needed to develop aircrafts over the years stated above)"
+    },
+    {
+      "cell": "A10",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "FCOMP"
+    },
+    {
+      "cell": "C10",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "composites factor(=1+fcomp)"
+    },
+    {
+      "cell": "G10",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "tAC"
+    },
+    {
+      "cell": "I10",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "hrs"
+    },
+    {
+      "cell": "J10",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "(average time to manufacture  single unit)"
+    },
+    {
+      "cell": "A11",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "FPRESS"
+    },
+    {
+      "cell": "B11",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 1
+    },
+    {
+      "cell": "C11",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "pressurization factor(press=1.03,unpress=1)"
+    },
+    {
+      "cell": "A12",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "Qm"
+    },
+    {
+      "cell": "C12",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "pdn rate per month"
+    },
+    {
+      "cell": "A13",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "FTAPER"
+    },
+    {
+      "cell": "B13",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 1
+    },
+    {
+      "cell": "C13",
+      "number_format": "General",
+      "style_id": 50,
+      "data_type": "s",
+      "value": "0.95 for const chord,1 for tapered"
+    },
+    {
+      "cell": "F14",
+      "number_format": "General",
+      "style_id": 257,
+      "data_type": "s",
+      "value": "COST ANALYSIS"
+    },
+    {
+      "cell": "I15",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Engineering"
+    },
+    {
+      "cell": "K15",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "CENG"
+    },
+    {
+      "cell": "C16",
+      "number_format": "General",
+      "style_id": 190,
+      "data_type": "s",
+      "value": "Rate of Engineering Labour "
+    },
+    {
+      "cell": "E16",
+      "number_format": "General",
+      "style_id": 192,
+      "data_type": "s",
+      "value": "RENG"
+    },
+    {
+      "cell": "F16",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 277,
+      "data_type": "n",
+      "value": 0
+    },
+    {
+      "cell": "G16",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per hr"
+    },
+    {
+      "cell": "I16",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Development support"
+    },
+    {
+      "cell": "K16",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "CDEV"
+    },
+    {
+      "cell": "C17",
+      "number_format": "General",
+      "style_id": 187,
+      "data_type": "s",
+      "value": "Cosumer Price Index as of 2012"
+    },
+    {
+      "cell": "E17",
+      "number_format": "General",
+      "style_id": 192,
+      "data_type": "s",
+      "value": "CPI2012"
+    },
+    {
+      "cell": "F17",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "n",
+      "value": 1
+    },
+    {
+      "cell": "I17",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Flight test operations"
+    },
+    {
+      "cell": "K17",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "CFT"
+    },
+    {
+      "cell": "C18",
+      "number_format": "General",
+      "style_id": 188,
+      "data_type": "s",
+      "value": "Number of prototypes"
+    },
+    {
+      "cell": "E18",
+      "number_format": "General",
+      "style_id": 192,
+      "data_type": "s",
+      "value": "NP"
+    },
+    {
+      "cell": "F18",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 1
+    },
+    {
+      "cell": "I18",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Tooling"
+    },
+    {
+      "cell": "K18",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "CTOOL"
+    },
+    {
+      "cell": "C19",
+      "number_format": "General",
+      "style_id": 191,
+      "data_type": "s",
+      "value": "Rate of Tooling Labour "
+    },
+    {
+      "cell": "E19",
+      "number_format": "General",
+      "style_id": 192,
+      "data_type": "s",
+      "value": "RTOOL"
+    },
+    {
+      "cell": "F19",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 277,
+      "data_type": "n",
+      "value": 0
+    },
+    {
+      "cell": "G19",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per hr"
+    },
+    {
+      "cell": "I19",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Certification Cost"
+    },
+    {
+      "cell": "K19",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "CCERT"
+    },
+    {
+      "cell": "C20",
+      "number_format": "General",
+      "style_id": 189,
+      "data_type": "s",
+      "value": "Rate of ManufacturingL abour "
+    },
+    {
+      "cell": "E20",
+      "number_format": "General",
+      "style_id": 192,
+      "data_type": "s",
+      "value": "RMFG"
+    },
+    {
+      "cell": "F20",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 277,
+      "data_type": "n",
+      "value": 0
+    },
+    {
+      "cell": "G20",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per hr"
+    },
+    {
+      "cell": "I20",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Manufacturing labour"
+    },
+    {
+      "cell": "K20",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "CMFG"
+    },
+    {
+      "cell": "I21",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Quality control"
+    },
+    {
+      "cell": "K21",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "CQC"
+    },
+    {
+      "cell": "C22",
+      "number_format": "General",
+      "style_id": 186,
+      "data_type": "s",
+      "value": "Number of Engineering Man-hours"
+    },
+    {
+      "cell": "E22",
+      "number_format": "General",
+      "style_id": 193,
+      "data_type": "s",
+      "value": "HENG"
+    },
+    {
+      "cell": "G22",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "hrs"
+    },
+    {
+      "cell": "I22",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Materials/equipment"
+    },
+    {
+      "cell": "K22",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "CMAT"
+    },
+    {
+      "cell": "C23",
+      "number_format": "General",
+      "style_id": 189,
+      "data_type": "s",
+      "value": "Number of Tooling Man-hours"
+    },
+    {
+      "cell": "E23",
+      "number_format": "General",
+      "style_id": 193,
+      "data_type": "s",
+      "value": "HTOOL"
+    },
+    {
+      "cell": "G23",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "hrs"
+    },
+    {
+      "cell": "I23",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Fixed landing gear discount"
+    },
+    {
+      "cell": "K23",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "landing gear"
+    },
+    {
+      "cell": "C24",
+      "number_format": "General",
+      "style_id": 185,
+      "data_type": "s",
+      "value": "No. of manufacturing Labour Man-hours"
+    },
+    {
+      "cell": "E24",
+      "number_format": "General",
+      "style_id": 193,
+      "data_type": "s",
+      "value": "HMFG"
+    },
+    {
+      "cell": "G24",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "hrs"
+    },
+    {
+      "cell": "I24",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Engine(s)"
+    },
+    {
+      "cell": "K24",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "CPP"
+    },
+    {
+      "cell": "I25",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Propeller(s)"
+    },
+    {
+      "cell": "K25",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "CFIXPROP"
+    },
+    {
+      "cell": "I26",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Avionics"
+    },
+    {
+      "cell": "K26",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "avionics"
+    },
+    {
+      "cell": "I27",
+      "number_format": "General",
+      "style_id": 145,
+      "data_type": "s",
+      "value": "Manufacturer's liability insurance"
+    },
+    {
+      "cell": "L27",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "data_type": "n",
+      "value": 300000
+    },
+    {
+      "cell": "I28",
+      "number_format": "General",
+      "style_id": 138,
+      "data_type": "s",
+      "value": "TOTAL COST TO PRODUCE"
+    },
+    {
+      "cell": "I29",
+      "number_format": "General",
+      "style_id": 138,
+      "data_type": "s",
+      "value": "MINIMUM SELLING PRICE"
+    },
+    {
+      "cell": "C30",
+      "number_format": "General",
+      "style_id": 256,
+      "data_type": "s",
+      "value": "Break-even Analysis"
+    },
+    {
+      "cell": "S31",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "n"
+    },
+    {
+      "cell": "T31",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "fixed+var"
+    },
+    {
+      "cell": "U31",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "fixed c"
+    },
+    {
+      "cell": "A32",
+      "number_format": "General",
+      "style_id": 184,
+      "data_type": "s",
+      "value": "Total fixed cost"
+    },
+    {
+      "cell": "S32",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "n",
+      "value": 0
+    },
+    {
+      "cell": "A33",
+      "number_format": "General",
+      "style_id": 162,
+      "data_type": "s",
+      "value": "Unit variable cost"
+    },
+    {
+      "cell": "A34",
+      "number_format": "General",
+      "style_id": 163,
+      "data_type": "s",
+      "value": "unit sales price"
+    },
+    {
+      "cell": "C34",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 277,
+      "data_type": "n",
+      "value": 800000
+    },
+    {
+      "cell": "E34",
+      "number_format": "General",
+      "style_id": 141,
+      "data_type": "s",
+      "value": "enter three different estimated selling"
+    },
+    {
+      "cell": "C35",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 277,
+      "data_type": "n",
+      "value": 1200000
+    },
+    {
+      "cell": "E35",
+      "number_format": "General",
+      "style_id": 142,
+      "data_type": "s",
+      "value": "prices of the aircraft"
+    },
+    {
+      "cell": "C36",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 277,
+      "data_type": "n",
+      "value": 1300000
+    },
+    {
+      "cell": "E36",
+      "number_format": "General",
+      "style_id": 199,
+      "data_type": "s",
+      "value": "HINT: they must be greater than unit variable cost"
+    },
+    {
+      "cell": "A38",
+      "number_format": "General",
+      "style_id": 161,
+      "data_type": "s",
+      "value": " final selling price"
+    },
+    {
+      "cell": "B39",
+      "number_format": "General",
+      "style_id": 195,
+      "data_type": "s",
+      "value": "NBE"
+    },
+    {
+      "cell": "D39",
+      "number_format": "General",
+      "style_id": 194,
+      "data_type": "s",
+      "value": "Number of Units to Break-even"
+    },
+    {
+      "cell": "D41",
+      "number_format": "General",
+      "style_id": 24,
+      "data_type": "s",
+      "value": "In the graph , the intersection between the fixed+variable "
+    },
+    {
+      "cell": "D42",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "line and respective selling prices corresponds to the break even"
+    },
+    {
+      "cell": "D43",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": " number on x-axis"
+    },
+    {
+      "cell": "C47",
+      "number_format": "General",
+      "style_id": 254,
+      "data_type": "s",
+      "value": "AIRCRAFT OPERATION COSTS"
+    },
+    {
+      "cell": "A50",
+      "number_format": "General",
+      "style_id": 170,
+      "data_type": "s",
+      "value": "if maintained by owner -0.15, 0  by hired technician"
+    },
+    {
+      "cell": "D50",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "F1"
+    },
+    {
+      "cell": "E50",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": -0.15
+    },
+    {
+      "cell": "A51",
+      "number_format": "General",
+      "style_id": 169,
+      "data_type": "s",
+      "value": "0 for easy engine access,otherwise input 0.02 "
+    },
+    {
+      "cell": "D51",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "F2"
+    },
+    {
+      "cell": "E51",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 0
+    },
+    {
+      "cell": "A52",
+      "number_format": "General",
+      "style_id": 171,
+      "data_type": "s",
+      "value": "fixed landing gear=0, 0.02 for retractable"
+    },
+    {
+      "cell": "D52",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "F3"
+    },
+    {
+      "cell": "E52",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 0
+    },
+    {
+      "cell": "A53",
+      "number_format": "General",
+      "style_id": 172,
+      "data_type": "s",
+      "value": "0 if no VFR radio installed,otherwise input 0.02"
+    },
+    {
+      "cell": "D53",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "F4"
+    },
+    {
+      "cell": "E53",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 0.02
+    },
+    {
+      "cell": "A54",
+      "number_format": "General",
+      "style_id": 173,
+      "data_type": "s",
+      "value": "0 if no IFR radios installed, otherwise input 0.04"
+    },
+    {
+      "cell": "D54",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "F5"
+    },
+    {
+      "cell": "E54",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 0
+    },
+    {
+      "cell": "A55",
+      "number_format": "General",
+      "style_id": 172,
+      "data_type": "s",
+      "value": "0 if no integral fuel tanks, otherwise input 0.01"
+    },
+    {
+      "cell": "D55",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "F6"
+    },
+    {
+      "cell": "E55",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 0
+    },
+    {
+      "cell": "A56",
+      "number_format": "General",
+      "style_id": 174,
+      "data_type": "s",
+      "value": "0 for simple flap system, otherwise input 0.02"
+    },
+    {
+      "cell": "D56",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "F7"
+    },
+    {
+      "cell": "E56",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 0
+    },
+    {
+      "cell": "A57",
+      "number_format": "General",
+      "style_id": 175,
+      "data_type": "s",
+      "value": "0 for 14CFR Part 23 certification, -0.10 for LSA crtfcn"
+    },
+    {
+      "cell": "D57",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "F8"
+    },
+    {
+      "cell": "E57",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 0
+    },
+    {
+      "cell": "J57",
+      "number_format": "General",
+      "style_id": 158,
+      "data_type": "s",
+      "value": "LOAN REPAYMENT (IF MONEY WAS BORROWED)"
+    },
+    {
+      "cell": "B58",
+      "number_format": "General",
+      "style_id": 169,
+      "data_type": "s",
+      "value": "Maintenance to Flight Hour Ratio"
+    },
+    {
+      "cell": "D58",
+      "number_format": "General",
+      "style_id": 181,
+      "data_type": "s",
+      "value": "FMF "
+    },
+    {
+      "cell": "K58",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "P"
+    },
+    {
+      "cell": "B59",
+      "number_format": "General",
+      "style_id": 180,
+      "data_type": "s",
+      "value": "hourly rate for A&P Technician"
+    },
+    {
+      "cell": "D59",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "RAP"
+    },
+    {
+      "cell": "E59",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 277,
+      "data_type": "n",
+      "value": 10
+    },
+    {
+      "cell": "F59",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per hr"
+    },
+    {
+      "cell": "J59",
+      "number_format": "General",
+      "style_id": 205,
+      "data_type": "s",
+      "value": "expected repayment time"
+    },
+    {
+      "cell": "K59",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "RT"
+    },
+    {
+      "cell": "L59",
+      "number_format": "General",
+      "style_id": 104,
+      "data_type": "n",
+      "value": 5
+    },
+    {
+      "cell": "M59",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "years"
+    },
+    {
+      "cell": "B60",
+      "number_format": "General",
+      "style_id": 179,
+      "data_type": "s",
+      "value": "no. of flight hours per year"
+    },
+    {
+      "cell": "D60",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "QFLGHT"
+    },
+    {
+      "cell": "E60",
+      "number_format": "General",
+      "style_id": 54,
+      "data_type": "n",
+      "value": 1040
+    },
+    {
+      "cell": "F60",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "hrs"
+    },
+    {
+      "cell": "J60",
+      "number_format": "General",
+      "style_id": 79,
+      "data_type": "s",
+      "value": "monthly interest rate"
+    },
+    {
+      "cell": "K60",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "i"
+    },
+    {
+      "cell": "L60",
+      "number_format": "General",
+      "style_id": 104,
+      "data_type": "n",
+      "value": 9
+    },
+    {
+      "cell": "M60",
+      "number_format": "General",
+      "style_id": 79,
+      "data_type": "s",
+      "value": "%"
+    },
+    {
+      "cell": "C61",
+      "number_format": "General",
+      "style_id": 168,
+      "data_type": "s",
+      "value": "storage rate "
+    },
+    {
+      "cell": "D61",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "RSTOR"
+    },
+    {
+      "cell": "E61",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 277,
+      "data_type": "n",
+      "value": 250
+    },
+    {
+      "cell": "F61",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per month"
+    },
+    {
+      "cell": "C62",
+      "number_format": "General",
+      "style_id": 168,
+      "data_type": "s",
+      "value": "fuel price"
+    },
+    {
+      "cell": "D62",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "RFUEL"
+    },
+    {
+      "cell": "E62",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 277,
+      "data_type": "n",
+      "value": 5.59
+    },
+    {
+      "cell": "F62",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per gal "
+    },
+    {
+      "cell": "J62",
+      "number_format": "General",
+      "style_id": 204,
+      "data_type": "s",
+      "value": "monthly loan repayment"
+    },
+    {
+      "cell": "K62",
+      "number_format": "General",
+      "style_id": 98,
+      "data_type": "s",
+      "value": "Cmonth"
+    },
+    {
+      "cell": "C63",
+      "number_format": "General",
+      "style_id": 168,
+      "data_type": "s",
+      "value": "total fuel flow"
+    },
+    {
+      "cell": "D63",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "FFCRUISE"
+    },
+    {
+      "cell": "F63",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "gal/hr"
+    },
+    {
+      "cell": "K63",
+      "number_format": "General",
+      "style_id": 98,
+      "data_type": "s",
+      "value": "CLOAN"
+    },
+    {
+      "cell": "B64",
+      "number_format": "General",
+      "style_id": 171,
+      "data_type": "s",
+      "value": "insured value of the aircraft"
+    },
+    {
+      "cell": "D64",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "CAC"
+    },
+    {
+      "cell": "C65",
+      "number_format": "General",
+      "style_id": 168,
+      "data_type": "s",
+      "value": "hourly rate of crew"
+    },
+    {
+      "cell": "D65",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "RCREW"
+    },
+    {
+      "cell": "E65",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "data_type": "n",
+      "value": 0
+    },
+    {
+      "cell": "F65",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per hr"
+    },
+    {
+      "cell": "J66",
+      "number_format": "General",
+      "style_id": 203,
+      "data_type": "s",
+      "value": "IMPORTANT NOTES:-"
+    },
+    {
+      "cell": "C67",
+      "number_format": "General",
+      "style_id": 168,
+      "data_type": "s",
+      "value": "Maintenace Cost"
+    },
+    {
+      "cell": "D67",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "CAP"
+    },
+    {
+      "cell": "F67",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per year"
+    },
+    {
+      "cell": "J67",
+      "number_format": "General",
+      "style_id": 202,
+      "data_type": "s",
+      "value": "WE  HAVEN'T INCLUDED wages for engineering,technician, tooling and  crew since "
+    },
+    {
+      "cell": "C68",
+      "number_format": "General",
+      "style_id": 168,
+      "data_type": "s",
+      "value": "Storage Cost"
+    },
+    {
+      "cell": "D68",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "CSTOR"
+    },
+    {
+      "cell": "F68",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per year"
+    },
+    {
+      "cell": "J68",
+      "number_format": "General",
+      "style_id": 202,
+      "data_type": "s",
+      "value": "this is a university project and we have assumed all services will be provided for free"
+    },
+    {
+      "cell": "C69",
+      "number_format": "General",
+      "style_id": 168,
+      "data_type": "s",
+      "value": "Fuel Cost"
+    },
+    {
+      "cell": "D69",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "CFUEL"
+    },
+    {
+      "cell": "F69",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per year"
+    },
+    {
+      "cell": "J69",
+      "number_format": "General",
+      "style_id": 182,
+      "data_type": "s",
+      "value": "this will be changed accordingly if a new approach is given."
+    },
+    {
+      "cell": "C70",
+      "number_format": "General",
+      "style_id": 168,
+      "data_type": "s",
+      "value": "Insurance Cost"
+    },
+    {
+      "cell": "D70",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "CINS"
+    },
+    {
+      "cell": "F70",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per year"
+    },
+    {
+      "cell": "C71",
+      "number_format": "General",
+      "style_id": 168,
+      "data_type": "s",
+      "value": "Inspection Cost"
+    },
+    {
+      "cell": "D71",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "CINSP"
+    },
+    {
+      "cell": "E71",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "data_type": "n",
+      "value": 500
+    },
+    {
+      "cell": "F71",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per year"
+    },
+    {
+      "cell": "C72",
+      "number_format": "General",
+      "style_id": 168,
+      "data_type": "s",
+      "value": "Engine Overhaul Fund"
+    },
+    {
+      "cell": "D72",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "COVER"
+    },
+    {
+      "cell": "F72",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per year"
+    },
+    {
+      "cell": "C73",
+      "number_format": "General",
+      "style_id": 168,
+      "data_type": "s",
+      "value": "Crew Cost"
+    },
+    {
+      "cell": "D73",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "CCREW"
+    },
+    {
+      "cell": "F73",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per year"
+    },
+    {
+      "cell": "C74",
+      "number_format": "General",
+      "style_id": 168,
+      "data_type": "s",
+      "value": "Loan Repayment"
+    },
+    {
+      "cell": "D74",
+      "number_format": "General",
+      "style_id": 274,
+      "data_type": "s",
+      "value": "CLOAN"
+    },
+    {
+      "cell": "F74",
+      "number_format": "General",
+      "style_id": 213,
+      "data_type": "s",
+      "value": "per year"
+    },
+    {
+      "cell": "C76",
+      "number_format": "General",
+      "style_id": 196,
+      "data_type": "s",
+      "value": "TOTAL YEARLY COST"
+    },
+    {
+      "cell": "D76",
+      "number_format": "General",
+      "style_id": 197,
+      "data_type": "s",
+      "value": "CYEAR"
+    },
+    {
+      "cell": "C77",
+      "number_format": "General",
+      "style_id": 196,
+      "data_type": "s",
+      "value": "COST PER FLIGHT HOUR"
+    },
+    {
+      "cell": "D77",
+      "number_format": "General",
+      "style_id": 197,
+      "data_type": "s",
+      "value": "CHR"
+    },
+    {
+      "cell": "F77",
+      "number_format": "General",
+      "style_id": 79,
+      "data_type": "s",
+      "value": "per hour"
+    }
+  ],
+  "formulas": [
+    {
+      "cell": "B5",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "='Detailed Weights'!L19-'Detailed Weights'!L12-'Detailed Weights'!L16-'Detailed Weights'!L18-'Detailed Weights'!L14",
+      "cached_value": 1740.1367540708186,
+      "references": {
+        "cross_sheet": [
+          "'Detailed Weights'!L12",
+          "'Detailed Weights'!L14",
+          "'Detailed Weights'!L16",
+          "'Detailed Weights'!L18",
+          "'Detailed Weights'!L19"
+        ],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "H9",
+      "number_format": "0",
+      "style_id": 200,
+      "formula": "=F22/(H5*H6*H7)",
+      "cached_value": 31.85731827696499,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "B10",
+      "number_format": "General",
+      "style_id": 54,
+      "formula": "=1+B9",
+      "cached_value": 1,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "H10",
+      "number_format": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+      "style_id": 132,
+      "formula": "=F24/B6",
+      "cached_value": 39282.67314662316,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "B12",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=B6/60",
+      "cached_value": 0.016666666666666666,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "L15",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=2.0969*F22*F16*F17",
+      "cached_value": 0,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "L16",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=0.06458*B5^0.873*Table2[[#Headers],[170]]^1.89*'Cost Analysis'!F18^0.346*'Cost Analysis'!F17*'Cost Analysis'!B7*'Cost Analysis'!B8*(1+0.5*'Cost Analysis'!B9)*'Cost Analysis'!B11",
+      "cached_value": 715608.998208848,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [
+          "'Cost Analysis'!B11",
+          "'Cost Analysis'!B7",
+          "'Cost Analysis'!B8",
+          "'Cost Analysis'!B9",
+          "'Cost Analysis'!F17",
+          "'Cost Analysis'!F18"
+        ],
+        "structured": [
+          "Table2[[#Headers],[170]]"
+        ],
+        "external": []
+      }
+    },
+    {
+      "cell": "L17",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=0.009646*B5^1.16*Table2[[#Headers],[170]]^1.3718*'Cost Analysis'!F18^1.281*'Cost Analysis'!F17*B7",
+      "cached_value": 63555.59790546199,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [
+          "'Cost Analysis'!F17",
+          "'Cost Analysis'!F18"
+        ],
+        "structured": [
+          "Table2[[#Headers],[170]]"
+        ],
+        "external": []
+      }
+    },
+    {
+      "cell": "L18",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=2.0969*F23*F17*F19",
+      "cached_value": 0,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "L19",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 278,
+      "formula": "=L15+L16+L17+L18",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "L20",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=2.0969*F24*F20*F17",
+      "cached_value": 0,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "L21",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=0.13*L20*B7*(1+0.5*B9)",
+      "cached_value": 0,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "F22",
+      "number_format": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+      "style_id": 29,
+      "formula": "=0.0396*B5^0.791*Table2[[#Headers],[170]]^1.526*'Cost Analysis'!B6^0.183*'Cost Analysis'!B7*'Cost Analysis'!B8*'Cost Analysis'!B10*'Cost Analysis'!B11",
+      "cached_value": 36699.630655063665,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [
+          "'Cost Analysis'!B10",
+          "'Cost Analysis'!B11",
+          "'Cost Analysis'!B6",
+          "'Cost Analysis'!B7",
+          "'Cost Analysis'!B8"
+        ],
+        "structured": [
+          "Table2[[#Headers],[170]]"
+        ],
+        "external": []
+      }
+    },
+    {
+      "cell": "L22",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=24.89*B5^0.689*Table2[[#Headers],[170]]^0.624*'Cost Analysis'!B6^0.792*'Cost Analysis'!F17*'Cost Analysis'!B7*'Cost Analysis'!B8*'Cost Analysis'!B11",
+      "cached_value": 104854.4755486597,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [
+          "'Cost Analysis'!B11",
+          "'Cost Analysis'!B6",
+          "'Cost Analysis'!B7",
+          "'Cost Analysis'!B8",
+          "'Cost Analysis'!F17"
+        ],
+        "structured": [
+          "Table2[[#Headers],[170]]"
+        ],
+        "external": []
+      }
+    },
+    {
+      "cell": "F23",
+      "number_format": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+      "style_id": 29,
+      "formula": "=1.0032*B5^0.764*Table2[[#Headers],[170]]^0.899*'Cost Analysis'!B6^0.178*B12^0.066*B13*B8*B10*B11",
+      "cached_value": 23174.417332022196,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [
+          "'Cost Analysis'!B6"
+        ],
+        "structured": [
+          "Table2[[#Headers],[170]]"
+        ],
+        "external": []
+      }
+    },
+    {
+      "cell": "L23",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=-(7500*B6)",
+      "cached_value": -7500,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "F24",
+      "number_format": "_(* #,##0.00_);_(* \\(#,##0.00\\);_(* \"-\"??_);_(@_)",
+      "style_id": 29,
+      "formula": "=9.6613*B5^0.74*Table2[[#Headers],[170]]^0.543*'Cost Analysis'!B6^0.524*'Cost Analysis'!B7*'Cost Analysis'!B8*'Cost Analysis'!B10",
+      "cached_value": 39282.67314662316,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [
+          "'Cost Analysis'!B10",
+          "'Cost Analysis'!B6",
+          "'Cost Analysis'!B7",
+          "'Cost Analysis'!B8"
+        ],
+        "structured": [
+          "Table2[[#Headers],[170]]"
+        ],
+        "external": []
+      }
+    },
+    {
+      "cell": "L24",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=174*'Sref and POWER SIZING'!K86*'Sref and POWER SIZING'!M96*'Cost Analysis'!F17",
+      "cached_value": 90480,
+      "references": {
+        "cross_sheet": [
+          "'Sref and POWER SIZING'!K86",
+          "'Sref and POWER SIZING'!M96"
+        ],
+        "local_sheet": [
+          "'Cost Analysis'!F17"
+        ],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "L25",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=3145*'Sref and POWER SIZING'!K86*'Cost Analysis'!F17",
+      "cached_value": 6290,
+      "references": {
+        "cross_sheet": [
+          "'Sref and POWER SIZING'!K86"
+        ],
+        "local_sheet": [
+          "'Cost Analysis'!F17"
+        ],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "L26",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=15000*B6",
+      "cached_value": 15000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "L28",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 279,
+      "formula": "=L29-L27",
+      "cached_value": 988289.0716629697,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "L29",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 280,
+      "formula": "=SUM(L19:L27)",
+      "cached_value": 1288289.0716629697,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V31",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=C34",
+      "cached_value": 800000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W31",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=C35",
+      "cached_value": 1200000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X31",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=C36",
+      "cached_value": 1300000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "C32",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=L19",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T32",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S32)",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U32",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V32",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S32",
+      "cached_value": 0,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W32",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S32",
+      "cached_value": 0,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X32",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S32",
+      "cached_value": 0,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "C33",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=SUM(L20:L27)",
+      "cached_value": 509124.4755486597,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S33",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S32+0.5",
+      "cached_value": 0.5,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T33",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S33)",
+      "cached_value": 1033726.8338886398,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U33",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V33",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S33",
+      "cached_value": 400000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W33",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S33",
+      "cached_value": 600000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X33",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S33",
+      "cached_value": 650000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S34",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S33+0.5",
+      "cached_value": 1,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T34",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S34)",
+      "cached_value": 1288289.0716629697,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U34",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V34",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S34",
+      "cached_value": 800000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W34",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S34",
+      "cached_value": 1200000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X34",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S34",
+      "cached_value": 1300000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S35",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S34+0.5",
+      "cached_value": 1.5,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T35",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S35)",
+      "cached_value": 1542851.3094372996,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U35",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V35",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S35",
+      "cached_value": 1200000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W35",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S35",
+      "cached_value": 1800000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X35",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S35",
+      "cached_value": 1950000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S36",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S35+0.5",
+      "cached_value": 2,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T36",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S36)",
+      "cached_value": 1797413.5472116293,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U36",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V36",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S36",
+      "cached_value": 1600000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W36",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S36",
+      "cached_value": 2400000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X36",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S36",
+      "cached_value": 2600000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S37",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S36+0.5",
+      "cached_value": 2.5,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T37",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S37)",
+      "cached_value": 2051975.784985959,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U37",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V37",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S37",
+      "cached_value": 2000000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W37",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S37",
+      "cached_value": 3000000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X37",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S37",
+      "cached_value": 3250000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "C38",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 282,
+      "formula": "=C34",
+      "cached_value": 800000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S38",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S37+0.5",
+      "cached_value": 3,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T38",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S38)",
+      "cached_value": 2306538.022760289,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U38",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V38",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S38",
+      "cached_value": 2400000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W38",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S38",
+      "cached_value": 3600000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X38",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S38",
+      "cached_value": 3900000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "C39",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 283,
+      "formula": "=C32/(C38-C33)",
+      "cached_value": 2.6786873786785526,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S39",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S38+0.5",
+      "cached_value": 3.5,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T39",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S39)",
+      "cached_value": 2561100.260534619,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U39",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V39",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S39",
+      "cached_value": 2800000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W39",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S39",
+      "cached_value": 4200000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X39",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S39",
+      "cached_value": 4550000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S40",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S39+0.5",
+      "cached_value": 4,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T40",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S40)",
+      "cached_value": 2815662.4983089487,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U40",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V40",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S40",
+      "cached_value": 3200000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W40",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S40",
+      "cached_value": 4800000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X40",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S40",
+      "cached_value": 5200000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S41",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S40+0.5",
+      "cached_value": 4.5,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T41",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S41)",
+      "cached_value": 3070224.7360832784,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U41",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V41",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S41",
+      "cached_value": 3600000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W41",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S41",
+      "cached_value": 5400000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X41",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S41",
+      "cached_value": 5850000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S42",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S41+0.5",
+      "cached_value": 5,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T42",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S42)",
+      "cached_value": 3324786.973857608,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U42",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V42",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S42",
+      "cached_value": 4000000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W42",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S42",
+      "cached_value": 6000000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X42",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S42",
+      "cached_value": 6500000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S43",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S42+0.5",
+      "cached_value": 5.5,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T43",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S43)",
+      "cached_value": 3579349.2116319383,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U43",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V43",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S43",
+      "cached_value": 4400000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W43",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S43",
+      "cached_value": 6600000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X43",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S43",
+      "cached_value": 7150000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S44",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S43+0.5",
+      "cached_value": 6,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T44",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S44)",
+      "cached_value": 3833911.449406268,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U44",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V44",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S44",
+      "cached_value": 4800000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W44",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S44",
+      "cached_value": 7200000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X44",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S44",
+      "cached_value": 7800000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S45",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S44+0.5",
+      "cached_value": 6.5,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T45",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S45)",
+      "cached_value": 4088473.687180598,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U45",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V45",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S45",
+      "cached_value": 5200000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W45",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S45",
+      "cached_value": 7800000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X45",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S45",
+      "cached_value": 8450000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S46",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S45+0.5",
+      "cached_value": 7,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T46",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S46)",
+      "cached_value": 4343035.924954928,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U46",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V46",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S46",
+      "cached_value": 5600000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W46",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S46",
+      "cached_value": 8400000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X46",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S46",
+      "cached_value": 9100000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S47",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S46+0.5",
+      "cached_value": 7.5,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T47",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S47)",
+      "cached_value": 4597598.162729258,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U47",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V47",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S47",
+      "cached_value": 6000000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W47",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S47",
+      "cached_value": 9000000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X47",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S47",
+      "cached_value": 9750000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S48",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S47+0.5",
+      "cached_value": 8,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T48",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S48)",
+      "cached_value": 4852160.400503587,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U48",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V48",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S48",
+      "cached_value": 6400000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W48",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S48",
+      "cached_value": 9600000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X48",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S48",
+      "cached_value": 10400000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S49",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S48+0.5",
+      "cached_value": 8.5,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T49",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S49)",
+      "cached_value": 5106722.638277918,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U49",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V49",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S49",
+      "cached_value": 6800000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W49",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S49",
+      "cached_value": 10200000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X49",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S49",
+      "cached_value": 11050000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S50",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S49+0.5",
+      "cached_value": 9,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T50",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S50)",
+      "cached_value": 5361284.876052247,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U50",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V50",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S50",
+      "cached_value": 7200000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W50",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S50",
+      "cached_value": 10800000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X50",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S50",
+      "cached_value": 11700000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S51",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S50+0.5",
+      "cached_value": 9.5,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T51",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S51)",
+      "cached_value": 5615847.113826577,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U51",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V51",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S51",
+      "cached_value": 7600000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W51",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S51",
+      "cached_value": 11400000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X51",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S51",
+      "cached_value": 12350000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S52",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S51+0.5",
+      "cached_value": 10,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T52",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S52)",
+      "cached_value": 5870409.351600906,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U52",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V52",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S52",
+      "cached_value": 8000000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W52",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S52",
+      "cached_value": 12000000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X52",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S52",
+      "cached_value": 13000000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "S53",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=S52+0.5",
+      "cached_value": 10.5,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "T53",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32+($C$33*S53)",
+      "cached_value": 6124971.589375237,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "U53",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$32",
+      "cached_value": 779164.59611431,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "V53",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$34*S53",
+      "cached_value": 8400000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "W53",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$35*S53",
+      "cached_value": 12600000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "X53",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=$C$36*S53",
+      "cached_value": 13650000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "E58",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=0.3+SUM(E50:E57)",
+      "cached_value": 0.16999999999999998,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "L58",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=L29",
+      "cached_value": 1288289.0716629697,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "L62",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 284,
+      "formula": "=(L58*(L60/(12*100)))/(1-(1/((1+(L60/(12*100)))^(12*L59))))",
+      "cached_value": 26742.76218380952,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "E63",
+      "number_format": "General",
+      "style_id": 213,
+      "formula": "=([1]cruise!$B$8*[1]cruise!$E$8)/5.87",
+      "cached_value": 32.33390119250426,
+      "references": {
+        "cross_sheet": [
+          "[1]cruise!$B$8",
+          "[1]cruise!$E$8"
+        ],
+        "local_sheet": [],
+        "structured": [],
+        "external": [
+          "[1]cruise!$B$8",
+          "[1]cruise!$E$8"
+        ]
+      }
+    },
+    {
+      "cell": "L63",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 285,
+      "formula": "=L62*12",
+      "cached_value": 320913.1462057142,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "E64",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=C38",
+      "cached_value": 800000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "E67",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=E58*E59*E60",
+      "cached_value": 1767.9999999999998,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "E68",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=12*E61",
+      "cached_value": 3000,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "E69",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=(E63*E60*E62)",
+      "cached_value": 187976.36797274274,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "E70",
+      "number_format": "_(\"$\"* #,##0.000_);_(\"$\"* \\(#,##0.000\\);_(\"$\"* \"-\"???_);_(@_)",
+      "style_id": 286,
+      "formula": "=500+(0.015*E64)",
+      "cached_value": 12500,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "E72",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=5*'Sref and POWER SIZING'!K86*'Cost Analysis'!E60",
+      "cached_value": 10400,
+      "references": {
+        "cross_sheet": [
+          "'Sref and POWER SIZING'!K86"
+        ],
+        "local_sheet": [
+          "'Cost Analysis'!E60"
+        ],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "E73",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 276,
+      "formula": "=E65*'MTOW & WEIGHTS'!B14*'Cost Analysis'!E60",
+      "cached_value": 0,
+      "references": {
+        "cross_sheet": [
+          "'MTOW & WEIGHTS'!B14"
+        ],
+        "local_sheet": [
+          "'Cost Analysis'!E60"
+        ],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "E74",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 281,
+      "formula": "=L63",
+      "cached_value": 320913.1462057142,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "E76",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 287,
+      "formula": "=SUM(E67:E74)",
+      "cached_value": 537057.514178457,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    },
+    {
+      "cell": "E77",
+      "number_format": "_(\"$\"* #,##0.00_);_(\"$\"* \\(#,##0.00\\);_(\"$\"* \"-\"??_);_(@_)",
+      "style_id": 288,
+      "formula": "=E76/E60",
+      "cached_value": 516.401455940824,
+      "references": {
+        "cross_sheet": [],
+        "local_sheet": [],
+        "structured": [],
+        "external": []
+      }
+    }
+  ]
+}
