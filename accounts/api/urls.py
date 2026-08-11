@@ -34,8 +34,8 @@
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
 
-from django.conf.urls import url
+from django.urls import path
 
 from .views import ExampleSimpleAPIView
 
-urlpatterns = [url(r"^example/$", ExampleSimpleAPIView.as_view(), name="example_api")]
+urlpatterns = [path("example/", ExampleSimpleAPIView.as_view(), name="example_api")]
