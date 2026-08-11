@@ -95,6 +95,13 @@ test("renders backend results and blocks incomplete inputs", async () => {
   );
 
   expect(await screen.findByText("Development & production")).toBeInTheDocument();
+  expect(
+    screen.getByRole("table", { name: "Commercial labour basis" })
+  ).toHaveTextContent("Manufacturing");
+  expect(screen.getByLabelText(/Engineering labour/)).toHaveValue(0);
+  expect(screen.getByLabelText(/Manufacturer liability insurance/)).toHaveValue(
+    300000
+  );
   fireEvent.change(screen.getByLabelText(/Airframe structural weight/), {
     target: { value: "" },
   });

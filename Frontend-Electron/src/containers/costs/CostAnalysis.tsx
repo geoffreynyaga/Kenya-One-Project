@@ -36,6 +36,11 @@ type FormField =
   | "prototypeCount"
   | "toolingRate"
   | "manufacturingRate"
+  | "liabilityInsurance"
+  | "fixedGearDiscount"
+  | "engineCostFactor"
+  | "propellerCostFactor"
+  | "avionicsCost"
   | "engineCount"
   | "enginePower"
   | "pilotCount"
@@ -57,6 +62,9 @@ type FormField =
   | "fuelFlow"
   | "crewRate"
   | "inspectionCost"
+  | "insuranceBase"
+  | "insuranceRate"
+  | "overhaulRate"
   | "loanTerm"
   | "interestRate"
   | "loanPrincipal";
@@ -80,6 +88,11 @@ const DEFAULT_VALUES: FormValues = {
   prototypeCount: "1",
   toolingRate: "0",
   manufacturingRate: "0",
+  liabilityInsurance: "300000",
+  fixedGearDiscount: "7500",
+  engineCostFactor: "174",
+  propellerCostFactor: "3145",
+  avionicsCost: "15000",
   engineCount: "2",
   enginePower: "260",
   pilotCount: "2",
@@ -101,6 +114,9 @@ const DEFAULT_VALUES: FormValues = {
   fuelFlow: "32.33390119",
   crewRate: "0",
   inspectionCost: "500",
+  insuranceBase: "500",
+  insuranceRate: "0.015",
+  overhaulRate: "5",
   loanTerm: "5",
   interestRate: "9",
   loanPrincipal: "",
@@ -144,6 +160,17 @@ const maintenanceFields: FormField[] = [
   "maintenanceFactor8",
 ];
 
+const maintenanceLabels = [
+  "Owner-maintained adjustment",
+  "Easy engine access adjustment",
+  "Retractable landing gear adjustment",
+  "VFR radio adjustment",
+  "IFR radio adjustment",
+  "Integral fuel tank adjustment",
+  "Complex flap system adjustment",
+  "LSA certification adjustment",
+];
+
 function toRequest(values: FormValues): CostAnalysisRequest {
   const number = (field: FormField) => Number(values[field]);
   return {
@@ -170,6 +197,11 @@ function toRequest(values: FormValues): CostAnalysisRequest {
       prototype_count: number("prototypeCount"),
       tooling_rate: number("toolingRate"),
       manufacturing_rate: number("manufacturingRate"),
+      liability_insurance: number("liabilityInsurance"),
+      fixed_gear_discount_per_aircraft: number("fixedGearDiscount"),
+      engine_cost_factor: number("engineCostFactor"),
+      propeller_cost_factor: number("propellerCostFactor"),
+      avionics_cost_per_aircraft: number("avionicsCost"),
     },
     operating: {
       maintenance_factors: maintenanceFields.map(number),
@@ -179,6 +211,9 @@ function toRequest(values: FormValues): CostAnalysisRequest {
       fuel_price_per_gallon: number("fuelPrice"),
       crew_rate: number("crewRate"),
       inspection_per_year: number("inspectionCost"),
+      insurance_base: number("insuranceBase"),
+      insurance_rate: number("insuranceRate"),
+      overhaul_per_engine_flight_hour: number("overhaulRate"),
     },
     financing: {
       loan_term_years: number("loanTerm"),
@@ -352,6 +387,77 @@ function ResultTable({ rows, label }: { rows: ResultRow[]; label: string }) {
   );
 }
 
+interface LabourRow {
+  label: string;
+  hours: number;
+  rate: number;
+  cost: number;
+}
+
+function LabourBasisTable({ rows }: { rows: LabourRow[] }) {
+  const columns = useMemo<ColumnDef<LabourRow>[]>(
+    () => [
+      { accessorKey: "label", header: "Labour item" },
+      {
+        accessorKey: "hours",
+        header: "Hours",
+        cell: ({ getValue }) => formatNumber(getValue<number>()),
+      },
+      {
+        accessorKey: "rate",
+        header: "Loaded rate",
+        cell: ({ getValue }) => formatCurrency(getValue<number>(), 2),
+      },
+      {
+        accessorKey: "cost",
+        header: "Calculated cost",
+        cell: ({ getValue }) => formatCurrency(getValue<number>()),
+      },
+    ],
+    []
+  );
+  const table = useReactTable({
+    data: rows,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    autoResetPageIndex: false,
+  });
+
+  return (
+    <div className="overflow-x-auto border border-rule bg-field">
+      <table className="w-full border-collapse text-left" aria-label="Commercial labour basis">
+        <thead className="bg-panel font-mono text-label tracking-band text-ink-label">
+          {table.getHeaderGroups().map((headerGroup) => (
+            <tr key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <th className="border-b border-rule px-3 py-2 font-medium" key={header.id}>
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                </th>
+              ))}
+            </tr>
+          ))}
+        </thead>
+        <tbody className="font-mono text-note text-ink-body">
+          {table.getRowModel().rows.map((row) => (
+            <tr key={row.id}>
+              {row.getVisibleCells().map((cell, index) => (
+                <td
+                  className={`border-b border-rule-hair px-3 py-[7px] ${
+                    index > 0 ? "text-right text-ink" : ""
+                  }`}
+                  key={cell.id}
+                >
+                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 const formatCurrency = (value: number, digits = 0) =>
   new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -363,7 +469,13 @@ const formatCurrency = (value: number, digits = 0) =>
 const formatNumber = (value: number, digits = 2) =>
   new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
 
-function CostResults({ result }: { result: CostAnalysisResult }) {
+function CostResults({
+  result,
+  inputs,
+}: {
+  result: CostAnalysisResult;
+  inputs: CostAnalysisRequest;
+}) {
   const breakdown = result.development.breakdown;
   const developmentRows: ResultRow[] = [
     { label: "Engineering", value: breakdown.engineering, unit: "project" },
@@ -383,6 +495,33 @@ function CostResults({ result }: { result: CostAnalysisResult }) {
     { label: "Minimum selling price", value: breakdown.minimum_selling_price, unit: "aircraft", total: true },
   ];
   const operating = result.operating;
+  const labourRows: LabourRow[] = [
+    {
+      label: "Engineering",
+      hours: result.development.engineering_hours,
+      rate: inputs.development.engineering_rate,
+      cost: breakdown.engineering,
+    },
+    {
+      label: "Tooling",
+      hours: result.development.tooling_hours,
+      rate: inputs.development.tooling_rate,
+      cost: breakdown.tooling,
+    },
+    {
+      label: "Manufacturing",
+      hours: result.development.manufacturing_hours,
+      rate: inputs.development.manufacturing_rate,
+      cost: breakdown.manufacturing_labor,
+    },
+    {
+      label: "Crew",
+      hours:
+        inputs.aircraft.pilot_count * inputs.operating.flight_hours_per_year,
+      rate: inputs.operating.crew_rate,
+      cost: operating.crew,
+    },
+  ];
   const operatingRows: ResultRow[] = [
     { label: "Maintenance", value: operating.maintenance, unit: "per year" },
     { label: "Storage", value: operating.storage, unit: "per year" },
@@ -421,6 +560,17 @@ function CostResults({ result }: { result: CostAnalysisResult }) {
           <div className="text-right font-mono text-label text-ink-faint">
             {formatNumber(result.development.engineers_required)} engineers · {formatNumber(result.development.manufacturing_hours_per_aircraft, 0)} hr / aircraft
           </div>
+        </div>
+        <div className="mb-4">
+          <div className="mb-2 flex flex-wrap items-end justify-between gap-2">
+            <h3 className="font-mono text-meta font-medium tracking-band text-ink">
+              COMMERCIAL LABOUR BASIS
+            </h3>
+            <p className="max-w-[620px] text-right text-note leading-5 text-ink-muted">
+              DAPCA labour costs apply the workbook factor and CPI to the entered loaded rates. Crew cost is pilot-hours × crew rate.
+            </p>
+          </div>
+          <LabourBasisTable rows={labourRows} />
         </div>
         <ResultTable label="Development and production cost breakdown" rows={developmentRows} />
       </section>
@@ -542,6 +692,17 @@ const operatingFields: Array<[FormField, string, string?]> = [
   ["pilotCount", "Pilot count"],
   ["crewRate", "Crew rate", "$/hr"],
   ["inspectionCost", "Inspection", "$/year"],
+  ["insuranceBase", "Insurance base charge", "$/year"],
+  ["insuranceRate", "Insurance value rate", "fraction"],
+  ["overhaulRate", "Engine overhaul reserve", "$/engine hr"],
+];
+
+const costBasisFields: Array<[FormField, string, string?]> = [
+  ["liabilityInsurance", "Manufacturer liability insurance", "$"],
+  ["fixedGearDiscount", "Fixed gear discount", "$/aircraft"],
+  ["engineCostFactor", "Engine cost factor", "$/hp"],
+  ["propellerCostFactor", "Propeller cost factor", "$/propeller"],
+  ["avionicsCost", "Avionics allowance", "$/aircraft"],
 ];
 
 export default function CostAnalysis() {
@@ -598,6 +759,13 @@ export default function CostAnalysis() {
               {developmentFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
             </InputSection>
 
+            <InputSection title="COST BASIS & ALLOWANCES">
+              {costBasisFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
+              <p className="bg-panel px-3 py-3 text-note leading-5 text-ink-muted">
+                Zero labour rates reproduce the university workbook. Enter loaded commercial rates and allowances here; zero-valued cost rows remain visible in the results.
+              </p>
+            </InputSection>
+
             <InputSection title="SELLING PRICE SCENARIOS">
               <InputCell field="sellingPrice1" label="Scenario 1" unit="$" {...inputProps} />
               <InputCell field="sellingPrice2" label="Scenario 2" unit="$" {...inputProps} />
@@ -605,7 +773,7 @@ export default function CostAnalysis() {
             </InputSection>
 
             <InputSection title="OPERATING INPUTS">
-              {maintenanceFields.map((field, index) => <InputCell field={field} key={field} label={`Maintenance factor F${index + 1}`} {...inputProps} />)}
+              {maintenanceFields.map((field, index) => <InputCell field={field} key={field} label={`${maintenanceLabels[index]} · F${index + 1}`} {...inputProps} />)}
               {operatingFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
             </InputSection>
 
@@ -629,7 +797,7 @@ export default function CostAnalysis() {
                 <div className="mt-1 text-note">{query.error.message} Check that the Django server is running, then solve again.</div>
               </div>
             ) : query.data ? (
-              <CostResults result={query.data} />
+              <CostResults inputs={submitted} result={query.data} />
             ) : null}
           </div>
         </div>

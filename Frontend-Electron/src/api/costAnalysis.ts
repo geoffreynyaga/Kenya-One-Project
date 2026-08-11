@@ -22,6 +22,11 @@ export interface CostAnalysisRequest {
     prototype_count: number;
     tooling_rate: number;
     manufacturing_rate: number;
+    liability_insurance: number;
+    fixed_gear_discount_per_aircraft: number;
+    engine_cost_factor: number;
+    propeller_cost_factor: number;
+    avionics_cost_per_aircraft: number;
   };
   operating: {
     maintenance_factors: number[];
@@ -31,6 +36,9 @@ export interface CostAnalysisRequest {
     fuel_price_per_gallon: number;
     crew_rate: number;
     inspection_per_year: number;
+    insurance_base: number;
+    insurance_rate: number;
+    overhaul_per_engine_flight_hour: number;
   };
   financing: {
     loan_term_years: number;

@@ -24,6 +24,11 @@ const request: CostAnalysisRequest = {
     prototype_count: 1,
     tooling_rate: 0,
     manufacturing_rate: 0,
+    liability_insurance: 300000,
+    fixed_gear_discount_per_aircraft: 7500,
+    engine_cost_factor: 174,
+    propeller_cost_factor: 3145,
+    avionics_cost_per_aircraft: 15000,
   },
   operating: {
     maintenance_factors: [-0.15, 0, 0, 0.02, 0, 0, 0, 0],
@@ -33,6 +38,9 @@ const request: CostAnalysisRequest = {
     fuel_price_per_gallon: 5.59,
     crew_rate: 0,
     inspection_per_year: 500,
+    insurance_base: 500,
+    insurance_rate: 0.015,
+    overhaul_per_engine_flight_hour: 5,
   },
   financing: {
     loan_term_years: 5,
