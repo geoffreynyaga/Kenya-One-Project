@@ -170,7 +170,6 @@ export default function InitialSizing(props: Props) {
                 </InputGroupAddon>
                 <FormInput
                   size="sm"
-                  className="col-xs-8"
                   placeholder="Max Value"
                   value={valueX[1] > 0 ? valueX[1] : context[1]}
                   onChange={(e: any) => {

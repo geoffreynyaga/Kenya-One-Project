@@ -34,8 +34,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Col, Container, Row } from "../../components/shards";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "shards-ui/dist/css/shards.min.css";
 
 import { SliderValueContext } from "./SliderValueContext";
 import InitialSizing from "./InitialSizing";

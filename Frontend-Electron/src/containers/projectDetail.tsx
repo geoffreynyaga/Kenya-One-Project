@@ -34,8 +34,6 @@
 
 import React from "react";
 import { Col, Container, Row } from "../components/shards";
-import "bootstrap/dist/css/bootstrap.min.css";
-import "shards-ui/dist/css/shards.min.css";
 
 import { Switch, Route, useRouteMatch } from "react-router-dom";
 import AuthScreen from "../authentication/authScreen";
