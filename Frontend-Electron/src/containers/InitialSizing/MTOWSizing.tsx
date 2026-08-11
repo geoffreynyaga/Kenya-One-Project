@@ -68,7 +68,7 @@ export default function MTOWSizing(props) {
   return (
     <SliderValueContext.Provider value={[context, setContext]}>
       {/* Sheet: input band across the top, one figure, variants rail. */}
-      <div className="flex min-h-screen flex-col bg-paper bg-draft bg-grid-32 font-sans text-value text-ink">
+      <div className="flex min-h-0 flex-1 flex-col bg-paper bg-draft bg-grid-32 font-sans text-value text-ink">
         <InitialValues
           axisRange={context}
           getChildData={handleDataInChildren}

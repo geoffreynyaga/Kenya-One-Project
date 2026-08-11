@@ -68,7 +68,7 @@ function LandingPage() {
   const isAuthenticated = true;
 
   return (
-    <div>
+    <div className="flex flex-1 flex-col">
       {/* <h1>Landing Page</h1> */}
 
       {isAuthenticated ? (

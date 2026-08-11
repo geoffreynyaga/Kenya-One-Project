@@ -33,10 +33,8 @@
  */
 
 import React from "react";
-import { Col, Container, Row } from "../components/shards";
 
-import { Switch, Route, useRouteMatch } from "react-router-dom";
-import AuthScreen from "../authentication/authScreen";
+import { Switch, Route } from "react-router-dom";
 import SrefAndPowerSizing from "./sref/SrefAndPowerSizing";
 import PerformanceConstraints from "./performanceConstraints/PerformanceConstraints";
 import DetailedWeights from "./detailedWeights/DetailedWeights";
@@ -44,13 +42,10 @@ import VnDiagram from "./vn/VnDiagram";
 import WingAndAirfoil from "./wingAndAirfoil/WingAndAirfoil";
 import DragAnalysis from "./drag/DragAnalysis";
 import WingStructural from "./wingAndAirfoil/WingStructural";
-import RightNavSizing from "../navigation/RightNavSizing";
-import RightNavControlSurfaces from "../navigation/RightNavControlSurfaces";
-import RightNavPerformance from "../navigation/RightNavPerformance";
+import SheetIndex from "../navigation/SheetIndex";
 import MTOWSizing from "./InitialSizing/MTOWSizing";
 
 const ProjectDetail = () => {
-  let { path, url } = useRouteMatch();
 
   const routes = [
     {
@@ -107,33 +102,22 @@ const ProjectDetail = () => {
   ];
 
   return (
-    <Container fluid>
-      {/* <div>
-        <p>Project Detail</p>
-      </div> */}
-      <Row>
-        <Col sm="2" lg="2">
-          <RightNavSizing />
-          <RightNavPerformance />
-          <RightNavControlSurfaces />
-        </Col>
-        <Col sm="10" lg="10">
-          <Switch>
-            {routes.map((route, index) => (
-              // Render more <Route>s with the same paths as
-              // above, but different components this time.
-              <Route
-                key={index}
-                path={route.path}
-                exact={route.exact}
-                // children={<route.main />}
-                component={route.component}
-              />
-            ))}
-          </Switch>
-        </Col>
-      </Row>
-    </Container>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <SheetIndex />
+      <Switch>
+        {routes.map((route, index) => (
+          // Render more <Route>s with the same paths as
+          // above, but different components this time.
+          <Route
+            key={index}
+            path={route.path}
+            exact={route.exact}
+            // children={<route.main />}
+            component={route.component}
+          />
+        ))}
+      </Switch>
+    </div>
   );
 };
 ProjectDetail.displayName = "ProjectDetail";
