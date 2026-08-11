@@ -39,5 +39,5 @@ export const SIZING_SHEETS: Sheet[] = [
   { id: "06", label: "06 AEROFOIL", path: "/wing-and-airfoil" },
   { id: "07", label: "07 DRAG", path: "/drag-analysis" },
   { id: "08", label: "08 STRUCTURE", path: "/wing-structural" },
-  { id: "09", label: "09 COST", path: null },
+  { id: "09", label: "09 COST", path: "/cost-analysis" },
 ];
