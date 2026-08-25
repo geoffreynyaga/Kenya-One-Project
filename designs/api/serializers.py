@@ -7,6 +7,14 @@ from aircraft_design.costs import (
     FinancingAssumptions,
     OperatingAssumptions,
 )
+from aircraft_design.sref import (
+    Aerodynamics as SrefAerodynamics,
+    AtmosphereInputs as SrefAtmosphereInputs,
+    DesignPoint as SrefDesignPoint,
+    PerformanceRequirements as SrefPerformanceRequirements,
+    SrefInputs,
+    WeightsAndCruise as SrefWeightsAndCruise,
+)
 
 
 class AircraftCostContextSerializer(serializers.Serializer):
@@ -97,4 +105,89 @@ class CostAnalysisRequestSerializer(serializers.Serializer):
                 if selling_prices is not None
                 else CostInputs().selling_prices
             ),
+        )
+
+
+class SrefAtmosphereSerializer(serializers.Serializer):
+    altitude_ft = serializers.FloatField(min_value=0.000001, required=False)
+    service_ceiling_ft = serializers.FloatField(min_value=0.000001, required=False)
+
+
+class SrefRequirementsSerializer(serializers.Serializer):
+    cl_max = serializers.FloatField(min_value=0.000001, required=False)
+    stall_speed_kcas = serializers.FloatField(min_value=0.000001, required=False)
+    vmax_knots = serializers.FloatField(min_value=0.000001, required=False)
+    takeoff_run_ft = serializers.FloatField(min_value=0.000001, required=False)
+    rate_of_climb_fpm = serializers.FloatField(min_value=0.000001, required=False)
+    ceiling_rate_of_climb_fpm = serializers.FloatField(
+        min_value=0.000001, required=False
+    )
+
+
+class SrefAerodynamicsSerializer(serializers.Serializer):
+    cd0 = serializers.FloatField(min_value=0.000001, required=False)
+    aspect_ratio = serializers.FloatField(min_value=0.000001, required=False)
+    oswald_efficiency = serializers.FloatField(
+        min_value=0.000001, max_value=1, required=False
+    )
+    induced_drag_factor_override = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+    ld_max = serializers.FloatField(min_value=0.000001, required=False)
+    prop_efficiency_cruise = serializers.FloatField(
+        min_value=0.000001, max_value=1, required=False
+    )
+    prop_efficiency_climb = serializers.FloatField(
+        min_value=0.000001, max_value=1, required=False
+    )
+    prop_efficiency_takeoff = serializers.FloatField(
+        min_value=0.000001, max_value=1, required=False
+    )
+    cl_takeoff = serializers.FloatField(min_value=0.000001, required=False)
+    takeoff_speed_knots = serializers.FloatField(min_value=0.000001, required=False)
+    takeoff_gear_drag = serializers.FloatField(min_value=0, required=False)
+    rolling_friction = serializers.FloatField(min_value=0.000001, required=False)
+
+
+class SrefWeightsSerializer(serializers.Serializer):
+    design_weight_lb = serializers.FloatField(min_value=0.000001, required=False)
+    taxi_fraction = serializers.FloatField(
+        min_value=0.000001, max_value=1, required=False
+    )
+    climb_fraction = serializers.FloatField(
+        min_value=0.000001, max_value=1, required=False
+    )
+    cruise_weight_ratio = serializers.FloatField(
+        min_value=0.000001, max_value=1, required=False
+    )
+    cruise_speed_knots = serializers.FloatField(min_value=0.000001, required=False)
+
+
+class SrefDesignPointSerializer(serializers.Serializer):
+    wing_loading_lb_per_ft2 = serializers.FloatField(
+        min_value=0.000001, required=False
+    )
+    power_loading_lb_per_hp = serializers.FloatField(
+        min_value=0.000001, required=False
+    )
+    engine_count = serializers.IntegerField(min_value=1, required=False)
+
+
+class SrefSizingRequestSerializer(serializers.Serializer):
+    atmosphere = SrefAtmosphereSerializer(required=False)
+    requirements = SrefRequirementsSerializer(required=False)
+    aerodynamics = SrefAerodynamicsSerializer(required=False)
+    weights = SrefWeightsSerializer(required=False)
+    design_point = SrefDesignPointSerializer(required=False)
+    engine_number = serializers.IntegerField(min_value=0, required=False)
+
+    def to_domain(self) -> SrefInputs:
+        data = self.validated_data
+        return SrefInputs(
+            atmosphere=SrefAtmosphereInputs(**data.get("atmosphere", {})),
+            requirements=SrefPerformanceRequirements(**data.get("requirements", {})),
+            aerodynamics=SrefAerodynamics(**data.get("aerodynamics", {})),
+            weights=SrefWeightsAndCruise(**data.get("weights", {})),
+            design_point=SrefDesignPoint(**data.get("design_point", {})),
+            engine_number=data.get("engine_number", SrefInputs().engine_number),
         )
