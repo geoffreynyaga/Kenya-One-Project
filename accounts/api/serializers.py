@@ -37,6 +37,14 @@ class InitialSizingRequestSerializer(serializers.Serializer):
     )
     range = serializers.FloatField()
     propellerEfficiency = serializers.FloatField()
+    # Best lift-to-drag ratio. A consequence of the drag polar rather than a
+    # constant, so the client sends the one the rest of the design uses; the
+    # module default stands in only for callers that have not got one yet.
+    ldMax = serializers.FloatField(
+        min_value=0.000001,
+        required=False,
+        error_messages={"min_value": "L/D max must be greater than zero."},
+    )
     aspectRatio = serializers.FloatField()
     xAxisLimits = serializers.ListField(
         child=serializers.FloatField(),

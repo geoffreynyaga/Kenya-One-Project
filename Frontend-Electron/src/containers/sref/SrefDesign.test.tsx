@@ -282,10 +282,12 @@ test("says plainly when the design point is outside the allowed region", async (
 
   // W/S sits on the stall limit and W/P defaults to 11.5, but the take-off
   // run needs W/P at or below the take-off curve.
-  expect(
-    screen.getByText("DESIGN POINT OUTSIDE THE ALLOWED REGION")
-  ).toBeInTheDocument();
-  expect(screen.getByRole("alert")).toHaveTextContent(/TAKE-OFF needs W\/P ≤/);
+  // The verdict sits in the aside beside the figure, not below the engine
+  // catalog where it used to land thirty rows away from the plot.
+  const verdict = screen.getByRole("alert");
+  expect(verdict).toHaveTextContent("POINT OUTSIDE THE REGION");
+  expect(verdict.closest("aside")).not.toBeNull();
+  expect(verdict).toHaveTextContent(/TAKE-OFF needs W\/P ≤/);
   expect(screen.getAllByText("OUTSIDE THE REGION").length).toBeGreaterThan(0);
 });
 
@@ -312,9 +314,8 @@ test("finds the allowed region and can place the point at its corner", async () 
   expect(screen.getByText("22.691 lb/ft²")).toBeInTheDocument();
   expect(screen.getByText("9.658 lb/hp")).toBeInTheDocument();
 
-  fireEvent.click(
-    screen.getByRole("button", { name: "PLACE THE DESIGN POINT HERE" })
-  );
+  // The button names the point it will take, and what that point sizes to.
+  fireEvent.click(screen.getByRole("button", { name: /USE THIS POINT/ }));
 
   // Placing the point at the corner has to actually land inside the region:
   // rounding the stored value used to nudge it over the stall line.
@@ -341,9 +342,7 @@ test("says so when the requirements contradict each other", async () => {
   expect(
     screen.getByText(/The requirements contradict each other/)
   ).toBeInTheDocument();
-  expect(
-    screen.queryByRole("button", { name: "PLACE THE DESIGN POINT HERE" })
-  ).toBeNull();
+  expect(screen.queryByRole("button", { name: /USE THIS POINT/ })).toBeNull();
 });
 
 test("the requirement senses default to the conventional Part 23 reading", async () => {
@@ -357,6 +356,29 @@ test("the requirement senses default to the conventional Part 23 reading", async
   expect(screen.getByRole("button", { name: "CLIMB at least" })).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("button", { name: "CEILING at least" })).toHaveAttribute("aria-pressed", "true");
   expect(screen.getByRole("button", { name: "MAX SPEED at least" })).toHaveAttribute("aria-pressed", "true");
+});
+
+test("flags a requirement read the unusual way round and offers to restore it", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // Nothing to say while every sense is the conventional one.
+  expect(screen.queryByText(/READ THE UNUSUAL WAY ROUND/)).toBeNull();
+
+  // Reading Vmax as a cap inverts half the diagram, so it is called out
+  // rather than left to be discovered from a surprising allowed region.
+  fireEvent.click(screen.getByRole("button", { name: "MAX SPEED at most" }));
+
+  expect(screen.getByText(/1 READ THE UNUSUAL WAY ROUND/)).toBeInTheDocument();
+  expect(screen.getByText(/must not exceed this/)).toBeInTheDocument();
+  expect(screen.getAllByText("UNUSUAL").length).toBe(1);
+
+  // Restoring puts back only the senses, not the whole sheet.
+  fireEvent.click(screen.getByRole("button", { name: "READ THEM THE USUAL WAY" }));
+  expect(screen.queryByText(/READ THE UNUSUAL WAY ROUND/)).toBeNull();
+  expect(
+    screen.getByRole("button", { name: "MAX SPEED at least" })
+  ).toHaveAttribute("aria-pressed", "true");
 });
 
 test("blocks solve with an invalid input", async () => {

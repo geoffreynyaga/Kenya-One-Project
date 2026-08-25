@@ -67,11 +67,15 @@ class ExampleSimpleAPIView(APIView):
             paxWeight,
             crewWeight,
             payloadPax,
-            ldMax,
+            ldMax as default_ld_max,
             Vc,
             cbhp,
             fuelAllowance,
         )
+
+        # L/Dmax is derived from the drag polar on the Sref sheet. Sizing
+        # against a different one is how the two sheets came to disagree.
+        ldMax = sizing_inputs.get("ldMax", default_ld_max)
 
         try:
             x = Try_GA_Sizing.MTOW_estimate(

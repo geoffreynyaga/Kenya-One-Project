@@ -2,6 +2,7 @@ import { SrefCurvePoint } from "../../api/srefDesign";
 import {
   DEFAULT_SENSE_STATE,
   feasibleRegion,
+  flippedSenses,
   Senses,
   curveValueAt,
   evaluatePoint,
@@ -181,5 +182,57 @@ describe("feasibleRegion", () => {
     region.bands.forEach((band) =>
       expect(band.wingLoading).toBeGreaterThanOrEqual(STALL_LIMIT - 1e-9)
     );
+  });
+});
+
+
+describe("flippedSenses", () => {
+  it("says nothing when every requirement reads the usual way", () => {
+    expect(flippedSenses(DEFAULT_SENSE_STATE)).toEqual([]);
+  });
+
+  it("names a max speed read as a cap and says where the region goes", () => {
+    const flipped: Senses = {
+      ...DEFAULT_SENSE_STATE,
+      constraints: { ...DEFAULT_SENSE_STATE.constraints, vmax: "atMost" },
+    };
+    const [only] = flippedSenses(flipped);
+    expect(only.key).toBe("vmax");
+    expect(only.meaning).toMatch(/must not exceed/);
+    expect(only.meaning).toMatch(/above the curve/);
+  });
+
+  it("describes a take-off run read as a floor in its own terms", () => {
+    const flipped: Senses = {
+      ...DEFAULT_SENSE_STATE,
+      constraints: { ...DEFAULT_SENSE_STATE.constraints, takeoff: "atLeast" },
+    };
+    expect(flippedSenses(flipped)[0].meaning).toMatch(/at least this long/);
+  });
+
+  it("reports the stall line moving right when the speed becomes a floor", () => {
+    const flipped: Senses = { ...DEFAULT_SENSE_STATE, stall: "atLeast" };
+    const [only] = flippedSenses(flipped);
+    expect(only.key).toBe("stall");
+    expect(only.meaning).toMatch(/right of the stall line/);
+  });
+
+  it("collects every flip at once", () => {
+    const flipped: Senses = {
+      stall: "atLeast",
+      constraints: {
+        vmax: "atMost",
+        takeoff: "atLeast",
+        climb: "atMost",
+        ceiling: "atMost",
+      },
+    };
+    expect(flippedSenses(flipped).map((f) => f.key)).toEqual([
+      "stall",
+      "takeoff",
+      "climb",
+      "ceiling",
+      "vmax",
+    ]);
   });
 });

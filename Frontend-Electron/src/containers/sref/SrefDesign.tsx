@@ -41,6 +41,7 @@ import {
   Senses,
   allowedBelow,
   evaluatePoint,
+  flippedSenses,
   allowedLeftOfStall,
 } from "./srefFeasibility";
 import {
@@ -914,6 +915,13 @@ export default function SrefDesign() {
     [result, senses]
   );
 
+  // A flipped sense inverts half the diagram, so say so rather than leaving
+  // someone to wonder why the allowed region moved.
+  const flipped = useMemo(() => flippedSenses(senses), [senses]);
+
+  const restoreConventionalSenses = () =>
+    setView((current) => ({ ...current, senses: DEFAULT_SENSE_STATE }));
+
   const setSense = (key: ConstraintKey | "stall", sense: Sense) =>
     setView((current) => ({
       ...current,
@@ -1021,6 +1029,29 @@ export default function SrefDesign() {
               IS THE NUMBER YOU TYPED THE LEAST YOU WILL ACCEPT, OR THE MOST?
               THIS DECIDES WHICH SIDE OF EACH CURVE IS SHADED OUT.
             </p>
+
+            {flipped.length > 0 ? (
+              <div className="mx-[18px] mb-[10px] border-l-2 border-accent bg-accent-wash px-[11px] py-[9px]">
+                <div className="font-mono text-[10px] font-medium tracking-band text-accent-dark">
+                  {flipped.length} READ THE UNUSUAL WAY ROUND
+                </div>
+                <ul className="mt-[6px] space-y-[5px] text-note leading-5 text-ink-body">
+                  {flipped.map((sense) => (
+                    <li key={sense.key}>
+                      <span className="font-medium">{sense.label}</span>{" "}
+                      {sense.meaning}.
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className="mt-[9px] border border-accent px-[9px] py-[4px] font-mono text-[10px] tracking-band text-accent-dark transition-colors hover:bg-accent hover:text-white"
+                  onClick={restoreConventionalSenses}
+                  type="button"
+                >
+                  READ THEM THE USUAL WAY
+                </button>
+              </div>
+            ) : null}
             {(
               [
                 ["stall", "Stall speed"],
@@ -1031,6 +1062,7 @@ export default function SrefDesign() {
             ).map(([key, label]) => {
               const current =
                 key === "stall" ? senses.stall : senses.constraints[key];
+              const isFlipped = flipped.some((sense) => sense.key === key);
               return (
                 <div
                   className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-[18px] py-[6px] hover:bg-white/70"
@@ -1041,6 +1073,11 @@ export default function SrefDesign() {
                     <span className="ml-[6px] font-mono text-micro text-ink-faint">
                       {SENSE_VALUES[key](values)}
                     </span>
+                    {isFlipped ? (
+                      <span className="ml-[6px] font-mono text-[9px] tracking-band text-accent-dark">
+                        UNUSUAL
+                      </span>
+                    ) : null}
                   </span>
                   <span className="flex shrink-0 border border-rule">
                     {(
@@ -1177,38 +1214,6 @@ export default function SrefDesign() {
                   </div>
                 </details>
 
-                {feasibility && !feasibility.feasible ? (
-                  <div
-                    className="mt-3 border border-accent bg-accent-wash px-[14px] py-[11px]"
-                    role="alert"
-                  >
-                    <div className="font-mono text-label font-medium tracking-label text-accent-dark">
-                      DESIGN POINT OUTSIDE THE ALLOWED REGION
-                    </div>
-                    <ul className="mt-[8px] space-y-[4px] font-mono text-note text-ink-body">
-                      {feasibility.violations.map((violation) => (
-                        <li key={violation.key}>
-                          {violation.label} needs {violation.requires}
-                        </li>
-                      ))}
-                    </ul>
-                    {feasibility.ceilingWp !== null ? (
-                      <button
-                        className="mt-[10px] border border-accent px-[10px] py-[5px] font-mono text-[10.5px] tracking-band text-accent-dark hover:bg-accent hover:text-white"
-                        onClick={() =>
-                          pickPoint(
-                            Number(values.wingLoading),
-                            feasibility.ceilingWp as number
-                          )
-                        }
-                        type="button"
-                      >
-                        SNAP TO {formatNumber(feasibility.ceilingWp, 3)} lb/hp
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
-
                 <div className="px-[2px] py-4 font-mono text-meta text-ink-muted">
                   SHEET 02 OF 17 · MATCHING PLOT ·{" "}
                   {feasibility?.feasible ? (
@@ -1220,8 +1225,51 @@ export default function SrefDesign() {
               </section>
 
               <aside className="flex flex-col self-start bg-panel xl:border-l xl:border-rule-mid">
+                {/*
+                  The verdict on the design point sits beside the figure it is
+                  about. It used to follow the engine catalog, which is thirty
+                  rows long, so it landed far below the plot it referred to.
+                */}
+                {feasibility && !feasibility.feasible ? (
+                  <div
+                    className="border-b border-rule-mid bg-accent-wash px-[18px] py-[13px]"
+                    role="alert"
+                  >
+                    <div className="font-mono text-label font-medium tracking-label text-accent-dark">
+                      POINT OUTSIDE THE REGION
+                    </div>
+                    <ul className="mt-[8px] space-y-[5px] font-mono text-note text-ink-body">
+                      {feasibility.violations.map((violation) => (
+                        <li key={violation.key}>
+                          {violation.label} needs {violation.requires}
+                        </li>
+                      ))}
+                    </ul>
+                    {feasibility.ceilingWp !== null ? (
+                      <button
+                        className="mt-[10px] w-full border border-accent px-[10px] py-[6px] font-mono text-[10.5px] tracking-band text-accent-dark transition-colors hover:bg-accent hover:text-white"
+                        onClick={() =>
+                          pickPoint(
+                            Number(values.wingLoading),
+                            feasibility.ceilingWp as number
+                          )
+                        }
+                        type="button"
+                      >
+                        KEEP W/S · DROP W/P TO{" "}
+                        {formatNumber(feasibility.ceilingWp, 2)}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <h2 className="px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label">
                   SIZED FROM POINT
+                  {feasibility && !feasibility.feasible ? (
+                    <span className="ml-[7px] font-normal text-accent-dark">
+                      · NOT ALLOWED
+                    </span>
+                  ) : null}
                 </h2>
 
                 <div className="border-t border-rule-mid bg-field shadow-carried px-[18px] py-3">
@@ -1281,8 +1329,14 @@ export default function SrefDesign() {
                         </dd>
                       </div>
                     </dl>
+                    <p className="mt-[10px] text-note leading-5 text-ink-muted">
+                      The corner of the region is the smallest wing and the
+                      least power that still meet every requirement. Take it, or
+                      click anywhere inside the clear area of the plot to choose
+                      your own.
+                    </p>
                     <button
-                      className="mt-[11px] w-full border border-rule px-3 py-[7px] font-mono text-[10.5px] tracking-band text-ink-muted hover:border-accent hover:text-accent"
+                      className="mt-[9px] w-full border border-accent bg-accent px-3 py-[8px] font-mono text-[10.5px] font-medium tracking-band text-white transition-colors hover:bg-accent-dark"
                       onClick={() =>
                         pickPoint(
                           region!.optimum!.wingLoading,
@@ -1291,11 +1345,22 @@ export default function SrefDesign() {
                       }
                       type="button"
                     >
-                      PLACE THE DESIGN POINT HERE
+                      USE THIS POINT → {formatNumber(region!.optimum!.wingLoading, 1)}{" "}
+                      / {formatNumber(region!.optimum!.powerLoading, 1)}
                     </button>
-                    <p className="mt-[8px] font-mono text-[10px] leading-[1.5] tracking-band text-ink-faint">
-                      FARTHEST RIGHT IS THE SMALLEST WING · FARTHEST UP IS THE
-                      LEAST POWER
+                    <p className="mt-[7px] font-mono text-[10px] leading-[1.5] tracking-band text-ink-faint">
+                      SREF {formatNumber(
+                        Number(values.designWeight) /
+                          region!.optimum!.wingLoading /
+                          10.76391
+                      )}{" "}
+                      m² · POWER{" "}
+                      {formatNumber(
+                        Number(values.designWeight) /
+                          region!.optimum!.powerLoading,
+                        0
+                      )}{" "}
+                      HP
                     </p>
                   </div>
                 )}

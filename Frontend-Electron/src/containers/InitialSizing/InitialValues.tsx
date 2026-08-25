@@ -34,6 +34,9 @@
 
 import React, { useState, useEffect, useContext } from "react";
 
+import { useAtomValue } from "jotai";
+
+import { ldMaxAtom } from "../../domain/atoms";
 import { usePersistentValue } from "../../hooks/usePersistentState";
 
 import { SliderValueContext } from "./SliderValueContext";
@@ -144,6 +147,10 @@ const InitialValues = (props) => {
   const [notice, setNotice] = useState<Notice | null>(null);
   const [context] = useContext(SliderValueContext);
 
+  // The Sref sheet derives this from the drag polar. Sizing the weight against
+  // a hardcoded 13 while Sheet 02 uses 13.55 is how the two came to disagree.
+  const ldMax = useAtomValue(ldMaxAtom);
+
   const handleLangChange = (serverData: ServerData) => {
     props.getChildData(serverData);
   };
@@ -230,6 +237,7 @@ const InitialValues = (props) => {
         range: Number(range),
         aspectRatio: Number(aspectRatio),
         crew: Number(crew),
+        ldMax,
       }),
     })
       .then(async (response) => {
