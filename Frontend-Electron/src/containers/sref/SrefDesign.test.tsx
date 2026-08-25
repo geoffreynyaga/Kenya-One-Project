@@ -33,14 +33,12 @@ const result: SrefSizingResult = {
   weight_end_cruise_lb: 4760.409492467239,
   weight_average_cruise_lb: 5160.70974623362,
   induced_drag_factor: 0.054006965223581664,
+  // The workbook's own sweep either side of the stall limit, so the binding
+  // constraint in these tests is the one the real sheet reports.
   curves: [
-    {
-      wing_loading: 10,
-      wp_vmax: 5.965230373322869,
-      wp_takeoff: 16.54121527970375,
-      wp_climb: 11.372662139759335,
-      wp_ceiling: 19.61436792878416,
-    },
+    { wing_loading: 20, wp_vmax: 10.670738984542657, wp_takeoff: 10.591090504674812, wp_climb: 10.453481679267414, wp_ceiling: 14.50232001975658 },
+    { wing_loading: 22, wp_vmax: 11.401, wp_takeoff: 9.874, wp_climb: 10.315, wp_ceiling: 13.899 },
+    { wing_loading: 24, wp_vmax: 12.058, wp_takeoff: 9.248, wp_climb: 10.185, wp_ceiling: 13.367 },
   ],
   sizing: {
     wing_area_ft2: 257.802,
@@ -276,6 +274,33 @@ test("shared quantities survive a remount, private ones too", async () => {
   await screen.findByRole("table", { name: "Engine catalog" });
   expect(screen.getByLabelText("Aspect ratio")).toHaveValue(9.2);
   expect(screen.getByLabelText("Take-off run")).toHaveValue(1800);
+});
+
+test("says plainly when the design point is outside the allowed region", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // W/S sits on the stall limit and W/P defaults to 11.5, but the take-off
+  // run needs W/P at or below the take-off curve.
+  expect(
+    screen.getByText("DESIGN POINT OUTSIDE THE ALLOWED REGION")
+  ).toBeInTheDocument();
+  expect(screen.getByRole("alert")).toHaveTextContent(/TAKE-OFF needs W\/P ≤/);
+  expect(screen.getAllByText("OUTSIDE THE REGION").length).toBeGreaterThan(0);
+});
+
+test("flipping a requirement sense flips which side is allowed", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // With take-off as a ceiling the point fails it. Read as a floor instead,
+  // the same point satisfies it.
+  expect(screen.getByRole("alert")).toHaveTextContent("TAKE-OFF");
+
+  fireEvent.click(screen.getByRole("button", { name: "TAKE-OFF at least" }));
+  expect(screen.queryByRole("alert")?.textContent ?? "").not.toContain(
+    "TAKE-OFF needs"
+  );
 });
 
 test("blocks solve with an invalid input", async () => {

@@ -77,6 +77,8 @@ export interface SrefSheet {
   overrideField: (field: FormField) => void;
   restoreField: (field: FormField) => void;
   isOverridden: (field: FormField) => boolean;
+  /** What the owning stage still holds, for a field shadowed here. */
+  upstreamValue: (field: FormField) => number | null;
   reset: () => void;
 }
 
@@ -108,8 +110,15 @@ export function useSrefSheet(): SrefSheet {
     Record<PrivateField, number>
   >(PRIVATE_KEY, PRIVATE_DEFAULTS);
 
-  // Fields the user has taken over from the domain layer's derivation.
-  const [manual, setManual] = useState<Partial<Record<FormField, number>>>({});
+  /**
+   * Sheet-local shadows of values another stage owns, or that the domain layer
+   * derives. Overriding one here is sensitivity work: it must not reach back
+   * and move a decision an upstream stage committed, which is exactly the
+   * transcription drift this layer exists to stop.
+   */
+  const [shadows, setShadows] = useState<Partial<Record<FormField, number>>>(
+    {}
+  );
   const [drafts, setDrafts] = useState<Partial<Record<FormField, string>>>({});
 
   const writers = useMemo(
@@ -130,6 +139,8 @@ export function useSrefSheet(): SrefSheet {
         altitude: setAltitude,
         powerLoading: setPowerLoading,
         engineCount: setEngineCount,
+        // The design point is a shared decision, not a local shadow: every
+        // stage downstream sizes against the wing this picks.
         wingLoading: (v: number) => setWingLoadingOverride(v),
       }) as Partial<Record<FormField, (value: number) => void>>,
     [
@@ -158,15 +169,16 @@ export function useSrefSheet(): SrefSheet {
       powerLoading,
       engineCount,
       wingLoading,
-      inducedDragFactor: manual.inducedDragFactor ?? inducedDragFactor,
-      ldMax: manual.ldMax ?? ldMax,
+      inducedDragFactor,
+      ldMax,
       ...privates,
+      ...shadows,
     }),
     [
       clMax, stallSpeed, vmax, aspectRatio, cd0, oswald, propCruise,
       designWeight, taxiFraction, climbFraction, cruiseRatio, cruiseSpeed,
       altitude, powerLoading, engineCount, wingLoading, inducedDragFactor,
-      ldMax, manual, privates,
+      ldMax, shadows, privates,
     ]
   );
 
@@ -189,13 +201,14 @@ export function useSrefSheet(): SrefSheet {
         setPrivates((current) => ({ ...current, [field]: value }));
         return;
       }
-      if (field === "inducedDragFactor" || field === "ldMax") {
-        setManual((current) => ({ ...current, [field]: value }));
+      // Once shadowed, edits stay local; the upstream stage keeps its number.
+      if (field in shadows) {
+        setShadows((current) => ({ ...current, [field]: value }));
         return;
       }
       writers[field]?.(value);
     },
-    [setPrivates, writers]
+    [setPrivates, shadows, writers]
   );
 
   const commitField = useCallback((field: FormField) => {
@@ -213,7 +226,7 @@ export function useSrefSheet(): SrefSheet {
         setWingLoadingOverride(wingLoading);
         return;
       }
-      setManual((current) => ({ ...current, [field]: numbers[field] }));
+      setShadows((current) => ({ ...current, [field]: numbers[field] }));
     },
     [numbers, setWingLoadingOverride, wingLoading]
   );
@@ -224,7 +237,7 @@ export function useSrefSheet(): SrefSheet {
         setWingLoadingOverride(null);
         return;
       }
-      setManual((current) => {
+      setShadows((current) => {
         const next = { ...current };
         delete next[field];
         return next;
@@ -237,13 +250,36 @@ export function useSrefSheet(): SrefSheet {
     (field: FormField) =>
       field === "wingLoading"
         ? wingLoadingOverride !== null
-        : field in manual,
-    [manual, wingLoadingOverride]
+        : field in shadows,
+    [shadows, wingLoadingOverride]
+  );
+
+  const upstreamValue = useCallback(
+    (field: FormField) => {
+      if (!(field in shadows)) return null;
+      const shared: Partial<Record<FormField, number>> = {
+        designWeight,
+        cd0,
+        oswaldEfficiency: oswald,
+        propEfficiencyCruise: propCruise,
+        taxiFraction,
+        climbFraction,
+        cruiseWeightRatio: cruiseRatio,
+        cruiseSpeed,
+        inducedDragFactor,
+        ldMax,
+      };
+      return shared[field] ?? null;
+    },
+    [
+      shadows, designWeight, cd0, oswald, propCruise, taxiFraction,
+      climbFraction, cruiseRatio, cruiseSpeed, inducedDragFactor, ldMax,
+    ]
   );
 
   const reset = useCallback(() => {
     resetPrivates();
-    setManual({});
+    setShadows({});
     setDrafts({});
     setWingLoadingOverride(null);
   }, [resetPrivates, setWingLoadingOverride]);
@@ -255,6 +291,7 @@ export function useSrefSheet(): SrefSheet {
     overrideField,
     restoreField,
     isOverridden,
+    upstreamValue,
     reset,
   };
 }

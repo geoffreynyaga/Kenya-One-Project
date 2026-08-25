@@ -31,6 +31,18 @@ import {
 import { computeLocal, recommendEngines } from "./srefCompute";
 import { useSrefSheet } from "./useSrefSheet";
 import {
+  CONSTRAINT_KEYS,
+  CURVE_FIELDS,
+  CONSTRAINT_LABELS,
+  ConstraintKey,
+  DEFAULT_SENSE_STATE,
+  Sense,
+  Senses,
+  allowedBelow,
+  evaluatePoint,
+  allowedLeftOfStall,
+} from "./srefFeasibility";
+import {
   powerPerEngineHpAtom,
   powerRequiredHpAtom,
   stallLimitWingLoadingAtom,
@@ -62,6 +74,8 @@ const fractionFields = new Set<FormField>([
 interface ViewState {
   openSections: string[];
   engineNumber: number | null;
+  /** Whether each requirement is a floor or a ceiling — drives the shading. */
+  senses: Senses;
 }
 
 // The two bands you actually tune start open; the bands that are mostly
@@ -69,6 +83,7 @@ interface ViewState {
 const DEFAULT_VIEW: ViewState = {
   openSections: ["REQUIREMENTS", "DESIGN POINT"],
   engineNumber: null,
+  senses: DEFAULT_SENSE_STATE,
 };
 
 function toRequest(values: FormValues): SrefSizingRequest {
@@ -210,6 +225,8 @@ interface ValueCellProps {
   values: FormValues;
   errors: Partial<Record<FormField, string>>;
   overridden: boolean;
+  /** What the owning stage still holds, when this cell has diverged from it. */
+  upstream: number | null;
   onChange: (field: FormField, value: string) => void;
   /** Editing finished — the draft string can go, leaving the stored number. */
   onBlur: (field: FormField) => void;
@@ -222,6 +239,7 @@ function ValueCell({
   values,
   errors,
   overridden,
+  upstream,
   onChange,
   onBlur,
   onOverride,
@@ -243,8 +261,14 @@ function ValueCell({
       : source === "figure"
         ? "← FIG. 2.1"
         : null;
+  // An override here is sheet-local: the owning stage keeps its own number,
+  // so say which one it still has.
   const caption =
-    provenance && overridden ? `OVERRIDDEN · ${provenance}` : provenance;
+    provenance && overridden
+      ? upstream !== null
+        ? `DIVERGED · ${spec.origin ?? "SOURCE"} ${readable(String(upstream))}`
+        : `OVERRIDDEN · ${provenance}`
+      : provenance;
 
   // CAUTION: quantities in a design loop carry a quiet tag here. It only turns
   // loud when the loop actually fires — see domain/loops.ts.
@@ -519,15 +543,66 @@ function EngineCatalog({
 function ConstraintFigure({
   result,
   picked,
+  senses,
   onPickPoint,
 }: {
   result: SrefSizingResult;
   picked: { wingLoading: number; powerLoading: number };
+  senses: Senses;
   onPickPoint: (wingLoading: number, powerLoading: number) => void;
 }) {
   const curves = result.curves;
   const x = curves.map((point) => point.wing_loading);
   const stallLimit = result.stall_limit_wing_loading;
+
+  // The plot has to cover the curves, the stall line and the picked point.
+  const allWp = curves.flatMap((c) => [
+    c.wp_vmax,
+    c.wp_takeoff,
+    c.wp_climb,
+    c.wp_ceiling,
+  ]);
+  const xMin = Math.min(...x);
+  const xMax = Math.max(...x, stallLimit);
+  const yMin = 0;
+  const yMax = Math.max(...allWp, picked.powerLoading) * 1.05;
+
+  /**
+   * One shaded shape per constraint, covering the half-plane its sense rules
+   * out. Overlaps darken, which is what the pencil hatching in the workbook
+   * did.
+   */
+  const shading = [
+    ...CONSTRAINT_KEYS.map((key) => {
+      const below = allowedBelow(key, senses.constraints[key]);
+      const edge = curves
+        .map(
+          (c, i) =>
+            `${i === 0 ? "M" : "L"}${c.wing_loading},${c[CURVE_FIELDS[key]]}`
+        )
+        .join(" ");
+      const close = below
+        ? `L${xMax},${yMax} L${xMin},${yMax} Z`
+        : `L${xMax},${yMin} L${xMin},${yMin} Z`;
+      return {
+        type: "path" as const,
+        path: `${edge} ${close}`,
+        fillcolor: "rgba(20,23,26,0.05)",
+        line: { width: 0 },
+        layer: "below" as const,
+      };
+    }),
+    {
+      type: "rect" as const,
+      x0: allowedLeftOfStall(senses.stall) ? stallLimit : xMin,
+      x1: allowedLeftOfStall(senses.stall) ? xMax : stallLimit,
+      y0: yMin,
+      y1: yMax,
+      fillcolor: "rgba(20,23,26,0.05)",
+      line: { width: 0 },
+      layer: "below" as const,
+    },
+  ];
 
   const seriesStyle = [
     { name: "TAKE-OFF", color: tokens.colors.series.compare, width: 1.6, dash: undefined },
@@ -598,15 +673,18 @@ function ConstraintFigure({
           paper_bgcolor: tokens.colors.field,
           plot_bgcolor: tokens.colors.field,
           font: { family: MONO, size: 10, color: tokens.colors.ink.muted },
+          shapes: shading,
           xaxis: {
             title: "WING LOADING  W/S  [lb/ft²]",
             gridcolor: tokens.colors.rule.grid,
             zeroline: false,
+            range: [xMin, xMax],
           },
           yaxis: {
             title: "POWER LOADING  W/P  [lb/hp]",
             gridcolor: tokens.colors.rule.grid,
             zeroline: false,
+            range: [yMin, yMax],
           },
           legend: { orientation: "h", y: -0.23, x: 0 },
           hovermode: "closest",
@@ -615,7 +693,7 @@ function ConstraintFigure({
         useResizeHandler
       />
       <div className="flex items-center gap-[10px] px-[2px] pb-1 pt-2 font-mono text-[10.5px] tracking-[0.08em] text-ink-faint">
-        <span>CLICK THE PLOT TO MOVE THE DESIGN POINT</span>
+        <span>UNSHADED = ALLOWED · CLICK TO MOVE THE DESIGN POINT</span>
         <span className="h-[12px] w-px bg-rule-cell" />
         <span>
           DESIGN POINT · W/S {formatNumber(picked.wingLoading)} lb/ft² · W/P{" "}
@@ -636,6 +714,7 @@ export default function SrefDesign() {
     overrideField,
     restoreField,
     isOverridden,
+    upstreamValue,
     reset: resetSheet,
   } = useSrefSheet();
 
@@ -644,6 +723,7 @@ export default function SrefDesign() {
     DEFAULT_VIEW
   );
   const [errors, setErrors] = useState<Partial<Record<FormField, string>>>({});
+  const senses = view.senses;
 
   // Sized outputs are shared quantities, so they are read, not recomputed.
   const wingAreaM2 = useAtomValue(wingAreaM2Atom);
@@ -749,6 +829,33 @@ export default function SrefDesign() {
 
   const result = query.data;
 
+  // Which constraints the point actually satisfies, given the senses.
+  const feasibility = useMemo(
+    () =>
+      result
+        ? evaluatePoint(
+            result.curves,
+            result.stall_limit_wing_loading,
+            senses,
+            Number(values.wingLoading),
+            Number(values.powerLoading)
+          )
+        : null,
+    [result, senses, values.wingLoading, values.powerLoading]
+  );
+
+  const setSense = (key: ConstraintKey | "stall", sense: Sense) =>
+    setView((current) => ({
+      ...current,
+      senses:
+        key === "stall"
+          ? { ...current.senses, stall: sense }
+          : {
+              ...current.senses,
+              constraints: { ...current.senses.constraints, [key]: sense },
+            },
+    }));
+
   const cellProps = {
     values,
     errors,
@@ -783,6 +890,7 @@ export default function SrefDesign() {
           key={spec.field}
           overridden={isOverridden(spec.field)}
           spec={spec}
+          upstream={upstreamValue(spec.field)}
           {...cellProps}
         />
       ))}
@@ -834,6 +942,60 @@ export default function SrefDesign() {
           </div>
 
           {renderSection("REQUIREMENTS", "PERFORMANCE REQUIREMENTS", requirementFields)}
+
+          <section className="border-t border-rule-soft">
+            <h2 className="px-[18px] pb-[4px] pt-4 font-mono text-label font-medium tracking-label text-ink-label">
+              REQUIREMENT SENSE
+            </h2>
+            <p className="px-[18px] pb-[10px] font-mono text-[10px] leading-[1.5] tracking-band text-ink-faint">
+              IS THE NUMBER YOU TYPED THE LEAST YOU WILL ACCEPT, OR THE MOST?
+              THIS DECIDES WHICH SIDE OF EACH CURVE IS SHADED OUT.
+            </p>
+            {(
+              [
+                ["stall", "Stall speed"],
+                ...CONSTRAINT_KEYS.map(
+                  (key) => [key, CONSTRAINT_LABELS[key]] as const
+                ),
+              ] as Array<[ConstraintKey | "stall", string]>
+            ).map(([key, label]) => {
+              const current =
+                key === "stall" ? senses.stall : senses.constraints[key];
+              return (
+                <div
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-[18px] py-[6px] hover:bg-white/70"
+                  key={key}
+                >
+                  <span className="min-w-0 truncate text-body leading-[1.2] text-ink-muted">
+                    {label}
+                  </span>
+                  <span className="flex shrink-0 border border-rule">
+                    {(
+                      [
+                        ["atMost", "≤"],
+                        ["atLeast", "≥"],
+                      ] as Array<[Sense, string]>
+                    ).map(([sense, glyph]) => (
+                      <button
+                        aria-label={`${label} at ${sense === "atMost" ? "most" : "least"}`}
+                        aria-pressed={current === sense}
+                        className={`px-[9px] py-[3px] font-mono text-meta ${
+                          current === sense
+                            ? "bg-ink text-panel"
+                            : "text-ink-muted hover:text-ink"
+                        }`}
+                        key={sense}
+                        onClick={() => setSense(key, sense)}
+                        type="button"
+                      >
+                        {glyph}
+                      </button>
+                    ))}
+                  </span>
+                </div>
+              );
+            })}
+          </section>
           {renderSection("AERODYNAMICS", "AERODYNAMICS", aerodynamicFields)}
           {renderSection("WEIGHTS", "WEIGHTS & CRUISE", weightFields)}
           {renderSection("DESIGN POINT", "DESIGN POINT", pointFields)}
@@ -873,6 +1035,7 @@ export default function SrefDesign() {
                 </div>
 
                 <ConstraintFigure
+                  senses={senses}
                   onPickPoint={(ws, wp) => pickPoint(ws, wp)}
                   picked={{
                     powerLoading: submitted.design_point.power_loading_lb_per_hp,
@@ -941,8 +1104,45 @@ export default function SrefDesign() {
                   </div>
                 </details>
 
+                {feasibility && !feasibility.feasible ? (
+                  <div
+                    className="mt-3 border border-accent bg-accent-wash px-[14px] py-[11px]"
+                    role="alert"
+                  >
+                    <div className="font-mono text-label font-medium tracking-label text-accent-dark">
+                      DESIGN POINT OUTSIDE THE ALLOWED REGION
+                    </div>
+                    <ul className="mt-[8px] space-y-[4px] font-mono text-note text-ink-body">
+                      {feasibility.violations.map((violation) => (
+                        <li key={violation.key}>
+                          {violation.label} needs {violation.requires}
+                        </li>
+                      ))}
+                    </ul>
+                    {feasibility.ceilingWp !== null ? (
+                      <button
+                        className="mt-[10px] border border-accent px-[10px] py-[5px] font-mono text-[10.5px] tracking-band text-accent-dark hover:bg-accent hover:text-white"
+                        onClick={() =>
+                          pickPoint(
+                            Number(values.wingLoading),
+                            feasibility.ceilingWp as number
+                          )
+                        }
+                        type="button"
+                      >
+                        SNAP TO {formatNumber(feasibility.ceilingWp, 3)} lb/hp
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <div className="px-[2px] py-4 font-mono text-meta text-ink-muted">
-                  SHEET 02 OF 17 · MATCHING PLOT · <span className="text-accent">FEASIBLE</span>
+                  SHEET 02 OF 17 · MATCHING PLOT ·{" "}
+                  {feasibility?.feasible ? (
+                    <span className="text-accent">INSIDE THE REGION</span>
+                  ) : (
+                    <span className="text-accent-dark">OUTSIDE THE REGION</span>
+                  )}
                 </div>
               </section>
 
