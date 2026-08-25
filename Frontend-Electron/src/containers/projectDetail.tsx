@@ -36,6 +36,7 @@ import React from "react";
 
 import { Switch, Route } from "react-router-dom";
 import SrefAndPowerSizing from "./sref/SrefAndPowerSizing";
+import SrefDesign from "./sref/SrefDesign";
 import PerformanceConstraints from "./performanceConstraints/PerformanceConstraints";
 import DetailedWeights from "./detailedWeights/DetailedWeights";
 import VnDiagram from "./vn/VnDiagram";
@@ -60,8 +61,8 @@ const ProjectDetail = () => {
       path: "/projects/project1/sref",
 
       exact: true,
-      component: SrefAndPowerSizing,
-      // main: () => <SrefAndPowerSizing />,
+      component: SrefDesign,
+      // main: () => <SrefDesign />,
     },
     {
       path: "/projects/project1/performance-constraints",
