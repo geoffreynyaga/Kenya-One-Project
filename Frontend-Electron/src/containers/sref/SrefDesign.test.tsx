@@ -358,6 +358,29 @@ test("the requirement senses default to the conventional Part 23 reading", async
   expect(screen.getByRole("button", { name: "MAX SPEED at least" })).toHaveAttribute("aria-pressed", "true");
 });
 
+test("flags a requirement read the unusual way round and offers to restore it", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // Nothing to say while every sense is the conventional one.
+  expect(screen.queryByText(/READ THE UNUSUAL WAY ROUND/)).toBeNull();
+
+  // Reading Vmax as a cap inverts half the diagram, so it is called out
+  // rather than left to be discovered from a surprising allowed region.
+  fireEvent.click(screen.getByRole("button", { name: "MAX SPEED at most" }));
+
+  expect(screen.getByText(/1 READ THE UNUSUAL WAY ROUND/)).toBeInTheDocument();
+  expect(screen.getByText(/must not exceed this/)).toBeInTheDocument();
+  expect(screen.getAllByText("UNUSUAL").length).toBe(1);
+
+  // Restoring puts back only the senses, not the whole sheet.
+  fireEvent.click(screen.getByRole("button", { name: "READ THEM THE USUAL WAY" }));
+  expect(screen.queryByText(/READ THE UNUSUAL WAY ROUND/)).toBeNull();
+  expect(
+    screen.getByRole("button", { name: "MAX SPEED at least" })
+  ).toHaveAttribute("aria-pressed", "true");
+});
+
 test("blocks solve with an invalid input", async () => {
   renderPage();
   await screen.findAllByText("23.95 m²");

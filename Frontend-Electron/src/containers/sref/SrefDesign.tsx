@@ -41,6 +41,7 @@ import {
   Senses,
   allowedBelow,
   evaluatePoint,
+  flippedSenses,
   allowedLeftOfStall,
 } from "./srefFeasibility";
 import {
@@ -914,6 +915,13 @@ export default function SrefDesign() {
     [result, senses]
   );
 
+  // A flipped sense inverts half the diagram, so say so rather than leaving
+  // someone to wonder why the allowed region moved.
+  const flipped = useMemo(() => flippedSenses(senses), [senses]);
+
+  const restoreConventionalSenses = () =>
+    setView((current) => ({ ...current, senses: DEFAULT_SENSE_STATE }));
+
   const setSense = (key: ConstraintKey | "stall", sense: Sense) =>
     setView((current) => ({
       ...current,
@@ -1021,6 +1029,29 @@ export default function SrefDesign() {
               IS THE NUMBER YOU TYPED THE LEAST YOU WILL ACCEPT, OR THE MOST?
               THIS DECIDES WHICH SIDE OF EACH CURVE IS SHADED OUT.
             </p>
+
+            {flipped.length > 0 ? (
+              <div className="mx-[18px] mb-[10px] border-l-2 border-accent bg-accent-wash px-[11px] py-[9px]">
+                <div className="font-mono text-[10px] font-medium tracking-band text-accent-dark">
+                  {flipped.length} READ THE UNUSUAL WAY ROUND
+                </div>
+                <ul className="mt-[6px] space-y-[5px] text-note leading-5 text-ink-body">
+                  {flipped.map((sense) => (
+                    <li key={sense.key}>
+                      <span className="font-medium">{sense.label}</span>{" "}
+                      {sense.meaning}.
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className="mt-[9px] border border-accent px-[9px] py-[4px] font-mono text-[10px] tracking-band text-accent-dark transition-colors hover:bg-accent hover:text-white"
+                  onClick={restoreConventionalSenses}
+                  type="button"
+                >
+                  READ THEM THE USUAL WAY
+                </button>
+              </div>
+            ) : null}
             {(
               [
                 ["stall", "Stall speed"],
@@ -1031,6 +1062,7 @@ export default function SrefDesign() {
             ).map(([key, label]) => {
               const current =
                 key === "stall" ? senses.stall : senses.constraints[key];
+              const isFlipped = flipped.some((sense) => sense.key === key);
               return (
                 <div
                   className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-[18px] py-[6px] hover:bg-white/70"
@@ -1041,6 +1073,11 @@ export default function SrefDesign() {
                     <span className="ml-[6px] font-mono text-micro text-ink-faint">
                       {SENSE_VALUES[key](values)}
                     </span>
+                    {isFlipped ? (
+                      <span className="ml-[6px] font-mono text-[9px] tracking-band text-accent-dark">
+                        UNUSUAL
+                      </span>
+                    ) : null}
                   </span>
                   <span className="flex shrink-0 border border-rule">
                     {(

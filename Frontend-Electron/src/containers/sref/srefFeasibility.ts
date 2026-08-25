@@ -305,3 +305,47 @@ export function feasibleRegion(
     empty: false,
   };
 }
+
+
+export interface FlippedSense {
+  key: ConstraintKey | "stall";
+  label: string;
+  /** What reading it this way actually asserts about the aircraft. */
+  meaning: string;
+}
+
+/**
+ * Senses read the opposite way round from the usual Part 23 light aircraft.
+ *
+ * Not an error — the workbook itself notes that "in most jet aircraft designs
+ * the reverse is usually true" for the service ceiling, and a minimum stall
+ * speed is a real requirement for some designs. But a flipped sense inverts a
+ * whole half of the diagram, so it is worth saying out loud rather than
+ * leaving someone to wonder why the allowed region moved.
+ */
+export function flippedSenses(senses: Senses): FlippedSense[] {
+  const flipped: FlippedSense[] = [];
+
+  if (senses.stall !== CONVENTIONAL_STALL_SENSE) {
+    flipped.push({
+      key: "stall",
+      label: "Stall speed",
+      meaning:
+        "read as a floor, so the aircraft must stall no slower than this and the allowed region moves right of the stall line",
+    });
+  }
+
+  CONSTRAINT_KEYS.forEach((key) => {
+    if (senses.constraints[key] === CONVENTIONAL_SENSE[key]) return;
+    flipped.push({
+      key,
+      label: CONSTRAINT_LABELS[key],
+      meaning:
+        key === "takeoff"
+          ? "read as a floor, so the run must be at least this long and the allowed region moves above the curve"
+          : "read as a cap, so the aircraft must not exceed this and the allowed region moves above the curve",
+    });
+  });
+
+  return flipped;
+}
