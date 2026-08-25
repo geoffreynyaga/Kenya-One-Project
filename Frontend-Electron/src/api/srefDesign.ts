@@ -47,7 +47,6 @@ export interface SrefSizingRequest {
   aerodynamics: SrefAerodynamics;
   weights: SrefWeightsAndCruise;
   design_point: SrefDesignPoint;
-  engine_number: number;
 }
 
 export interface SrefEngineSpec {
@@ -93,13 +92,16 @@ export interface SrefSizingResult {
     total_horsepower_hp: number;
     cruise_cl: number;
   };
-  engines: SrefEngineSpec[];
-  selected_engine: SrefEngineSpec | null;
 }
 
 interface SrefSizingResponse {
   status: "success";
   data: SrefSizingResult;
+}
+
+interface SrefEngineCatalogResponse {
+  status: "success";
+  data: SrefEngineSpec[];
 }
 
 interface SrefSizingErrorResponse {
@@ -124,6 +126,24 @@ export async function fetchSrefSizing(
   if (!response.ok || payload.status !== "success" || !("data" in payload)) {
     const message = "message" in payload ? payload.message : undefined;
     throw new Error(message ?? "The constraint analysis could not be completed.");
+  }
+
+  return payload.data;
+}
+
+/**
+ * The engine reference table. Static data, so it is fetched once and cached
+ * rather than repeated in every sizing response.
+ */
+export async function fetchSrefEngines(): Promise<SrefEngineSpec[]> {
+  const response = await fetch(`${API_ROOT}/api/designs/sref-engines/`);
+  const payload = (await response.json()) as
+    | SrefEngineCatalogResponse
+    | SrefSizingErrorResponse;
+
+  if (!response.ok || payload.status !== "success" || !("data" in payload)) {
+    const message = "message" in payload ? payload.message : undefined;
+    throw new Error(message ?? "The engine catalog could not be loaded.");
   }
 
   return payload.data;

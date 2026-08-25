@@ -13,76 +13,28 @@ import {
   SrefEngineSpec,
   SrefSizingRequest,
   SrefSizingResult,
+  fetchSrefEngines,
   fetchSrefSizing,
 } from "../../api/srefDesign";
+import { usePersistentState } from "../../hooks/usePersistentState";
 import tokens from "../../design-tokens";
+import {
+  DEFAULT_VALUES,
+  FieldSpec,
+  FormField,
+  FormValues,
+  aerodynamicFields,
+  deriveValues,
+  pointFields,
+  requirementFields,
+  weightFields,
+} from "./srefFields";
+import { computeLocal, recommendEngines } from "./srefCompute";
 
 const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
 
-type FormField =
-  | "altitude"
-  | "serviceCeiling"
-  | "clMax"
-  | "stallSpeed"
-  | "vmax"
-  | "takeoffRun"
-  | "rateOfClimb"
-  | "ceilingRoc"
-  | "cd0"
-  | "aspectRatio"
-  | "oswaldEfficiency"
-  | "inducedDragFactor"
-  | "ldMax"
-  | "propEfficiencyCruise"
-  | "propEfficiencyClimb"
-  | "propEfficiencyTakeoff"
-  | "clTakeoff"
-  | "takeoffSpeed"
-  | "takeoffGearDrag"
-  | "rollingFriction"
-  | "designWeight"
-  | "taxiFraction"
-  | "climbFraction"
-  | "cruiseWeightRatio"
-  | "cruiseSpeed"
-  | "wingLoading"
-  | "powerLoading"
-  | "engineCount";
-
-type FormValues = Record<FormField, string>;
-
-// Defaults reproduce the workbook's cached state cell-for-cell.
-const DEFAULT_VALUES: FormValues = {
-  altitude: "10000",
-  serviceCeiling: "18000",
-  clMax: "1.8",
-  stallSpeed: "61",
-  vmax: "170",
-  takeoffRun: "1500",
-  rateOfClimb: "1600",
-  ceilingRoc: "100",
-  cd0: "0.02521994401080592",
-  aspectRatio: "7.8",
-  oswaldEfficiency: "0.7555260492234778",
-  inducedDragFactor: "0.054006965223581664",
-  ldMax: "13.547933564579795",
-  propEfficiencyCruise: "0.8",
-  propEfficiencyClimb: "0.7",
-  propEfficiencyTakeoff: "0.583014076612842",
-  clTakeoff: "1.4869053204776603",
-  takeoffSpeed: "67.11577841941003",
-  takeoffGearDrag: "0.005",
-  rollingFriction: "0.04",
-  designWeight: "5850",
-  taxiFraction: "0.98",
-  climbFraction: "0.97",
-  cruiseWeightRatio: "0.8560332551941533",
-  cruiseSpeed: "140",
-  wingLoading: "22.691275793164802",
-  powerLoading: "11.5",
-  engineCount: "2",
-};
+const STORAGE_KEY = "kenya-one:sref:v1";
 
 const integerFields = new Set<FormField>(["engineCount"]);
 
@@ -95,6 +47,25 @@ const fractionFields = new Set<FormField>([
   "climbFraction",
   "cruiseWeightRatio",
 ]);
+
+interface SheetState {
+  values: FormValues;
+  /** Derived fields the user has taken over by hand. */
+  overrides: FormField[];
+  /** Input bands left expanded. */
+  openSections: string[];
+  /** Engine chosen from the catalog, by catalog number. */
+  engineNumber: number | null;
+}
+
+// The two bands you actually tune start open; the bands that are mostly
+// carried from other sheets start collapsed.
+const DEFAULT_SHEET: SheetState = {
+  values: DEFAULT_VALUES,
+  overrides: [],
+  openSections: ["REQUIREMENTS", "DESIGN POINT"],
+  engineNumber: null,
+};
 
 function toRequest(values: FormValues): SrefSizingRequest {
   const number = (field: FormField) => Number(values[field]);
@@ -115,7 +86,7 @@ function toRequest(values: FormValues): SrefSizingRequest {
       cd0: number("cd0"),
       aspect_ratio: number("aspectRatio"),
       oswald_efficiency: number("oswaldEfficiency"),
-      induced_drag_factor_override: values.inducedDragFactor.trim() === "" ? null : number("inducedDragFactor"),
+      induced_drag_factor_override: number("inducedDragFactor"),
       ld_max: number("ldMax"),
       prop_efficiency_cruise: number("propEfficiencyCruise"),
       prop_efficiency_climb: number("propEfficiencyClimb"),
@@ -137,14 +108,12 @@ function toRequest(values: FormValues): SrefSizingRequest {
       power_loading_lb_per_hp: number("powerLoading"),
       engine_count: number("engineCount"),
     },
-    engine_number: 4,
   };
 }
 
 function validate(values: FormValues): Partial<Record<FormField, string>> {
   const errors: Partial<Record<FormField, string>> = {};
   (Object.keys(values) as FormField[]).forEach((field) => {
-    if (field === "inducedDragFactor" && values[field].trim() === "") return;
     if (values[field].trim() === "") {
       errors[field] = "Enter a number.";
       return;
@@ -165,108 +134,269 @@ function validate(values: FormValues): Partial<Record<FormField, string>> {
   return errors;
 }
 
-interface HintProps {
-  text: string;
+const formatNumber = (value: number, digits = 2) =>
+  new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
+
+/**
+ * Numbers are rounded for reading and shown at full precision on demand — when
+ * the cell has focus, or in its tooltip.
+ */
+function readable(raw: string): string {
+  if (raw.trim() === "" || raw.length <= 8) return raw;
+  const value = Number(raw);
+  if (!Number.isFinite(value)) return raw;
+  return String(Number(value.toPrecision(6)));
 }
 
-/** Dotted-underline marker carrying a native tooltip explanation. */
-function Hint({ text }: HintProps) {
+interface HintProps {
+  inputId: string;
+  spec: FieldSpec;
+  /** Full-precision value, shown under the explanation. */
+  exact?: string;
+}
+
+/**
+ * Same tooltip as the MTOW sheet: CSS-only, so it appears the instant the
+ * pointer lands rather than waiting on the browser's native title delay.
+ */
+function Hint({ inputId, spec, exact }: HintProps) {
+  const helpId = `${inputId}-help`;
   return (
-    <span
-      aria-label={`Explanation: ${text}`}
-      className="cursor-help border-b border-dashed border-accent text-[9px] font-mono font-medium text-accent"
-      role="note"
-      tabIndex={0}
-      title={text}
-    >
-      i
+    <span className="group relative inline-flex align-middle">
+      <button
+        aria-describedby={helpId}
+        aria-label={`Help for ${spec.label}`}
+        className="flex h-4 w-4 items-center justify-center border border-rule bg-transparent font-mono text-[9px] leading-none text-ink-muted outline-none hover:border-ink focus:border-accent focus:text-accent"
+        data-testid={`help-${inputId}`}
+        onClick={(event) => event.preventDefault()}
+        type="button"
+      >
+        ?
+      </button>
+      <span
+        className="invisible pointer-events-none absolute left-0 top-[calc(100%+6px)] z-50 w-[260px] border border-ink bg-ink px-3 py-2 font-sans text-note normal-case leading-[1.55] tracking-normal text-white opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
+        id={helpId}
+        role="tooltip"
+      >
+        {spec.body}
+        {spec.typical ? (
+          <span className="mt-[6px] block text-white/70">{spec.typical}</span>
+        ) : null}
+        {exact ? (
+          <span className="mt-[6px] block font-mono text-[10.5px] text-white/60">
+            {exact}
+          </span>
+        ) : null}
+        <span className="mt-[8px] block border-t border-white/15 pt-[6px] font-mono text-[10px] leading-[1.5] tracking-band text-white/45">
+          {spec.cell === "—" ? null : (
+            <span className="block">
+              WORKBOOK {spec.origin ? `${spec.origin} · ` : ""}
+              {spec.cell}
+            </span>
+          )}
+          {spec.cite ? <span className="block">{spec.cite}</span> : null}
+        </span>
+      </span>
     </span>
   );
 }
 
-interface InputCellProps {
-  field: FormField;
-  label: string;
-  unit?: string;
-  hint?: string;
+interface ValueCellProps {
+  spec: FieldSpec;
   values: FormValues;
   errors: Partial<Record<FormField, string>>;
+  overridden: boolean;
   onChange: (field: FormField, value: string) => void;
+  onOverride: (field: FormField) => void;
+  onRestore: (field: FormField) => void;
 }
 
-function InputCell({
-  field,
-  label,
-  unit,
-  hint,
+function ValueCell({
+  spec,
   values,
   errors,
+  overridden,
   onChange,
-}: InputCellProps) {
+  onOverride,
+  onRestore,
+}: ValueCellProps) {
+  const { field, source } = spec;
+  const [focused, setFocused] = useState(false);
+  const error = errors[field];
   const errorId = `${field}-error`;
-  return (
-    <label
-      className={`grid cursor-text grid-cols-[minmax(0,1fr)_96px] items-baseline gap-3 px-[18px] py-[7px] hover:bg-white/70 focus-within:bg-white focus-within:shadow-edited ${
-        errors[field] ? "bg-accent-wash" : ""
-      }`}
-      htmlFor={field}
-    >
-      <span className="min-w-0 text-body leading-[1.2] text-ink-muted">
-        {label}
-        {hint ? <span> <Hint text={hint} /></span> : null}
-        {unit ? (
-          <span className="ml-1 font-mono text-micro text-ink-faint">[{unit}]</span>
-        ) : null}
-        {errors[field] ? (
-          <span className="mt-1 block text-[10px] text-accent-dark" id={errorId}>
-            {errors[field]}
-          </span>
-        ) : null}
-      </span>
-      <input
-        aria-describedby={errors[field] ? errorId : undefined}
-        aria-invalid={Boolean(errors[field])}
-        className="min-w-0 border-0 border-b border-dashed border-ink-faint bg-transparent px-[1px] pb-[3px] text-right font-mono text-body leading-none text-ink outline-none hover:border-accent focus:border-accent"
-        id={field}
-        inputMode="decimal"
-        onChange={(event) => onChange(field, event.target.value)}
-        step="any"
-        type="number"
-        value={values[field]}
+  const raw = values[field];
+  const editable = source !== "derived" || overridden;
+  const carried = source === "carried";
+
+  const caption =
+    source === "derived" && !overridden
+      ? spec.formula
+      : source === "derived"
+        ? `OVERRIDDEN · ${spec.formula}`
+        : carried
+          ? `← ${spec.origin}`
+          : source === "figure"
+            ? "← FIG. 2.1"
+            : null;
+
+  const label = (
+    <span className="min-w-0 text-body leading-[1.35] text-ink-muted">
+      {spec.label}
+      {spec.unit ? (
+        <span className="ml-[5px] font-mono text-micro text-ink-faint">
+          [{spec.unit}]
+        </span>
+      ) : null}{" "}
+      <Hint
+        exact={raw !== readable(raw) ? raw : undefined}
+        inputId={field}
+        spec={spec}
       />
-    </label>
+    </span>
+  );
+
+  return (
+    <div
+      className={`grid grid-cols-[minmax(0,1fr)_104px] items-baseline gap-x-3 px-[18px] py-[7px] ${
+        error ? "bg-accent-wash" : ""
+      } ${carried ? "shadow-carried" : ""} ${
+        source === "derived" ? "bg-field/70" : ""
+      } ${editable ? "hover:bg-white/70 focus-within:bg-white" : ""}`}
+    >
+      {editable ? (
+        // eslint-disable-next-line jsx-a11y/label-has-associated-control
+        <label className="contents cursor-text" htmlFor={field}>
+          {label}
+        </label>
+      ) : (
+        label
+      )}
+
+      {editable ? (
+        <input
+          aria-describedby={error ? errorId : undefined}
+          aria-invalid={Boolean(error)}
+          aria-label={spec.label}
+          className="min-w-0 border-0 border-b border-dashed border-ink-faint bg-transparent px-[1px] pb-[3px] text-right font-mono text-body leading-none text-ink outline-none hover:border-accent focus:border-accent"
+          id={field}
+          inputMode="decimal"
+          onBlur={() => setFocused(false)}
+          onChange={(event) => onChange(field, event.target.value)}
+          onFocus={() => setFocused(true)}
+          step="any"
+          type="number"
+          value={focused ? raw : readable(raw)}
+        />
+      ) : (
+        <output
+          aria-label={spec.label}
+          className="min-w-0 pb-[3px] text-right font-mono text-body font-medium leading-none text-ink"
+          id={field}
+        >
+          {readable(raw)}
+        </output>
+      )}
+
+      {caption ? (
+        <span className="col-span-2 mt-[3px] flex items-baseline justify-between gap-2 font-mono text-[10px] tracking-band text-ink-faint">
+          <span className="min-w-0 truncate">{caption}</span>
+          {source === "derived" ? (
+            <button
+              aria-label={`${overridden ? "Restore" : "Override"} ${spec.label}`}
+              className="shrink-0 border-b border-dashed border-ink-faint tracking-band text-ink-muted hover:border-accent hover:text-accent"
+              onClick={() => (overridden ? onRestore(field) : onOverride(field))}
+              type="button"
+            >
+              {overridden ? "RESTORE" : "OVERRIDE"}
+            </button>
+          ) : null}
+        </span>
+      ) : null}
+
+      {error ? (
+        <span className="col-span-2 mt-1 block text-[10px] text-accent-dark" id={errorId}>
+          {error}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
 interface SectionProps {
   title: string;
+  count: number;
+  open: boolean;
+  onToggle: (open: boolean) => void;
   children: React.ReactNode;
 }
 
-function InputSection({ title, children }: SectionProps) {
+/** Bands collapse so the input list stays readable as the sheet grows. */
+function InputSection({ title, count, open, onToggle, children }: SectionProps) {
   return (
-    <section className="border-t border-rule-soft first:border-t-0">
-      <h2 className="px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label">
-        {title}
-      </h2>
+    <details
+      className="border-t border-rule-soft first:border-t-0"
+      onToggle={(event) => onToggle(event.currentTarget.open)}
+      open={open}
+    >
+      <summary className="group flex cursor-pointer list-none items-center justify-between gap-2 px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label marker:content-none hover:text-ink">
+        <span className="min-w-0 truncate">{title}</span>
+        <span className="flex shrink-0 items-center gap-[7px]">
+          <span className="font-normal text-ink-faint">
+            {open ? "" : `+${count}`}
+          </span>
+          <svg
+            aria-hidden="true"
+            className={`text-accent transition-transform duration-150 ${
+              open ? "rotate-180" : ""
+            }`}
+            fill="none"
+            height="10"
+            viewBox="0 0 10 10"
+            width="10"
+          >
+            <path
+              d="M1.5 3.5 5 7 8.5 3.5"
+              stroke="currentColor"
+              strokeLinecap="square"
+              strokeWidth="1"
+            />
+          </svg>
+        </span>
+      </summary>
       {children}
-    </section>
+    </details>
   );
 }
 
-const formatNumber = (value: number, digits = 2) =>
-  new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
-
 interface EngineCatalogProps {
   engines: SrefEngineSpec[];
-  selectedNumber: number;
+  selectedNumber: number | null;
+  recommended: ReadonlySet<number>;
   onSelect: (number: number) => void;
 }
 
-function EngineCatalog({ engines, selectedNumber, onSelect }: EngineCatalogProps) {
+function EngineCatalog({
+  engines,
+  selectedNumber,
+  recommended,
+  onSelect,
+}: EngineCatalogProps) {
   const columns = useMemo<ColumnDef<SrefEngineSpec>[]>(
     () => [
-      { accessorKey: "number", header: "#" },
+      {
+        id: "number",
+        header: "#",
+        cell: ({ row }) => (
+          <span className="flex items-center gap-[6px]">
+            {row.original.number}
+            {recommended.has(row.original.number) ? (
+              <span className="border border-accent px-[3px] text-[9px] leading-[1.5] tracking-band text-accent">
+                FIT
+              </span>
+            ) : null}
+          </span>
+        ),
+      },
       { accessorKey: "family", header: "Family" },
       { accessorKey: "name", header: "Model" },
       {
@@ -307,7 +437,7 @@ function EngineCatalog({ engines, selectedNumber, onSelect }: EngineCatalogProps
         cell: ({ row }) => row.original.fuel_grade ?? "100LL",
       },
     ],
-    []
+    [recommended]
   );
 
   const table = useReactTable({
@@ -475,10 +605,25 @@ function ConstraintFigure({
 }
 
 export default function SrefDesign() {
-  const [values, setValues] = useState<FormValues>(DEFAULT_VALUES);
+  const [sheet, setSheet, resetSheet] = usePersistentState<SheetState>(
+    STORAGE_KEY,
+    DEFAULT_SHEET
+  );
   const [errors, setErrors] = useState<Partial<Record<FormField, string>>>({});
-  const defaultRequest = useMemo(() => toRequest(DEFAULT_VALUES), []);
-  const [submitted, setSubmitted] = useState<SrefSizingRequest>(defaultRequest);
+
+  const overrides = useMemo(() => new Set(sheet.overrides), [sheet.overrides]);
+  const values = useMemo(
+    () => deriveValues(sheet.values, overrides),
+    [sheet.values, overrides]
+  );
+
+  const [submitted, setSubmitted] = useState<SrefSizingRequest>(() =>
+    toRequest(deriveValues(sheet.values, new Set(sheet.overrides)))
+  );
+
+  // The closed-form values run here, so the tiles and the derived block track
+  // every keystroke. Only the constraint sweep needs the server.
+  const local = useMemo(() => computeLocal(values), [values]);
 
   const query = useQuery({
     queryKey: ["sref-sizing", submitted],
@@ -488,14 +633,65 @@ export default function SrefDesign() {
     refetchOnWindowFocus: false,
   });
 
+  // Static reference data: fetched once, never refetched.
+  const catalog = useQuery({
+    queryKey: ["sref-engines"],
+    queryFn: fetchSrefEngines,
+    staleTime: Infinity,
+    gcTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+
+  const engines = useMemo(() => catalog.data ?? [], [catalog.data]);
+
+  const recommendations = useMemo(
+    () => recommendEngines(engines, local.powerPerEngineHp),
+    [engines, local.powerPerEngineHp]
+  );
+
+  // Default to the closest engine that covers the requirement until picked.
+  const selectedNumber =
+    sheet.engineNumber ?? recommendations[0]?.engine.number ?? null;
+  const selectedEngine =
+    engines.find((engine) => engine.number === selectedNumber) ?? null;
+
+  const recommendedNumbers = useMemo(
+    () => new Set(recommendations.map(({ engine }) => engine.number)),
+    [recommendations]
+  );
+
+  const selectEngine = (number: number) =>
+    setSheet((current) => ({ ...current, engineNumber: number }));
+
   const setField = (field: FormField, value: string) => {
-    setValues((current) => ({ ...current, [field]: value }));
+    setSheet((current) => ({
+      ...current,
+      values: { ...current.values, [field]: value },
+    }));
     setErrors((current) => {
       if (!current[field]) return current;
       const next = { ...current };
       delete next[field];
       return next;
     });
+  };
+
+  /** Freeze a derived cell at its current value and let the user edit it. */
+  const overrideField = (field: FormField) => {
+    setSheet((current) => ({
+      ...current,
+      values: { ...current.values, [field]: values[field] },
+      overrides: current.overrides.includes(field)
+        ? current.overrides
+        : [...current.overrides, field],
+    }));
+  };
+
+  const restoreField = (field: FormField) => {
+    setSheet((current) => ({
+      ...current,
+      overrides: current.overrides.filter((entry) => entry !== field),
+    }));
   };
 
   const submit = (event: FormEvent) => {
@@ -511,71 +707,81 @@ export default function SrefDesign() {
     }
   };
 
+  // Clicking the plot takes the design point off the stall limit, so the wing
+  // loading becomes an override rather than a derived cell.
   const pickPoint = (wingLoading: number, powerLoading: number) => {
-    const next = {
-      ...values,
+    const nextValues: FormValues = {
+      ...sheet.values,
       wingLoading: String(Number(wingLoading.toFixed(4))),
       powerLoading: String(Number(powerLoading.toFixed(4))),
     };
-    const nextErrors = validate(next);
-    setValues(next);
-    setErrors(nextErrors);
-    setSubmitted(toRequest(next));
+    const nextOverrides = sheet.overrides.includes("wingLoading")
+      ? sheet.overrides
+      : [...sheet.overrides, "wingLoading" as FormField];
+    setSheet((current) => ({
+      ...current,
+      values: nextValues,
+      overrides: nextOverrides,
+    }));
+    const resolved = deriveValues(nextValues, new Set(nextOverrides));
+    setErrors(validate(resolved));
+    setSubmitted(toRequest(resolved));
   };
 
-  const inputProps = { values, errors, onChange: setField };
+  const reset = () => {
+    resetSheet();
+    setErrors({});
+    setSubmitted(toRequest(deriveValues(DEFAULT_VALUES, new Set())));
+  };
+
   const result = query.data;
 
-  const summaryItems: Array<[string, string]> = result
-    ? [
-        ["WING AREA SREF", `${formatNumber(result.sizing.wing_area_m2)} m²`],
-        ["POWER REQUIRED", `${formatNumber(result.sizing.power_required_hp, 1)} hp`],
-        ["PER ENGINE", `${formatNumber(result.sizing.power_per_engine_hp, 1)} hp × ${submitted.design_point.engine_count}`],
-      ]
-    : [
-        ["WING AREA SREF", "—"],
-        ["POWER REQUIRED", "—"],
-        ["PER ENGINE", "—"],
-      ];
+  const cellProps = {
+    values,
+    errors,
+    onChange: setField,
+    onOverride: overrideField,
+    onRestore: restoreField,
+  };
 
-  const requirementFields: Array<[FormField, string, string?, string?]> = [
-    ["clMax", "Max lift coefficient", "CLmax", "Maximum lift coefficient at landing/stall configuration. Typical GA range: 1.4–2.0."],
-    ["stallSpeed", "Stall speed", "KCAS", "FAR Part 23 caps stall speed at 61 KCAS for normal-category aircraft without stronger structure."],
-    ["vmax", "Maximum speed", "kt", "Level-flight top speed. Typical single/twin piston: 140–200 kt."],
-    ["takeoffRun", "Take-off run", "ft", "Ground run over a 50 ft obstacle. Common FAR Part 23 target: ≤ 1,500 ft."],
-    ["rateOfClimb", "Rate of climb", "fpm", "Sea-level climb at best rate. Typical light twin: 1,000–1,600 fpm."],
-    ["serviceCeiling", "Service ceiling", "ft", "Altitude where only 100 fpm remains. Typical unpressurised GA: 14,000–25,000 ft."],
-    ["ceilingRoc", "Ceiling residual ROC", "fpm", "Residual climb defining the ceiling; conventionally 100 fpm."],
-  ];
+  const toggleSection = (key: string, open: boolean) => {
+    setSheet((current) => {
+      const isOpen = current.openSections.includes(key);
+      if (isOpen === open) return current;
+      return {
+        ...current,
+        openSections: open
+          ? [...current.openSections, key]
+          : current.openSections.filter((entry) => entry !== key),
+      };
+    });
+  };
 
-  const aerodynamicFields: Array<[FormField, string, string?, string?]> = [
-    ["cd0", "Parasite drag coefficient", "CD0", "Zero-lift drag at cruise. Clean GA airframe: 0.020–0.035; add 0.005–0.015 for fixed gear and struts."],
-    ["aspectRatio", "Aspect ratio", "AR", "Span² / area. Light aircraft: 6–10; higher AR improves efficiency at span cost."],
-    ["oswaldEfficiency", "Oswald span efficiency", "e", "Propeller aircraft typically 0.70–0.85."],
-    ["inducedDragFactor", "Induced drag factor", "k", "k = 1/(π·AR·e). Workbook-parity value carried by default; typical 0.04–0.06. Blank falls back to π·AR·e."],
-    ["ldMax", "L/D maximum", "", "Best lift-to-drag ratio. This class: 12–15."],
-    ["propEfficiencyCruise", "Prop efficiency · cruise", "ηp", "~0.80 for fixed metal props; 0.70–0.85 overall."],
-    ["propEfficiencyClimb", "Prop efficiency · climb", "ηp", "Typically 0.65–0.75."],
-    ["propEfficiencyTakeoff", "Prop efficiency · take-off", "ηp", "Static conditions. Typically 0.50–0.60."],
-    ["clTakeoff", "Take-off lift coefficient", "CL·TO", "With flaps deployed: 1.4–1.6 typical."],
-    ["takeoffSpeed", "Take-off speed", "kt", "Usually ≈ 1.1 × stall speed."],
-    ["takeoffGearDrag", "Fixed-gear drag add-on", "ΔCD0", "Extra parasite drag with gear down: 0.005–0.015; 0 for retractable."],
-    ["rollingFriction", "Rolling friction", "μ", "Brake-off rolling resistance. Paved runway: 0.02–0.05; grass 0.04–0.10."],
-  ];
+  const renderSection = (key: string, title: string, specs: FieldSpec[]) => (
+    <InputSection
+      count={specs.length}
+      onToggle={(open) => toggleSection(key, open)}
+      open={sheet.openSections.includes(key)}
+      title={title}
+    >
+      {specs.map((spec) => (
+        <ValueCell
+          key={spec.field}
+          overridden={overrides.has(spec.field)}
+          spec={spec}
+          {...cellProps}
+        />
+      ))}
+    </InputSection>
+  );
 
-  const weightFields: Array<[FormField, string, string?, string?]> = [
-    ["designWeight", "Design gross weight", "lb", "The weight the sizing point applies to (MTOW & Weights sheet output)."],
-    ["taxiFraction", "Taxi & take-off fraction", "", "Mission-weight fraction after taxi/take-off fuel: ~0.98."],
-    ["climbFraction", "Climb fraction", "", "Fraction after climbing to cruise altitude: ~0.97."],
-    ["cruiseWeightRatio", "Cruise weight ratio w6/w1", "", "Breguet mission fraction across cruise: ~0.86 here."],
-    ["cruiseSpeed", "Cruise speed", "kt", "Drives cruise CL and the Vmax constraint's altitude scaling."],
-    ["altitude", "Cruise altitude", "ft", "Density model valid to ≈ 20,805 ft."],
-  ];
-
-  const pointFields: Array<[FormField, string, string?, string?]> = [
-    ["wingLoading", "Wing loading", "lb/ft²", "Picked from the matching plot. Right of the stall line suits 'not more than' stall speeds; farther left = bigger wing."],
-    ["powerLoading", "Power loading", "lb/hp", "Farther up = less installed power. Must sit inside the feasible region."],
-    ["engineCount", "Engines", "NE", "Installed engines. Power per engine = required ÷ NE."],
+  const summaryItems: Array<[string, string]> = [
+    ["WING AREA SREF", `${formatNumber(local.wingAreaM2)} m²`],
+    ["POWER REQUIRED", `${formatNumber(local.powerRequiredHp, 1)} hp`],
+    [
+      "PER ENGINE",
+      `${formatNumber(local.powerPerEngineHp, 1)} hp × ${values.engineCount}`,
+    ],
   ];
 
   return (
@@ -597,42 +803,43 @@ export default function SrefDesign() {
         <form className="bg-panel pb-0 xl:border-r xl:border-rule-mid" onSubmit={submit}>
           <div className="px-[18px] pb-[11px] pt-[15px]">
             <div className="font-mono text-label font-medium tracking-label text-ink-label">CONSTRAINT INPUTS</div>
-            <div className="mt-[7px] flex items-center gap-[7px] font-mono text-label text-ink-faint">
-              <span className="border-b border-dashed border-accent pr-[2px] text-accent">i</span> EXPLANATIONS ON HOVER
-            </div>
+            <dl className="mt-[9px] space-y-[5px] font-mono text-[10px] tracking-band text-ink-faint">
+              <div className="flex items-center gap-[7px]">
+                <span className="h-[10px] w-[2px] bg-transparent" />
+                <span>ENTRY · TYPED HERE</span>
+              </div>
+              <div className="flex items-center gap-[7px]">
+                <span className="h-[10px] w-[2px] bg-accent" />
+                <span>CARRIED · FROM ANOTHER SHEET</span>
+              </div>
+              <div className="flex items-center gap-[7px]">
+                <span className="h-[10px] w-[2px] bg-transparent" />
+                <span className="bg-field/70 px-[3px]">DERIVED · COMPUTED HERE</span>
+              </div>
+            </dl>
           </div>
 
-          <InputSection title="ENTRY · PERFORMANCE REQUIREMENTS">
-            {requirementFields.map(([field, label, unit, hint]) => (
-              <InputCell field={field} hint={hint} key={field} label={label} unit={unit} {...inputProps} />
-            ))}
-          </InputSection>
+          {renderSection("REQUIREMENTS", "PERFORMANCE REQUIREMENTS", requirementFields)}
+          {renderSection("AERODYNAMICS", "AERODYNAMICS", aerodynamicFields)}
+          {renderSection("WEIGHTS", "WEIGHTS & CRUISE", weightFields)}
+          {renderSection("DESIGN POINT", "DESIGN POINT", pointFields)}
 
-          <InputSection title="ENTRY · AERODYNAMICS">
-            {aerodynamicFields.map(([field, label, unit, hint]) => (
-              <InputCell field={field} hint={hint} key={field} label={label} unit={unit} {...inputProps} />
-            ))}
-          </InputSection>
-
-          <InputSection title="ENTRY · WEIGHTS & CRUISE">
-            {weightFields.map(([field, label, unit, hint]) => (
-              <InputCell field={field} hint={hint} key={field} label={label} unit={unit} {...inputProps} />
-            ))}
-          </InputSection>
-
-          <InputSection title="ENTRY · DESIGN POINT">
-            {pointFields.map(([field, label, unit, hint]) => (
-              <InputCell field={field} hint={hint} key={field} label={label} unit={unit} {...inputProps} />
-            ))}
-          </InputSection>
-
-          <button
-            className="sticky bottom-0 mt-4 w-full border border-accent bg-accent px-4 py-3 font-mono text-meta font-medium tracking-tab text-white transition-colors hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-wait disabled:border-rule disabled:bg-panel disabled:text-ink-faint"
-            disabled={query.isFetching}
-            type="submit"
-          >
-            {query.isFetching ? "SOLVING…" : "SOLVE CONSTRAINTS"}
-          </button>
+          <div className="sticky bottom-0 mt-4 flex border-t border-rule-mid bg-panel">
+            <button
+              className="flex-1 border border-accent bg-accent px-4 py-3 font-mono text-meta font-medium tracking-tab text-white transition-colors hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-wait disabled:border-rule disabled:bg-panel disabled:text-ink-faint"
+              disabled={query.isFetching}
+              type="submit"
+            >
+              {query.isFetching ? "SOLVING…" : "SOLVE CONSTRAINTS"}
+            </button>
+            <button
+              className="border border-l-0 border-rule px-4 py-3 font-mono text-meta tracking-tab text-ink-muted transition-colors hover:border-ink hover:text-ink"
+              onClick={reset}
+              type="button"
+            >
+              RESET
+            </button>
+          </div>
         </form>
 
         <div aria-live="polite" className="min-w-0 xl:col-span-2">
@@ -644,7 +851,7 @@ export default function SrefDesign() {
               <div className="mt-1 text-note">{query.error.message} Check that the Django server is running, then solve again.</div>
             </div>
           ) : result ? (
-            <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_330px]">
+            <div className="grid min-w-0 items-start xl:grid-cols-[minmax(0,1fr)_330px]">
               <section className="min-w-0 bg-paper px-[22px] pb-0 pt-[18px]">
                 <div className="mb-[10px]">
                   <div className="font-mono text-label tracking-label text-ink-faint">SHEET 02 / SREF &amp; POWER</div>
@@ -668,14 +875,55 @@ export default function SrefDesign() {
                     <p className="mb-3 text-note leading-5 text-ink-muted">
                       Click a row to carry that engine forward. Turboprops are rated in shaft horsepower, turbofans in static thrust.
                     </p>
-                    <EngineCatalog
-                      engines={result.engines}
-                      onSelect={(number) => {
-                        const next = { ...submitted, engine_number: number };
-                        setSubmitted(next);
-                      }}
-                      selectedNumber={submitted.engine_number}
-                    />
+
+                    {recommendations.length > 0 ? (
+                      <div className="mb-3 border border-rule bg-field px-[14px] py-[10px]">
+                        <div className="font-mono text-label tracking-label text-ink-label">
+                          RECOMMENDED FOR {formatNumber(local.powerPerEngineHp, 1)} HP
+                          PER ENGINE
+                        </div>
+                        <ul className="mt-[9px] space-y-[6px] font-mono text-note">
+                          {recommendations.map(({ engine, margin }) => (
+                            <li
+                              className="flex items-baseline justify-between gap-3"
+                              key={engine.number}
+                            >
+                              <button
+                                className="min-w-0 truncate border-b border-dashed border-ink-faint text-left text-ink hover:border-accent hover:text-accent"
+                                onClick={() => selectEngine(engine.number)}
+                                type="button"
+                              >
+                                {engine.family} {engine.name}
+                              </button>
+                              <span className="shrink-0 text-ink-muted">
+                                {formatNumber(engine.hp, 0)}{" "}
+                                {engine.engine_type === "turboprop" ? "shp" : "hp"}
+                                <span className="ml-[8px] text-accent">
+                                  +{formatNumber(margin * 100, 0)}%
+                                </span>
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null}
+
+                    {catalog.isPending ? (
+                      <div className="border border-rule bg-field p-5 font-mono text-note text-ink-muted">
+                        Loading the engine catalog…
+                      </div>
+                    ) : catalog.isError ? (
+                      <div className="border border-accent bg-accent-wash p-4 text-note text-accent-dark" role="alert">
+                        {catalog.error.message}
+                      </div>
+                    ) : (
+                      <EngineCatalog
+                        engines={engines}
+                        onSelect={selectEngine}
+                        recommended={recommendedNumbers}
+                        selectedNumber={selectedNumber}
+                      />
+                    )}
                   </div>
                 </details>
 
@@ -684,7 +932,7 @@ export default function SrefDesign() {
                 </div>
               </section>
 
-              <aside className="flex flex-col bg-panel xl:border-l xl:border-rule-mid">
+              <aside className="flex flex-col self-start bg-panel xl:border-l xl:border-rule-mid">
                 <h2 className="px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label">
                   SIZED FROM POINT
                 </h2>
@@ -693,11 +941,11 @@ export default function SrefDesign() {
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="text-[12.5px] leading-[1.2] text-ink-body">Wing area Sref</span>
                     <span className="whitespace-nowrap font-mono text-value-lg font-medium text-accent">
-                      {formatNumber(result.sizing.wing_area_m2)} m²
+                      {formatNumber(local.wingAreaM2)} m²
                     </span>
                   </div>
                   <div className="mt-[6px] font-mono text-micro text-ink-faint">
-                    FROM W/S {formatNumber(submitted.design_point.wing_loading_lb_per_ft2)} lb/ft²
+                    FROM W/S {formatNumber(Number(values.wingLoading))} lb/ft²
                   </div>
                 </div>
 
@@ -705,11 +953,11 @@ export default function SrefDesign() {
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="text-[12.5px] leading-[1.2] text-ink-body">Power required</span>
                     <span className="whitespace-nowrap font-mono text-value-lg text-ink">
-                      {formatNumber(result.sizing.power_required_hp, 1)} hp
+                      {formatNumber(local.powerRequiredHp, 1)} hp
                     </span>
                   </div>
                   <div className="mt-[6px] font-mono text-micro text-ink-faint">
-                    FROM W/P {formatNumber(submitted.design_point.power_loading_lb_per_hp)} lb/hp
+                    FROM W/P {formatNumber(Number(values.powerLoading))} lb/hp
                   </div>
                 </div>
 
@@ -717,15 +965,15 @@ export default function SrefDesign() {
                   DERIVED AT ALTITUDE
                 </h2>
                 <dl className="space-y-[9px] px-[18px] pb-[14px] font-mono text-note">
-                  <div className="flex justify-between gap-3"><dt className="text-ink-label">ρ ALTITUDE</dt><dd className="text-ink">{result.atmosphere.rho_altitude_slug_per_ft3.toFixed(7)} slug/ft³</dd></div>
-                  <div className="flex justify-between gap-3"><dt className="text-ink-label">σ DENSITY RATIO</dt><dd className="text-ink">{result.atmosphere.sigma.toFixed(4)}</dd></div>
-                  <div className="flex justify-between gap-3"><dt className="text-ink-label">CRUISE CL</dt><dd className="text-ink">{result.sizing.cruise_cl.toFixed(4)}</dd></div>
-                  <div className="flex justify-between gap-3"><dt className="text-ink-label">STALL LIMIT W/S</dt><dd className="text-accent-dark">{formatNumber(result.stall_limit_wing_loading)} lb/ft²</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink-label">ρ ALTITUDE</dt><dd className="text-ink">{local.rhoAltitude.toFixed(7)} slug/ft³</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink-label">σ DENSITY RATIO</dt><dd className="text-ink">{local.sigma.toFixed(4)}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink-label">CRUISE CL</dt><dd className="text-ink">{local.cruiseCl.toFixed(4)}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink-label">STALL LIMIT W/S</dt><dd className="text-accent-dark">{formatNumber(local.stallLimitWingLoading)} lb/ft²</dd></div>
                 </dl>
 
-                <div className="mt-auto space-y-[9px] border-t border-rule-mid px-[18px] py-[14px] font-mono text-note">
-                  <div className="flex justify-between gap-3"><span className="text-ink-label">SELECTED ENGINE</span><span className="text-accent">{result.selected_engine ? result.selected_engine.name : "—"}</span></div>
-                  <div className="flex justify-between gap-3"><span className="text-ink-label">TOTAL HORSEPOWER</span><span className="text-ink">{formatNumber(result.sizing.total_horsepower_hp, 1)}</span></div>
+                <div className="space-y-[9px] border-t border-rule-mid px-[18px] py-[14px] font-mono text-note">
+                  <div className="flex justify-between gap-3"><span className="text-ink-label">SELECTED ENGINE</span><span className="text-accent">{selectedEngine ? selectedEngine.name : "—"}</span></div>
+                  <div className="flex justify-between gap-3"><span className="text-ink-label">TOTAL HORSEPOWER</span><span className="text-ink">{formatNumber(local.totalHorsepowerHp, 1)}</span></div>
                   <div className="flex justify-between gap-3"><span className="text-ink-label">TO SHEET</span><span className="text-ink">03 MISSION</span></div>
                 </div>
               </aside>

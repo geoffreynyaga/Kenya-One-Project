@@ -1,6 +1,6 @@
 """Constraint-analysis sizing translated from the 'Sref and POWER SIZING' sheet."""
 
-from .calculate import SrefCalculationError, calculate_sref
+from .calculate import ENGINE_CATALOG, SrefCalculationError, calculate_sref
 from .contracts import (
     Aerodynamics,
     AtmosphereInputs,
@@ -8,6 +8,7 @@ from .contracts import (
     CurvePoint,
     DesignPoint,
     EngineSpec,
+    EngineType,
     PerformanceRequirements,
     SrefInputs,
     SrefResult,
@@ -16,6 +17,7 @@ from .contracts import (
 )
 
 __all__ = [
+    "ENGINE_CATALOG",
     "Aerodynamics",
     "AtmosphereInputs",
     "AtmosphereResult",

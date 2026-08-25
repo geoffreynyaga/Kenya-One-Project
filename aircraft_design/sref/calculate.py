@@ -483,11 +483,6 @@ def calculate_sref(inputs: SrefInputs = SrefInputs()) -> SrefResult:
         cruise_cl=cruise_cl,
     )
 
-    selected = next(
-        (engine for engine in ENGINE_CATALOG if engine.number == inputs.engine_number),
-        None,
-    )
-
     return SrefResult(
         atmosphere=atm,
         stall_limit_wing_loading=stall_limit,
@@ -497,9 +492,7 @@ def calculate_sref(inputs: SrefInputs = SrefInputs()) -> SrefResult:
         induced_drag_factor=k,
         curves=curves,
         sizing=sizing,
-        engines=ENGINE_CATALOG,
-        selected_engine=selected,
     )
 
 
-__all__ = ["SrefCalculationError", "calculate_sref"]
+__all__ = ["ENGINE_CATALOG", "SrefCalculationError", "calculate_sref"]

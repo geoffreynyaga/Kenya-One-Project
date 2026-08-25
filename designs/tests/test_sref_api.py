@@ -15,10 +15,9 @@ def test_sref_sizing_defaults_match_workbook_reference():
     assert isclose(data["sizing"]["cruise_cl"], 0.40822440553839295)
     assert len(data["curves"]) == 19
     assert data["curves"][0]["wp_vmax"] == 5.965230373322869
-    assert data["selected_engine"]["name"] == "IO-540-D"
 
 
-def test_sref_sizing_accepts_design_point_and_engine_overrides():
+def test_sref_sizing_accepts_design_point_overrides():
     response = APIClient().post(
         "/api/designs/sref-sizing/",
         {
@@ -27,7 +26,6 @@ def test_sref_sizing_accepts_design_point_and_engine_overrides():
                 "power_loading_lb_per_hp": 10.0,
                 "engine_count": 2,
             },
-            "engine_number": 24,
         },
         format="json",
     )
@@ -38,8 +36,6 @@ def test_sref_sizing_accepts_design_point_and_engine_overrides():
     assert isclose(data["sizing"]["wing_area_m2"], 5850.0 / 20.0 / 10.76391)
     assert isclose(data["sizing"]["power_required_hp"], 585.0)
     assert isclose(data["sizing"]["power_per_engine_hp"], 292.5)
-    assert data["selected_engine"]["name"] == "PT6A-67AG"
-    assert data["selected_engine"]["engine_type"] == "turboprop"
 
 
 def test_sref_sizing_rejects_invalid_requirements():
@@ -65,3 +61,27 @@ def test_sref_sizing_rejects_physically_invalid_combinations():
 
     assert response.status_code == 422
     assert response.data["code"] == "INVALID_SIZING_INPUTS"
+
+
+def test_sref_engine_catalog_is_served_separately_and_cached():
+    response = APIClient().get("/api/designs/sref-engines/")
+
+    assert response.status_code == 200
+    assert response.data["status"] == "success"
+    engines = response.data["data"]
+    assert {engine["engine_type"] for engine in engines} == {
+        "piston",
+        "turboprop",
+        "turbofan",
+    }
+    assert any(engine["name"] == "IO-540-D" for engine in engines)
+    assert "max-age=86400" in response["Cache-Control"]
+
+
+def test_sref_sizing_response_omits_the_engine_catalog():
+    """63% of the old payload was a static table repeated on every solve."""
+    response = APIClient().post("/api/designs/sref-sizing/", {}, format="json")
+
+    assert response.status_code == 200
+    assert "engines" not in response.data["data"]
+    assert "selected_engine" not in response.data["data"]

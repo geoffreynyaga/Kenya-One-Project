@@ -179,7 +179,6 @@ class SrefSizingRequestSerializer(serializers.Serializer):
     aerodynamics = SrefAerodynamicsSerializer(required=False)
     weights = SrefWeightsSerializer(required=False)
     design_point = SrefDesignPointSerializer(required=False)
-    engine_number = serializers.IntegerField(min_value=0, required=False)
 
     def to_domain(self) -> SrefInputs:
         data = self.validated_data
@@ -189,5 +188,4 @@ class SrefSizingRequestSerializer(serializers.Serializer):
             aerodynamics=SrefAerodynamics(**data.get("aerodynamics", {})),
             weights=SrefWeightsAndCruise(**data.get("weights", {})),
             design_point=SrefDesignPoint(**data.get("design_point", {})),
-            engine_number=data.get("engine_number", SrefInputs().engine_number),
         )

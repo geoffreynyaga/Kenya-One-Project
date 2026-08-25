@@ -3,3 +3,9 @@
 // expect(element).toHaveTextContent(/react/i)
 // learn more: https://github.com/testing-library/jest-dom
 import "@testing-library/jest-dom";
+
+// Sheets persist their inputs to localStorage, so clear it between tests to
+// stop one test's edits leaking into the next.
+beforeEach(() => {
+  window.localStorage.clear();
+});

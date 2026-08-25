@@ -34,6 +34,8 @@
 
 import React, { useState, useEffect, useContext } from "react";
 
+import { usePersistentValue } from "../../hooks/usePersistentState";
+
 import { SliderValueContext } from "./SliderValueContext";
 
 import { ServerData } from "./types";
@@ -117,14 +119,27 @@ const FieldHeader = ({ inputId, label, helpLabel, help }: FieldHeaderProps) => {
 
 const InitialValues = (props) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [aircraft_type, setAircraftType] = useState<string>("GA_Twin");
-  const [altitude, setAltitude] = useState<string>("10000");
-  const [pax, setPax] = useState<string>("4");
+  // Persisted so a refresh does not throw the sheet back to these defaults.
+  const [aircraft_type, setAircraftType] = usePersistentValue<string>(
+    "kenya-one:mtow:aircraftType",
+    "GA_Twin"
+  );
+  const [altitude, setAltitude] = usePersistentValue<string>(
+    "kenya-one:mtow:altitude",
+    "10000"
+  );
+  const [pax, setPax] = usePersistentValue<string>("kenya-one:mtow:pax", "4");
   const [propellerEfficiency, setPropellerEfficiency] =
-    useState<string>("0.78");
-  const [range, setRange] = useState<string>("1200");
-  const [aspectRatio, setAspectRatio] = useState<string>("7.8");
-  const [crew, setCrew] = useState<string>("2");
+    usePersistentValue<string>("kenya-one:mtow:propellerEfficiency", "0.78");
+  const [range, setRange] = usePersistentValue<string>(
+    "kenya-one:mtow:range",
+    "1200"
+  );
+  const [aspectRatio, setAspectRatio] = usePersistentValue<string>(
+    "kenya-one:mtow:aspectRatio",
+    "7.8"
+  );
+  const [crew, setCrew] = usePersistentValue<string>("kenya-one:mtow:crew", "2");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [notice, setNotice] = useState<Notice | null>(null);
   const [context] = useContext(SliderValueContext);

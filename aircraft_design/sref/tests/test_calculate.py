@@ -3,6 +3,7 @@ from math import isclose
 from unittest import TestCase
 
 from aircraft_design.sref import (
+    ENGINE_CATALOG,
     SrefCalculationError,
     SrefInputs,
     calculate_sref,
@@ -80,24 +81,23 @@ class CalculateSrefParityTests(TestCase):
         assert_close(self, result.sizing.total_horsepower_hp, 508.69565217391306)
         assert_close(self, result.sizing.cruise_cl, 0.40822440553839295)
 
-    def test_engine_selection_lookup(self):
-        result = calculate_sref()
-
-        selected = result.selected_engine
-        self.assertIsNotNone(selected)
-        assert_close(self, float(selected.hp), 260.0)  # type: ignore[union-attr]
-
-        unknown = calculate_sref(SrefInputs(engine_number=99))
-        self.assertIsNone(unknown.selected_engine)
-
     def test_catalog_covers_all_propulsion_families(self):
-        result = calculate_sref()
-        types = {engine.engine_type.value for engine in result.engines}
+        types = {engine.engine_type.value for engine in ENGINE_CATALOG}
         self.assertEqual(types, {"piston", "turboprop", "turbofan"})
 
-        turbofans = [e for e in result.engines if e.engine_type.value == "turbofan"]
+        turbofans = [e for e in ENGINE_CATALOG if e.engine_type.value == "turbofan"]
         self.assertTrue(all(e.thrust_lbf and e.thrust_lbf > 0 for e in turbofans))
         self.assertTrue(all(e.hp == 0 for e in turbofans))
+
+    def test_catalog_numbers_are_unique(self):
+        numbers = [engine.number for engine in ENGINE_CATALOG]
+        self.assertEqual(len(numbers), len(set(numbers)))
+
+    def test_sizing_result_carries_no_catalog(self):
+        """The catalog is served by its own endpoint, not repeated per solve."""
+        result = calculate_sref()
+        self.assertFalse(hasattr(result, "engines"))
+        self.assertFalse(hasattr(result, "selected_engine"))
 
     def test_zero_wing_loading_rejected(self):
         inputs = SrefInputs()

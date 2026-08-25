@@ -80,7 +80,6 @@ class SrefInputs:
     aerodynamics: Aerodynamics = Aerodynamics()
     weights: WeightsAndCruise = WeightsAndCruise()
     design_point: DesignPoint = DesignPoint()
-    engine_number: int = 4
 
 
 @dataclass(frozen=True)
@@ -135,5 +134,3 @@ class SrefResult:
     induced_drag_factor: float
     curves: tuple[CurvePoint, ...]
     sizing: SizingResult
-    engines: tuple[EngineSpec, ...]
-    selected_engine: EngineSpec | None

@@ -2,7 +2,12 @@ import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-import { SrefSizingResult, fetchSrefSizing } from "../../api/srefDesign";
+import {
+  SrefEngineSpec,
+  SrefSizingResult,
+  fetchSrefEngines,
+  fetchSrefSizing,
+} from "../../api/srefDesign";
 import SrefDesign from "./SrefDesign";
 
 jest.mock("plotly.js-basic-dist", () => ({}));
@@ -12,7 +17,7 @@ jest.mock("react-plotly.js/factory", () => ({
 }));
 jest.mock("../../api/srefDesign", () => {
   const actual = jest.requireActual("../../api/srefDesign");
-  return { ...actual, fetchSrefSizing: jest.fn() };
+  return { ...actual, fetchSrefSizing: jest.fn(), fetchSrefEngines: jest.fn() };
 });
 
 const result: SrefSizingResult = {
@@ -44,35 +49,10 @@ const result: SrefSizingResult = {
     total_horsepower_hp: 508.69565217391306,
     cruise_cl: 0.40822440553839295,
   },
-  engines: [
-    {
-      number: 4,
-      family: "Lycoming",
-      name: "IO-540-D",
-      hp: 260,
-      rpm: 2700,
-      compression_ratio: "8.50:1",
-      tbo_hours: 2000,
-      weight_lb: 412,
-      fuel_grade: null,
-      engine_type: "piston" as const,
-      thrust_lbf: null,
-    },
-    {
-      number: 24,
-      family: "Pratt & Whitney Canada",
-      name: "PT6A-67AG",
-      hp: 1200,
-      rpm: 2200,
-      compression_ratio: "n/a",
-      tbo_hours: 7000,
-      weight_lb: 490,
-      fuel_grade: "Jet A",
-      engine_type: "turboprop" as const,
-      thrust_lbf: null,
-    },
-  ],
-  selected_engine: {
+};
+
+const engines: SrefEngineSpec[] = [
+  {
     number: 4,
     family: "Lycoming",
     name: "IO-540-D",
@@ -82,17 +62,47 @@ const result: SrefSizingResult = {
     tbo_hours: 2000,
     weight_lb: 412,
     fuel_grade: null,
-    engine_type: "piston" as const,
+    engine_type: "piston",
     thrust_lbf: null,
   },
-};
+  {
+    number: 24,
+    family: "Pratt & Whitney Canada",
+    name: "PT6A-67AG",
+    hp: 1200,
+    rpm: 2200,
+    compression_ratio: "n/a",
+    tbo_hours: 7000,
+    weight_lb: 490,
+    fuel_grade: "Jet A",
+    engine_type: "turboprop",
+    thrust_lbf: null,
+  },
+  {
+    number: 26,
+    family: "Williams",
+    name: "FJ44-4A",
+    hp: 0,
+    rpm: 0,
+    compression_ratio: "n/a",
+    tbo_hours: 5000,
+    weight_lb: 672,
+    fuel_grade: "Jet A",
+    engine_type: "turbofan",
+    thrust_lbf: 3600,
+  },
+];
 
 const fetchSrefSizingMock = fetchSrefSizing as jest.MockedFunction<
   typeof fetchSrefSizing
 >;
+const fetchSrefEnginesMock = fetchSrefEngines as jest.MockedFunction<
+  typeof fetchSrefEngines
+>;
 
 beforeEach(() => {
   fetchSrefSizingMock.mockResolvedValue(result);
+  fetchSrefEnginesMock.mockResolvedValue(engines);
 });
 
 afterEach(() => {
@@ -113,34 +123,103 @@ function renderPage() {
 test("renders workbook-parity summary and sized outputs", async () => {
   renderPage();
 
-  expect((await screen.findAllByText("23.95 m²")).length).toBeGreaterThan(0);
+  // Sref and power are computed in the browser, so they render before the
+  // constraint sweep comes back.
+  expect(screen.getAllByText("23.95 m²").length).toBeGreaterThan(0);
   expect(screen.getAllByText("508.7 hp").length).toBeGreaterThan(0);
-  expect(screen.getAllByText(/IO-540-D/).length).toBeGreaterThan(0);
-  expect(screen.getByRole("table", { name: "Engine catalog" })).toHaveTextContent(
+
+  expect(await screen.findByRole("table", { name: "Engine catalog" })).toHaveTextContent(
     "PT6A-67AG"
   );
 });
 
-test("explanatory hints are attached to technical inputs", async () => {
+test("recommends the closest engine that covers the power per engine", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // 508.7 hp over 2 engines is 254.3 hp each. The IO-540-D at 260 hp is the
+  // closest fit; the turbofan is excluded because thrust is not horsepower.
+  expect(screen.getByText(/RECOMMENDED FOR 254.3 HP/)).toBeInTheDocument();
+  const shortlist = screen.getByText(/RECOMMENDED FOR/).parentElement!;
+  expect(shortlist).toHaveTextContent("Lycoming IO-540-D");
+  expect(shortlist).not.toHaveTextContent("FJ44-4A");
+
+  // Selected by default, and carried into the summary aside.
+  expect(screen.getAllByText("IO-540-D").length).toBeGreaterThan(0);
+});
+
+test("the engine catalog is fetched once, not per solve", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  fireEvent.change(screen.getByLabelText("Maximum speed"), {
+    target: { value: "180" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "SOLVE CONSTRAINTS" }));
+
+  await screen.findByRole("table", { name: "Engine catalog" });
+  expect(fetchSrefEnginesMock).toHaveBeenCalledTimes(1);
+  expect(fetchSrefSizingMock).toHaveBeenCalledTimes(2);
+});
+
+test("explanatory hints open instantly and cite the source", async () => {
   renderPage();
 
-  const cd0Input = await screen.findByLabelText(/^Parasite drag coefficient/);
-  const hint = cd0Input.closest("label")!.querySelector("span[title]");
-  expect(hint).not.toBeNull();
-  expect(hint!.getAttribute("title")).toMatch(/0\.020–0\.035/);
+  await screen.findAllByText("23.95 m²");
 
-  const muHint = screen
-    .getByLabelText(/^Rolling friction/)
-    .closest("label")!
-    .querySelector("span[title]");
-  expect(muHint!.getAttribute("title")).toMatch(/Paved runway: 0\.02–0\.05/);
+  const cd0Help = screen.getByTestId("help-cd0");
+  const cd0Tip = document.getElementById(cd0Help.getAttribute("aria-describedby")!);
+  expect(cd0Tip).toHaveTextContent("0.020–0.035");
+  expect(cd0Tip).toHaveTextContent("DRAG ANALYSIS");
+  // No native title attribute: the tooltip is CSS-driven, so it has no delay.
+  expect(cd0Help).not.toHaveAttribute("title");
+
+  const muTip = document.getElementById(
+    screen.getByTestId("help-rollingFriction").getAttribute("aria-describedby")!
+  );
+  expect(muTip).toHaveTextContent("Dry asphalt or concrete 0.03–0.05");
+  expect(muTip).toHaveTextContent("Gudmundsson Table 17-3");
+});
+
+test("derived cells are read-only and recompute from their dependencies", async () => {
+  renderPage();
+  await screen.findAllByText("23.95 m²");
+
+  // k = 1/(π·AR·e) and L/Dmax = 1/(2√(k·CD0)) are outputs, not inputs.
+  expect(screen.getByLabelText("Induced drag factor").tagName).toBe("OUTPUT");
+  expect(screen.getByLabelText("L/D maximum").tagName).toBe("OUTPUT");
+  expect(screen.getByLabelText("Induced drag factor")).toHaveTextContent("0.054014");
+
+  // Widening the wing drops k and lifts L/D max without a round trip.
+  fireEvent.change(screen.getByLabelText("Aspect ratio"), {
+    target: { value: "10" },
+  });
+  expect(screen.getByLabelText("Induced drag factor")).toHaveTextContent("0.0421309");
+  expect(screen.getByLabelText("L/D maximum")).toHaveTextContent("15.339");
+});
+
+test("wing loading tracks the stall limit until it is overridden", async () => {
+  renderPage();
+  await screen.findAllByText("23.95 m²");
+
+  const wingLoading = screen.getByLabelText("Wing loading");
+  expect(wingLoading).toHaveTextContent("22.6913");
+
+  // W/S = ½·ρ₀·CLmax·(Vs·1.688)², so a higher CLmax moves the design point.
+  fireEvent.change(screen.getByLabelText("Max lift coefficient"), {
+    target: { value: "2.0" },
+  });
+  expect(screen.getByLabelText("Wing loading")).toHaveTextContent("25.2125");
+
+  fireEvent.click(screen.getByRole("button", { name: "Override Wing loading" }));
+  expect(screen.getByLabelText("Wing loading").tagName).toBe("INPUT");
 });
 
 test("blocks solve with an invalid input", async () => {
   renderPage();
   await screen.findAllByText("23.95 m²");
 
-  fireEvent.change(screen.getByLabelText(/^Max lift coefficient/), {
+  fireEvent.change(screen.getByLabelText("Max lift coefficient"), {
     target: { value: "" },
   });
   fireEvent.click(screen.getByRole("button", { name: "SOLVE CONSTRAINTS" }));
