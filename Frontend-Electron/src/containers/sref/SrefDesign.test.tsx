@@ -1,6 +1,6 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Provider, createStore } from "jotai";
 
 import {
@@ -322,6 +322,13 @@ test("finds the allowed region and can place the point at its corner", async () 
     Number((screen.getByLabelText("Power loading") as HTMLInputElement).value)
   ).toBeCloseTo(9.658, 3);
   expect(screen.queryByRole("alert")).toBeNull();
+
+  // And the figure has to follow, which means the point reaches the solver.
+  await waitFor(() => {
+    const last = fetchSrefSizingMock.mock.calls.at(-1)![0];
+    expect(last.design_point.power_loading_lb_per_hp).toBeCloseTo(9.658, 3);
+    expect(last.design_point.wing_loading_lb_per_ft2).toBeCloseTo(22.691, 3);
+  });
 });
 
 test("says so when the requirements contradict each other", async () => {

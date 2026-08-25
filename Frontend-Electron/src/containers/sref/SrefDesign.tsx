@@ -867,10 +867,20 @@ export default function SrefDesign() {
     // Stored at full precision: rounding here can nudge a point that sits
     // exactly on a constraint over to the wrong side of it. Cells round for
     // reading on their own.
-    setField("wingLoading", String(wingLoading));
-    setField("powerLoading", String(powerLoading));
+    const next: FormValues = {
+      ...values,
+      wingLoading: String(wingLoading),
+      powerLoading: String(powerLoading),
+    };
+    setField("wingLoading", next.wingLoading);
+    setField("powerLoading", next.powerLoading);
     commitField("wingLoading");
     commitField("powerLoading");
+
+    // The figure plots the submitted point, so moving the design point has to
+    // resolve the curves as well or nothing on the plot moves.
+    setErrors(validate(next));
+    setSubmitted(toRequest(next));
   };
 
   const reset = () => {
