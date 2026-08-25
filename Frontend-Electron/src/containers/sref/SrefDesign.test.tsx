@@ -1,6 +1,7 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
+import { Provider, createStore } from "jotai";
 
 import {
   SrefEngineSpec,
@@ -109,14 +110,21 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
+/**
+ * A fresh jotai store per render, so no test inherits another's design
+ * quantities. Anything that should survive a remount does so through
+ * localStorage, which setupTests clears between tests.
+ */
 function renderPage() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
-    <QueryClientProvider client={queryClient}>
-      <SrefDesign />
-    </QueryClientProvider>
+    <Provider store={createStore()}>
+      <QueryClientProvider client={queryClient}>
+        <SrefDesign />
+      </QueryClientProvider>
+    </Provider>
   );
 }
 
@@ -213,6 +221,61 @@ test("wing loading tracks the stall limit until it is overridden", async () => {
 
   fireEvent.click(screen.getByRole("button", { name: "Override Wing loading" }));
   expect(screen.getByLabelText("Wing loading").tagName).toBe("INPUT");
+});
+
+test("values another stage owns are read-only, not typeable", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // CD0 comes from Drag analysis and e from Wing & Airfoil. Typing into them
+  // would write a number those stages overwrite the moment they run.
+  expect(screen.getByLabelText("Parasite drag coefficient").tagName).toBe(
+    "OUTPUT"
+  );
+  expect(screen.getByLabelText("Oswald span efficiency").tagName).toBe("OUTPUT");
+
+  // Aspect ratio is a genuine choice, so it stays editable.
+  expect(screen.getByLabelText("Aspect ratio").tagName).toBe("INPUT");
+
+  // The escape hatch is explicit.
+  fireEvent.click(
+    screen.getByRole("button", { name: "Override Parasite drag coefficient" })
+  );
+  expect(screen.getByLabelText("Parasite drag coefficient").tagName).toBe(
+    "INPUT"
+  );
+});
+
+test("quantities in a design loop carry a caution tag", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  const cd0Cell = screen
+    .getByLabelText("Parasite drag coefficient")
+    .closest("div")!;
+  expect(cd0Cell).toHaveTextContent("CD0 ⇄ AREA");
+
+  // A quantity outside every loop stays unmarked.
+  const clMaxCell = screen.getByLabelText("Max lift coefficient").closest("div")!;
+  expect(clMaxCell).not.toHaveTextContent("⇄");
+});
+
+test("shared quantities survive a remount, private ones too", async () => {
+  const { unmount } = renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  fireEvent.change(screen.getByLabelText("Aspect ratio"), {
+    target: { value: "9.2" },
+  });
+  fireEvent.change(screen.getByLabelText("Take-off run"), {
+    target: { value: "1800" },
+  });
+  unmount();
+
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+  expect(screen.getByLabelText("Aspect ratio")).toHaveValue(9.2);
+  expect(screen.getByLabelText("Take-off run")).toHaveValue(1800);
 });
 
 test("blocks solve with an invalid input", async () => {

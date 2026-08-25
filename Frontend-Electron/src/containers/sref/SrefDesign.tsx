@@ -1,5 +1,6 @@
 import React, { FormEvent, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 import {
   ColumnDef,
   flexRender,
@@ -19,17 +20,23 @@ import {
 import { usePersistentState } from "../../hooks/usePersistentState";
 import tokens from "../../design-tokens";
 import {
-  DEFAULT_VALUES,
   FieldSpec,
   FormField,
   FormValues,
   aerodynamicFields,
-  deriveValues,
   pointFields,
   requirementFields,
   weightFields,
 } from "./srefFields";
 import { computeLocal, recommendEngines } from "./srefCompute";
+import { useSrefSheet } from "./useSrefSheet";
+import {
+  powerPerEngineHpAtom,
+  powerRequiredHpAtom,
+  stallLimitWingLoadingAtom,
+  wingAreaM2Atom,
+} from "../../domain/atoms";
+import { loopsFor } from "../../domain/loops";
 
 const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
@@ -48,21 +55,18 @@ const fractionFields = new Set<FormField>([
   "cruiseWeightRatio",
 ]);
 
-interface SheetState {
-  values: FormValues;
-  /** Derived fields the user has taken over by hand. */
-  overrides: FormField[];
-  /** Input bands left expanded. */
+/**
+ * What is left of this sheet's own state once the design quantities moved to
+ * `domain/atoms`: which bands are open and which engine is selected.
+ */
+interface ViewState {
   openSections: string[];
-  /** Engine chosen from the catalog, by catalog number. */
   engineNumber: number | null;
 }
 
 // The two bands you actually tune start open; the bands that are mostly
-// carried from other sheets start collapsed.
-const DEFAULT_SHEET: SheetState = {
-  values: DEFAULT_VALUES,
-  overrides: [],
+// consequences of other stages start collapsed.
+const DEFAULT_VIEW: ViewState = {
   openSections: ["REQUIREMENTS", "DESIGN POINT"],
   engineNumber: null,
 };
@@ -207,6 +211,8 @@ interface ValueCellProps {
   errors: Partial<Record<FormField, string>>;
   overridden: boolean;
   onChange: (field: FormField, value: string) => void;
+  /** Editing finished — the draft string can go, leaving the stored number. */
+  onBlur: (field: FormField) => void;
   onOverride: (field: FormField) => void;
   onRestore: (field: FormField) => void;
 }
@@ -217,6 +223,7 @@ function ValueCell({
   errors,
   overridden,
   onChange,
+  onBlur,
   onOverride,
   onRestore,
 }: ValueCellProps) {
@@ -225,19 +232,23 @@ function ValueCell({
   const error = errors[field];
   const errorId = `${field}-error`;
   const raw = values[field];
-  const editable = source !== "derived" || overridden;
-  const carried = source === "carried";
+  // A consequence is read-only until you take it over by hand. Whether this
+  // stage computes it or another one does only changes the caption.
+  const editable = source !== "consequence" || overridden;
+  const hasOrigin = Boolean(spec.origin);
 
+  const provenance =
+    source === "consequence"
+      ? (spec.formula ?? `← ${spec.origin}`)
+      : source === "figure"
+        ? "← FIG. 2.1"
+        : null;
   const caption =
-    source === "derived" && !overridden
-      ? spec.formula
-      : source === "derived"
-        ? `OVERRIDDEN · ${spec.formula}`
-        : carried
-          ? `← ${spec.origin}`
-          : source === "figure"
-            ? "← FIG. 2.1"
-            : null;
+    provenance && overridden ? `OVERRIDDEN · ${provenance}` : provenance;
+
+  // CAUTION: quantities in a design loop carry a quiet tag here. It only turns
+  // loud when the loop actually fires — see domain/loops.ts.
+  const loops = spec.quantity ? loopsFor(spec.quantity) : [];
 
   const label = (
     <span className="min-w-0 text-body leading-[1.35] text-ink-muted">
@@ -259,8 +270,8 @@ function ValueCell({
     <div
       className={`grid grid-cols-[minmax(0,1fr)_104px] items-baseline gap-x-3 px-[18px] py-[7px] ${
         error ? "bg-accent-wash" : ""
-      } ${carried ? "shadow-carried" : ""} ${
-        source === "derived" ? "bg-field/70" : ""
+      } ${hasOrigin ? "shadow-carried" : ""} ${
+        source === "consequence" ? "bg-field/70" : ""
       } ${editable ? "hover:bg-white/70 focus-within:bg-white" : ""}`}
     >
       {editable ? (
@@ -280,7 +291,10 @@ function ValueCell({
           className="min-w-0 border-0 border-b border-dashed border-ink-faint bg-transparent px-[1px] pb-[3px] text-right font-mono text-body leading-none text-ink outline-none hover:border-accent focus:border-accent"
           id={field}
           inputMode="decimal"
-          onBlur={() => setFocused(false)}
+          onBlur={() => {
+            setFocused(false);
+            onBlur(field);
+          }}
           onChange={(event) => onChange(field, event.target.value)}
           onFocus={() => setFocused(true)}
           step="any"
@@ -300,7 +314,15 @@ function ValueCell({
       {caption ? (
         <span className="col-span-2 mt-[3px] flex items-baseline justify-between gap-2 font-mono text-[10px] tracking-band text-ink-faint">
           <span className="min-w-0 truncate">{caption}</span>
-          {source === "derived" ? (
+          {loops.length > 0 ? (
+            <span
+              className="shrink-0 whitespace-nowrap text-ink-faint"
+              title={loops.map((loop) => loop.because).join(" ")}
+            >
+              ⟳ {loops[0].label}
+            </span>
+          ) : null}
+          {source === "consequence" ? (
             <button
               aria-label={`${overridden ? "Restore" : "Override"} ${spec.label}`}
               className="shrink-0 border-b border-dashed border-ink-faint tracking-band text-ink-muted hover:border-accent hover:text-accent"
@@ -605,25 +627,49 @@ function ConstraintFigure({
 }
 
 export default function SrefDesign() {
-  const [sheet, setSheet, resetSheet] = usePersistentState<SheetState>(
+  // The shared quantities come from domain/atoms; the ten fields only this
+  // sheet uses stay local. See useSrefSheet for the split.
+  const {
+    values,
+    setField,
+    commitField,
+    overrideField,
+    restoreField,
+    isOverridden,
+    reset: resetSheet,
+  } = useSrefSheet();
+
+  const [view, setView, resetView] = usePersistentState<ViewState>(
     STORAGE_KEY,
-    DEFAULT_SHEET
+    DEFAULT_VIEW
   );
   const [errors, setErrors] = useState<Partial<Record<FormField, string>>>({});
 
-  const overrides = useMemo(() => new Set(sheet.overrides), [sheet.overrides]);
-  const values = useMemo(
-    () => deriveValues(sheet.values, overrides),
-    [sheet.values, overrides]
+  // Sized outputs are shared quantities, so they are read, not recomputed.
+  const wingAreaM2 = useAtomValue(wingAreaM2Atom);
+  const powerRequiredHp = useAtomValue(powerRequiredHpAtom);
+  const powerPerEngineHp = useAtomValue(powerPerEngineHpAtom);
+  const stallLimitWingLoading = useAtomValue(stallLimitWingLoadingAtom);
+
+  // What is left is private to this sheet: atmosphere, mission weights, CLc.
+  const local = useMemo(
+    () =>
+      computeLocal({
+        altitudeFt: Number(values.altitude),
+        serviceCeilingFt: Number(values.serviceCeiling),
+        designWeightLb: Number(values.designWeight),
+        taxiFraction: Number(values.taxiFraction),
+        climbFraction: Number(values.climbFraction),
+        cruiseWeightRatio: Number(values.cruiseWeightRatio),
+        cruiseSpeedKnots: Number(values.cruiseSpeed),
+        wingAreaM2,
+      }),
+    [values, wingAreaM2]
   );
 
   const [submitted, setSubmitted] = useState<SrefSizingRequest>(() =>
-    toRequest(deriveValues(sheet.values, new Set(sheet.overrides)))
+    toRequest(values)
   );
-
-  // The closed-form values run here, so the tiles and the derived block track
-  // every keystroke. Only the constraint sweep needs the server.
-  const local = useMemo(() => computeLocal(values), [values]);
 
   const query = useQuery({
     queryKey: ["sref-sizing", submitted],
@@ -645,13 +691,13 @@ export default function SrefDesign() {
   const engines = useMemo(() => catalog.data ?? [], [catalog.data]);
 
   const recommendations = useMemo(
-    () => recommendEngines(engines, local.powerPerEngineHp),
-    [engines, local.powerPerEngineHp]
+    () => recommendEngines(engines, powerPerEngineHp),
+    [engines, powerPerEngineHp]
   );
 
   // Default to the closest engine that covers the requirement until picked.
   const selectedNumber =
-    sheet.engineNumber ?? recommendations[0]?.engine.number ?? null;
+    view.engineNumber ?? recommendations[0]?.engine.number ?? null;
   const selectedEngine =
     engines.find((engine) => engine.number === selectedNumber) ?? null;
 
@@ -661,37 +707,16 @@ export default function SrefDesign() {
   );
 
   const selectEngine = (number: number) =>
-    setSheet((current) => ({ ...current, engineNumber: number }));
+    setView((current) => ({ ...current, engineNumber: number }));
 
-  const setField = (field: FormField, value: string) => {
-    setSheet((current) => ({
-      ...current,
-      values: { ...current.values, [field]: value },
-    }));
+  const changeField = (field: FormField, value: string) => {
+    setField(field, value);
     setErrors((current) => {
       if (!current[field]) return current;
       const next = { ...current };
       delete next[field];
       return next;
     });
-  };
-
-  /** Freeze a derived cell at its current value and let the user edit it. */
-  const overrideField = (field: FormField) => {
-    setSheet((current) => ({
-      ...current,
-      values: { ...current.values, [field]: values[field] },
-      overrides: current.overrides.includes(field)
-        ? current.overrides
-        : [...current.overrides, field],
-    }));
-  };
-
-  const restoreField = (field: FormField) => {
-    setSheet((current) => ({
-      ...current,
-      overrides: current.overrides.filter((entry) => entry !== field),
-    }));
   };
 
   const submit = (event: FormEvent) => {
@@ -707,31 +732,19 @@ export default function SrefDesign() {
     }
   };
 
-  // Clicking the plot takes the design point off the stall limit, so the wing
-  // loading becomes an override rather than a derived cell.
+  // Clicking the plot takes the design point off the stall limit, which is an
+  // override on the shared wing-loading quantity.
   const pickPoint = (wingLoading: number, powerLoading: number) => {
-    const nextValues: FormValues = {
-      ...sheet.values,
-      wingLoading: String(Number(wingLoading.toFixed(4))),
-      powerLoading: String(Number(powerLoading.toFixed(4))),
-    };
-    const nextOverrides = sheet.overrides.includes("wingLoading")
-      ? sheet.overrides
-      : [...sheet.overrides, "wingLoading" as FormField];
-    setSheet((current) => ({
-      ...current,
-      values: nextValues,
-      overrides: nextOverrides,
-    }));
-    const resolved = deriveValues(nextValues, new Set(nextOverrides));
-    setErrors(validate(resolved));
-    setSubmitted(toRequest(resolved));
+    setField("wingLoading", String(Number(wingLoading.toFixed(4))));
+    setField("powerLoading", String(Number(powerLoading.toFixed(4))));
+    commitField("wingLoading");
+    commitField("powerLoading");
   };
 
   const reset = () => {
     resetSheet();
+    resetView();
     setErrors({});
-    setSubmitted(toRequest(deriveValues(DEFAULT_VALUES, new Set())));
   };
 
   const result = query.data;
@@ -739,13 +752,14 @@ export default function SrefDesign() {
   const cellProps = {
     values,
     errors,
-    onChange: setField,
+    onChange: changeField,
+    onBlur: commitField,
     onOverride: overrideField,
     onRestore: restoreField,
   };
 
   const toggleSection = (key: string, open: boolean) => {
-    setSheet((current) => {
+    setView((current) => {
       const isOpen = current.openSections.includes(key);
       if (isOpen === open) return current;
       return {
@@ -761,13 +775,13 @@ export default function SrefDesign() {
     <InputSection
       count={specs.length}
       onToggle={(open) => toggleSection(key, open)}
-      open={sheet.openSections.includes(key)}
+      open={view.openSections.includes(key)}
       title={title}
     >
       {specs.map((spec) => (
         <ValueCell
           key={spec.field}
-          overridden={overrides.has(spec.field)}
+          overridden={isOverridden(spec.field)}
           spec={spec}
           {...cellProps}
         />
@@ -776,11 +790,11 @@ export default function SrefDesign() {
   );
 
   const summaryItems: Array<[string, string]> = [
-    ["WING AREA SREF", `${formatNumber(local.wingAreaM2)} m²`],
-    ["POWER REQUIRED", `${formatNumber(local.powerRequiredHp, 1)} hp`],
+    ["WING AREA SREF", `${formatNumber(wingAreaM2)} m²`],
+    ["POWER REQUIRED", `${formatNumber(powerRequiredHp, 1)} hp`],
     [
       "PER ENGINE",
-      `${formatNumber(local.powerPerEngineHp, 1)} hp × ${values.engineCount}`,
+      `${formatNumber(powerPerEngineHp, 1)} hp × ${values.engineCount}`,
     ],
   ];
 
@@ -879,7 +893,7 @@ export default function SrefDesign() {
                     {recommendations.length > 0 ? (
                       <div className="mb-3 border border-rule bg-field px-[14px] py-[10px]">
                         <div className="font-mono text-label tracking-label text-ink-label">
-                          RECOMMENDED FOR {formatNumber(local.powerPerEngineHp, 1)} HP
+                          RECOMMENDED FOR {formatNumber(powerPerEngineHp, 1)} HP
                           PER ENGINE
                         </div>
                         <ul className="mt-[9px] space-y-[6px] font-mono text-note">
@@ -941,7 +955,7 @@ export default function SrefDesign() {
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="text-[12.5px] leading-[1.2] text-ink-body">Wing area Sref</span>
                     <span className="whitespace-nowrap font-mono text-value-lg font-medium text-accent">
-                      {formatNumber(local.wingAreaM2)} m²
+                      {formatNumber(wingAreaM2)} m²
                     </span>
                   </div>
                   <div className="mt-[6px] font-mono text-micro text-ink-faint">
@@ -953,7 +967,7 @@ export default function SrefDesign() {
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="text-[12.5px] leading-[1.2] text-ink-body">Power required</span>
                     <span className="whitespace-nowrap font-mono text-value-lg text-ink">
-                      {formatNumber(local.powerRequiredHp, 1)} hp
+                      {formatNumber(powerRequiredHp, 1)} hp
                     </span>
                   </div>
                   <div className="mt-[6px] font-mono text-micro text-ink-faint">
@@ -968,12 +982,12 @@ export default function SrefDesign() {
                   <div className="flex justify-between gap-3"><dt className="text-ink-label">ρ ALTITUDE</dt><dd className="text-ink">{local.rhoAltitude.toFixed(7)} slug/ft³</dd></div>
                   <div className="flex justify-between gap-3"><dt className="text-ink-label">σ DENSITY RATIO</dt><dd className="text-ink">{local.sigma.toFixed(4)}</dd></div>
                   <div className="flex justify-between gap-3"><dt className="text-ink-label">CRUISE CL</dt><dd className="text-ink">{local.cruiseCl.toFixed(4)}</dd></div>
-                  <div className="flex justify-between gap-3"><dt className="text-ink-label">STALL LIMIT W/S</dt><dd className="text-accent-dark">{formatNumber(local.stallLimitWingLoading)} lb/ft²</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink-label">STALL LIMIT W/S</dt><dd className="text-accent-dark">{formatNumber(stallLimitWingLoading)} lb/ft²</dd></div>
                 </dl>
 
                 <div className="space-y-[9px] border-t border-rule-mid px-[18px] py-[14px] font-mono text-note">
                   <div className="flex justify-between gap-3"><span className="text-ink-label">SELECTED ENGINE</span><span className="text-accent">{selectedEngine ? selectedEngine.name : "—"}</span></div>
-                  <div className="flex justify-between gap-3"><span className="text-ink-label">TOTAL HORSEPOWER</span><span className="text-ink">{formatNumber(local.totalHorsepowerHp, 1)}</span></div>
+                  <div className="flex justify-between gap-3"><span className="text-ink-label">TOTAL HORSEPOWER</span><span className="text-ink">{formatNumber(powerRequiredHp, 1)}</span></div>
                   <div className="flex justify-between gap-3"><span className="text-ink-label">TO SHEET</span><span className="text-ink">03 MISSION</span></div>
                 </div>
               </aside>

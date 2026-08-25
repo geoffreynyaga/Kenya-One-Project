@@ -1,41 +1,35 @@
 import { SrefEngineSpec } from "../../api/srefDesign";
 import { computeLocal, recommendEngines } from "./srefCompute";
-import { DEFAULT_VALUES, deriveValues } from "./srefFields";
 
 /**
- * These are the same workbook figures asserted by
- * `aircraft_design/sref/tests/test_calculate.py`. Two implementations of the
- * same formulas drift; this fixture is what stops them.
+ * The workbook figures for the quantities this sheet keeps to itself. The
+ * shared ones are asserted in `domain/atoms.test.ts`, and both files use the
+ * same numbers as `aircraft_design/sref/tests/test_calculate.py` — two
+ * implementations of the same formulas drift, and this fixture is what stops
+ * them.
  */
-const WORKBOOK = {
-  rhoAltitude: 0.001756074594414648,
-  sigma: 0.7384670287698267,
-  rhoCeiling: 0.0013552150962194316,
-  sigmaCeiling: 0.5698970127079191,
-  stallLimitWingLoading: 22.691275793164802,
-  weightStartCruise: 5561.01,
-  weightEndCruise: 4760.409492467239,
-  weightAverageCruise: 5160.70974623362,
+const WORKBOOK_INPUTS = {
+  altitudeFt: 10000,
+  serviceCeilingFt: 18000,
+  designWeightLb: 5850,
+  taxiFraction: 0.98,
+  climbFraction: 0.97,
+  cruiseWeightRatio: 0.8560332551941533,
+  cruiseSpeedKnots: 140,
   wingAreaM2: 23.951178858082848,
-  powerRequiredHp: 508.69565217391306,
-  cruiseCl: 0.40822440553839295,
 };
 
-test("browser-side arithmetic reproduces the workbook", () => {
-  const values = deriveValues(DEFAULT_VALUES, new Set());
-  const local = computeLocal(values);
+test("the atmosphere and cruise mission reproduce the workbook", () => {
+  const local = computeLocal(WORKBOOK_INPUTS);
 
-  (Object.keys(WORKBOOK) as Array<keyof typeof WORKBOOK>).forEach((key) => {
-    expect(local[key]).toBeCloseTo(WORKBOOK[key], 9);
-  });
-});
-
-test("the derived wing loading is the stall limit", () => {
-  const values = deriveValues(DEFAULT_VALUES, new Set());
-  expect(Number(values.wingLoading)).toBeCloseTo(
-    WORKBOOK.stallLimitWingLoading,
-    12
-  );
+  expect(local.rhoAltitude).toBeCloseTo(0.001756074594414648, 12);
+  expect(local.sigma).toBeCloseTo(0.7384670287698267, 12);
+  expect(local.rhoCeiling).toBeCloseTo(0.0013552150962194316, 12);
+  expect(local.sigmaCeiling).toBeCloseTo(0.5698970127079191, 12);
+  expect(local.weightStartCruise).toBeCloseTo(5561.01, 9);
+  expect(local.weightEndCruise).toBeCloseTo(4760.409492467239, 9);
+  expect(local.weightAverageCruise).toBeCloseTo(5160.70974623362, 9);
+  expect(local.cruiseCl).toBeCloseTo(0.40822440553839295, 12);
 });
 
 const engine = (
