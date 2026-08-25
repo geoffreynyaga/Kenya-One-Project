@@ -113,3 +113,12 @@ ENV/
 static-cdn-local/
 
 AGENTS.md
+
+
+claude-design/
+
+# Local implementation plans
+plans/
+
+# Local working backlog
+backlog.md
