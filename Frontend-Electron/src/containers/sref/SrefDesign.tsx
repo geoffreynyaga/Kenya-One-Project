@@ -1281,8 +1281,14 @@ export default function SrefDesign() {
                         </dd>
                       </div>
                     </dl>
+                    <p className="mt-[10px] text-note leading-5 text-ink-muted">
+                      The corner of the region is the smallest wing and the
+                      least power that still meet every requirement. Take it, or
+                      click anywhere inside the clear area of the plot to choose
+                      your own.
+                    </p>
                     <button
-                      className="mt-[11px] w-full border border-rule px-3 py-[7px] font-mono text-[10.5px] tracking-band text-ink-muted hover:border-accent hover:text-accent"
+                      className="mt-[9px] w-full border border-accent bg-accent px-3 py-[8px] font-mono text-[10.5px] font-medium tracking-band text-white transition-colors hover:bg-accent-dark"
                       onClick={() =>
                         pickPoint(
                           region!.optimum!.wingLoading,
@@ -1291,11 +1297,22 @@ export default function SrefDesign() {
                       }
                       type="button"
                     >
-                      PLACE THE DESIGN POINT HERE
+                      USE THIS POINT → {formatNumber(region!.optimum!.wingLoading, 1)}{" "}
+                      / {formatNumber(region!.optimum!.powerLoading, 1)}
                     </button>
-                    <p className="mt-[8px] font-mono text-[10px] leading-[1.5] tracking-band text-ink-faint">
-                      FARTHEST RIGHT IS THE SMALLEST WING · FARTHEST UP IS THE
-                      LEAST POWER
+                    <p className="mt-[7px] font-mono text-[10px] leading-[1.5] tracking-band text-ink-faint">
+                      SREF {formatNumber(
+                        Number(values.designWeight) /
+                          region!.optimum!.wingLoading /
+                          10.76391
+                      )}{" "}
+                      m² · POWER{" "}
+                      {formatNumber(
+                        Number(values.designWeight) /
+                          region!.optimum!.powerLoading,
+                        0
+                      )}{" "}
+                      HP
                     </p>
                   </div>
                 )}

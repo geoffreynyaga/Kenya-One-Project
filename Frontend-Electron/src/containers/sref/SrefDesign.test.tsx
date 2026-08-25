@@ -312,9 +312,8 @@ test("finds the allowed region and can place the point at its corner", async () 
   expect(screen.getByText("22.691 lb/ft²")).toBeInTheDocument();
   expect(screen.getByText("9.658 lb/hp")).toBeInTheDocument();
 
-  fireEvent.click(
-    screen.getByRole("button", { name: "PLACE THE DESIGN POINT HERE" })
-  );
+  // The button names the point it will take, and what that point sizes to.
+  fireEvent.click(screen.getByRole("button", { name: /USE THIS POINT/ }));
 
   // Placing the point at the corner has to actually land inside the region:
   // rounding the stored value used to nudge it over the stall line.
@@ -341,9 +340,7 @@ test("says so when the requirements contradict each other", async () => {
   expect(
     screen.getByText(/The requirements contradict each other/)
   ).toBeInTheDocument();
-  expect(
-    screen.queryByRole("button", { name: "PLACE THE DESIGN POINT HERE" })
-  ).toBeNull();
+  expect(screen.queryByRole("button", { name: /USE THIS POINT/ })).toBeNull();
 });
 
 test("the requirement senses default to the conventional Part 23 reading", async () => {

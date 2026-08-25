@@ -8,7 +8,9 @@
  */
 
 import React from "react";
+import { useAtom, useSetAtom } from "jotai";
 
+import { committedStagesAtom, mtowLbAtom } from "../../domain/atoms";
 import { formatDelta, formatValue, toNumber } from "./format";
 
 interface Props {
@@ -24,8 +26,16 @@ interface Props {
  * The spine of the sheet: every fuel-fraction method the discipline offers,
  * with its number, one marked primary, and an explicit statement of which
  * value moves to the next sheet.
+ *
+ * "Carried forward" used to be a label and nothing more — the number stayed on
+ * this page while Sheet 02 sized against a weight typed into the workbook
+ * years ago. Carrying it forward now actually writes the shared quantity, and
+ * the rail shows what the later sheets currently hold so a divergence is
+ * visible rather than silent.
  */
 export default function VariantsRail(props: Props) {
+  const [carried, setCarried] = useAtom(mtowLbAtom);
+  const setCommitted = useSetAtom(committedStagesAtom);
   const raymer = toNumber(props.data.raymerIntersect);
   const gudmundsson = toNumber(props.data.gudmundssonIntersect);
   const roskam = toNumber(props.data.roskamIntersect);
@@ -53,6 +63,10 @@ export default function VariantsRail(props: Props) {
 
   const spreadPercent =
     spread !== undefined && mean ? ((spread / mean) * 100).toFixed(1) : undefined;
+
+  // A pound either way is rounding, not a disagreement.
+  const diverged =
+    raymer !== undefined && Math.abs(raymer - carried) > 1;
 
   return (
     <div className="flex min-h-0 flex-col border-l border-rule-mid bg-panel">
@@ -110,6 +124,35 @@ export default function VariantsRail(props: Props) {
           <span>CARRIED FWD</span>
           <span className="text-accent">RAYMER</span>
         </div>
+        <div className="flex justify-between font-mono text-note text-ink-label">
+          <span>LATER SHEETS USE</span>
+          <span className={diverged ? "text-accent-dark" : "text-ink"}>
+            {formatValue(carried)} lbf
+          </span>
+        </div>
+
+        {raymer === undefined ? null : diverged ? (
+          <>
+            <p className="text-note leading-5 text-accent-dark">
+              Sheet 02 is sizing against {formatValue(carried)} lbf, not the{" "}
+              {formatValue(raymer)} lbf solved here.
+            </p>
+            <button
+              className="border border-accent bg-accent px-3 py-[8px] font-mono text-[10.5px] font-medium tracking-band text-white transition-colors hover:bg-accent-dark"
+              onClick={() => {
+                setCarried(raymer);
+                setCommitted((current) => ({ ...current, mtow: true }));
+              }}
+              type="button"
+            >
+              CARRY {formatValue(raymer)} LBF FORWARD
+            </button>
+          </>
+        ) : (
+          <p className="font-mono text-micro text-ink-faint">
+            SHEET 02 IS SIZING AGAINST THIS WEIGHT
+          </p>
+        )}
       </div>
     </div>
   );
