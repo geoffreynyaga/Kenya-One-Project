@@ -65,6 +65,7 @@ const PRIVATE_DEFAULTS: Record<PrivateField, number> = {
 };
 
 const PRIVATE_KEY = "kenya-one:sref:private:v1";
+const SHADOW_KEY = "kenya-one:sref:shadows:v1";
 
 export interface SrefSheet {
   /** Every field as a string, ready for the inputs. */
@@ -116,9 +117,9 @@ export function useSrefSheet(): SrefSheet {
    * and move a decision an upstream stage committed, which is exactly the
    * transcription drift this layer exists to stop.
    */
-  const [shadows, setShadows] = useState<Partial<Record<FormField, number>>>(
-    {}
-  );
+  const [shadows, setShadows, resetShadows] = usePersistentState<
+    Partial<Record<FormField, number>>
+  >(SHADOW_KEY, {});
   const [drafts, setDrafts] = useState<Partial<Record<FormField, string>>>({});
 
   const writers = useMemo(
@@ -279,10 +280,10 @@ export function useSrefSheet(): SrefSheet {
 
   const reset = useCallback(() => {
     resetPrivates();
-    setShadows({});
+    resetShadows();
     setDrafts({});
     setWingLoadingOverride(null);
-  }, [resetPrivates, setWingLoadingOverride]);
+  }, [resetPrivates, resetShadows, setWingLoadingOverride]);
 
   return {
     values,

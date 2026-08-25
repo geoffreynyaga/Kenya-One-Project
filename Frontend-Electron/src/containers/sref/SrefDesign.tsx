@@ -35,6 +35,7 @@ import {
   CURVE_FIELDS,
   CONSTRAINT_LABELS,
   ConstraintKey,
+  feasibleRegion,
   DEFAULT_SENSE_STATE,
   Sense,
   Senses,
@@ -54,6 +55,18 @@ const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
 
 const STORAGE_KEY = "kenya-one:sref:v1";
+
+/** The number each requirement sense applies to, for the toggle row. */
+const SENSE_VALUES: Record<
+  ConstraintKey | "stall",
+  (values: FormValues) => string
+> = {
+  stall: (v) => `${v.stallSpeed} kt`,
+  takeoff: (v) => `${v.takeoffRun} ft`,
+  climb: (v) => `${v.rateOfClimb} fpm`,
+  ceiling: (v) => `${v.serviceCeiling} ft`,
+  vmax: (v) => `${v.vmax} kt`,
+};
 
 const integerFields = new Set<FormField>(["engineCount"]);
 
@@ -572,6 +585,8 @@ function ConstraintFigure({
    * out. Overlaps darken, which is what the pencil hatching in the workbook
    * did.
    */
+  const region = feasibleRegion(curves, stallLimit, senses);
+
   const shading = [
     ...CONSTRAINT_KEYS.map((key) => {
       const below = allowedBelow(key, senses.constraints[key]);
@@ -651,6 +666,40 @@ function ConstraintFigure({
             name: "STALL LIMIT",
             line: { color: tokens.colors.accent.DEFAULT, width: 2 },
           },
+          ...(region.empty
+            ? []
+            : [
+                {
+                  x: region.outline.map((point) => point.x),
+                  y: region.outline.map((point) => point.y),
+                  type: "scatter" as const,
+                  mode: "lines" as const,
+                  name: "ALLOWED REGION",
+                  line: { color: tokens.colors.ink.DEFAULT, width: 1 },
+                  fill: "toself" as const,
+                  fillcolor: "rgba(255,255,255,0.55)",
+                  hoverinfo: "skip" as const,
+                },
+              ]),
+          ...(region.optimum
+            ? [
+                {
+                  x: [region.optimum.wingLoading],
+                  y: [region.optimum.powerLoading],
+                  type: "scatter" as const,
+                  mode: "markers" as const,
+                  name: "OPTIMUM",
+                  marker: {
+                    color: tokens.colors.field,
+                    size: 9,
+                    symbol: "circle-open",
+                    line: { color: tokens.colors.ink.DEFAULT, width: 1.4 },
+                  },
+                  hovertemplate:
+                    "OPTIMUM<br>W/S %{x:.3f} lb/ft² · W/P %{y:.3f} lb/hp<extra></extra>",
+                },
+              ]
+            : []),
           {
             x: [picked.wingLoading],
             y: [picked.powerLoading],
@@ -815,8 +864,11 @@ export default function SrefDesign() {
   // Clicking the plot takes the design point off the stall limit, which is an
   // override on the shared wing-loading quantity.
   const pickPoint = (wingLoading: number, powerLoading: number) => {
-    setField("wingLoading", String(Number(wingLoading.toFixed(4))));
-    setField("powerLoading", String(Number(powerLoading.toFixed(4))));
+    // Stored at full precision: rounding here can nudge a point that sits
+    // exactly on a constraint over to the wrong side of it. Cells round for
+    // reading on their own.
+    setField("wingLoading", String(wingLoading));
+    setField("powerLoading", String(powerLoading));
     commitField("wingLoading");
     commitField("powerLoading");
   };
@@ -842,6 +894,14 @@ export default function SrefDesign() {
           )
         : null,
     [result, senses, values.wingLoading, values.powerLoading]
+  );
+
+  const region = useMemo(
+    () =>
+      result
+        ? feasibleRegion(result.curves, result.stall_limit_wing_loading, senses)
+        : null,
+    [result, senses]
   );
 
   const setSense = (key: ConstraintKey | "stall", sense: Sense) =>
@@ -966,29 +1026,32 @@ export default function SrefDesign() {
                   className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-[18px] py-[6px] hover:bg-white/70"
                   key={key}
                 >
-                  <span className="min-w-0 truncate text-body leading-[1.2] text-ink-muted">
+                  <span className="min-w-0 text-body leading-[1.25] text-ink-muted">
                     {label}
+                    <span className="ml-[6px] font-mono text-micro text-ink-faint">
+                      {SENSE_VALUES[key](values)}
+                    </span>
                   </span>
                   <span className="flex shrink-0 border border-rule">
                     {(
                       [
-                        ["atMost", "≤"],
-                        ["atLeast", "≥"],
+                        ["atMost", "AT MOST"],
+                        ["atLeast", "AT LEAST"],
                       ] as Array<[Sense, string]>
-                    ).map(([sense, glyph]) => (
+                    ).map(([sense, word]) => (
                       <button
                         aria-label={`${label} at ${sense === "atMost" ? "most" : "least"}`}
                         aria-pressed={current === sense}
-                        className={`px-[9px] py-[3px] font-mono text-meta ${
+                        className={`px-[8px] py-[4px] font-mono text-[10px] tracking-band ${
                           current === sense
-                            ? "bg-ink text-panel"
-                            : "text-ink-muted hover:text-ink"
+                            ? "bg-ink font-medium text-panel"
+                            : "bg-transparent text-ink-faint hover:text-ink"
                         }`}
                         key={sense}
                         onClick={() => setSense(key, sense)}
                         type="button"
                       >
-                        {glyph}
+                        {word}
                       </button>
                     ))}
                   </span>
@@ -1176,6 +1239,58 @@ export default function SrefDesign() {
                 </div>
 
                 <h2 className="mt-[14px] border-t border-rule-mid px-[18px] pb-[10px] pt-[15px] font-mono text-label font-medium tracking-label text-ink-label">
+                  ALLOWED REGION
+                </h2>
+                {region?.empty ?? true ? (
+                  <p className="px-[18px] pb-[14px] text-note leading-5 text-accent-dark">
+                    The requirements contradict each other — no wing loading
+                    satisfies all of them at once. Loosen one, or flip a sense.
+                  </p>
+                ) : (
+                  <div className="px-[18px] pb-[14px]">
+                    <dl className="space-y-[9px] font-mono text-note">
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-ink-label">W/S RANGE</dt>
+                        <dd className="text-ink">
+                          {formatNumber(region!.bands[0].wingLoading)} –{" "}
+                          {formatNumber(
+                            region!.bands[region!.bands.length - 1].wingLoading
+                          )}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-ink-label">OPTIMUM W/S</dt>
+                        <dd className="text-ink">
+                          {formatNumber(region!.optimum!.wingLoading, 3)} lb/ft²
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-ink-label">OPTIMUM W/P</dt>
+                        <dd className="text-ink">
+                          {formatNumber(region!.optimum!.powerLoading, 3)} lb/hp
+                        </dd>
+                      </div>
+                    </dl>
+                    <button
+                      className="mt-[11px] w-full border border-rule px-3 py-[7px] font-mono text-[10.5px] tracking-band text-ink-muted hover:border-accent hover:text-accent"
+                      onClick={() =>
+                        pickPoint(
+                          region!.optimum!.wingLoading,
+                          region!.optimum!.powerLoading
+                        )
+                      }
+                      type="button"
+                    >
+                      PLACE THE DESIGN POINT HERE
+                    </button>
+                    <p className="mt-[8px] font-mono text-[10px] leading-[1.5] tracking-band text-ink-faint">
+                      FARTHEST RIGHT IS THE SMALLEST WING · FARTHEST UP IS THE
+                      LEAST POWER
+                    </p>
+                  </div>
+                )}
+
+                <h2 className="border-t border-rule-mid px-[18px] pb-[10px] pt-[15px] font-mono text-label font-medium tracking-label text-ink-label">
                   DERIVED AT ALTITUDE
                 </h2>
                 <dl className="space-y-[9px] px-[18px] pb-[14px] font-mono text-note">

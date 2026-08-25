@@ -303,6 +303,55 @@ test("flipping a requirement sense flips which side is allowed", async () => {
   );
 });
 
+test("finds the allowed region and can place the point at its corner", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  expect(screen.getByText("ALLOWED REGION")).toBeInTheDocument();
+  // Top-right corner of the region: the stall line meeting the take-off curve.
+  expect(screen.getByText("22.691 lb/ft²")).toBeInTheDocument();
+  expect(screen.getByText("9.658 lb/hp")).toBeInTheDocument();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "PLACE THE DESIGN POINT HERE" })
+  );
+
+  // Placing the point at the corner has to actually land inside the region:
+  // rounding the stored value used to nudge it over the stall line.
+  expect(
+    Number((screen.getByLabelText("Power loading") as HTMLInputElement).value)
+  ).toBeCloseTo(9.658, 3);
+  expect(screen.queryByRole("alert")).toBeNull();
+});
+
+test("says so when the requirements contradict each other", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // Reading the ceiling as a cap puts its floor above the take-off ceiling.
+  fireEvent.click(screen.getByRole("button", { name: "CEILING at most" }));
+
+  expect(
+    screen.getByText(/The requirements contradict each other/)
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "PLACE THE DESIGN POINT HERE" })
+  ).toBeNull();
+});
+
+test("the requirement senses default to the conventional Part 23 reading", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // A stall speed and a take-off run are caps; climb, ceiling and speed are
+  // floors. Getting these backwards inverts the whole diagram.
+  expect(screen.getByRole("button", { name: "Stall speed at most" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "TAKE-OFF at most" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "CLIMB at least" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "CEILING at least" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "MAX SPEED at least" })).toHaveAttribute("aria-pressed", "true");
+});
+
 test("blocks solve with an invalid input", async () => {
   renderPage();
   await screen.findAllByText("23.95 m²");

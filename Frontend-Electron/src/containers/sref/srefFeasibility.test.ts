@@ -1,6 +1,7 @@
 import { SrefCurvePoint } from "../../api/srefDesign";
 import {
   DEFAULT_SENSE_STATE,
+  feasibleRegion,
   Senses,
   curveValueAt,
   evaluatePoint,
@@ -123,5 +124,62 @@ describe("optimumPoint", () => {
       },
     };
     expect(optimumPoint(curves, STALL_LIMIT, impossible)).toBeNull();
+  });
+});
+
+
+describe("feasibleRegion", () => {
+  it("stops at the stall line and tops out on the binding curve", () => {
+    const region = feasibleRegion(curves, STALL_LIMIT, DEFAULT_SENSE_STATE);
+
+    expect(region.empty).toBe(false);
+    expect(region.bands[region.bands.length - 1].wingLoading).toBeCloseTo(
+      STALL_LIMIT,
+      9
+    );
+    // Take-off binds at the stall limit, so that is the top-right corner.
+    expect(region.optimum!.powerLoading).toBeCloseTo(9.658, 2);
+    expect(region.optimum!.wingLoading).toBeCloseTo(STALL_LIMIT, 9);
+  });
+
+  it("closes the outline so it can be drawn as one polygon", () => {
+    const region = feasibleRegion(curves, STALL_LIMIT, DEFAULT_SENSE_STATE);
+    expect(region.outline.length).toBe(region.bands.length * 2);
+    expect(region.outline[0].x).toBeCloseTo(
+      region.outline[region.outline.length - 1].x,
+      9
+    );
+  });
+
+  it("every sampled band is genuinely allowed", () => {
+    const region = feasibleRegion(curves, STALL_LIMIT, DEFAULT_SENSE_STATE);
+    region.bands.forEach((band) => {
+      const mid = (band.upper + band.lower) / 2;
+      expect(
+        evaluatePoint(
+          curves,
+          STALL_LIMIT,
+          DEFAULT_SENSE_STATE,
+          band.wingLoading,
+          mid
+        ).feasible
+      ).toBe(true);
+    });
+  });
+
+  it("reports empty when the senses contradict each other", () => {
+    const impossible: Senses = {
+      ...DEFAULT_SENSE_STATE,
+      constraints: { ...DEFAULT_SENSE_STATE.constraints, ceiling: "atMost" },
+    };
+    expect(feasibleRegion(curves, STALL_LIMIT, impossible).empty).toBe(true);
+  });
+
+  it("moves to the right of the stall line when the stall speed is a minimum", () => {
+    const flipped: Senses = { ...DEFAULT_SENSE_STATE, stall: "atLeast" };
+    const region = feasibleRegion(curves, STALL_LIMIT, flipped);
+    region.bands.forEach((band) =>
+      expect(band.wingLoading).toBeGreaterThanOrEqual(STALL_LIMIT - 1e-9)
+    );
   });
 });
