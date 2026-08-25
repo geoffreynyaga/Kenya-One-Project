@@ -95,6 +95,25 @@ export const powerLoadingAtom = persisted("powerLoading", 11.5);
 /** Installed engine count. */
 export const engineCountAtom = persisted("engineCount", 2);
 
+/** Workbook MTOW!B19: weight fraction left after taxi and take-off. */
+export const taxiFractionAtom = persisted("taxiFraction", 0.98);
+
+/** Workbook MTOW!B20: weight fraction left after the climb to cruise. */
+export const climbFractionAtom = persisted("climbFraction", 0.97);
+
+/**
+ * Workbook MTOW!B28: w6/w1, the product of the phase fractions and the
+ * Breguet cruise fraction. A consequence of the MTOW mission once that stage
+ * is live; seeded from the workbook until then.
+ */
+export const cruiseWeightRatioAtom = persisted(
+  "cruiseWeightRatio",
+  0.8560332551941533
+);
+
+/** Workbook Sref!G6, carried from the take-off sheet. */
+export const cruiseSpeedKnotsAtom = persisted("cruiseSpeedKnots", 140);
+
 /**
  * CAUTION: closes a design loop — see DESIGN_LOOPS.cd0Area.
  *
