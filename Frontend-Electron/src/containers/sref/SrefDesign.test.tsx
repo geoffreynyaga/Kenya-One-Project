@@ -282,10 +282,12 @@ test("says plainly when the design point is outside the allowed region", async (
 
   // W/S sits on the stall limit and W/P defaults to 11.5, but the take-off
   // run needs W/P at or below the take-off curve.
-  expect(
-    screen.getByText("DESIGN POINT OUTSIDE THE ALLOWED REGION")
-  ).toBeInTheDocument();
-  expect(screen.getByRole("alert")).toHaveTextContent(/TAKE-OFF needs W\/P ≤/);
+  // The verdict sits in the aside beside the figure, not below the engine
+  // catalog where it used to land thirty rows away from the plot.
+  const verdict = screen.getByRole("alert");
+  expect(verdict).toHaveTextContent("POINT OUTSIDE THE REGION");
+  expect(verdict.closest("aside")).not.toBeNull();
+  expect(verdict).toHaveTextContent(/TAKE-OFF needs W\/P ≤/);
   expect(screen.getAllByText("OUTSIDE THE REGION").length).toBeGreaterThan(0);
 });
 

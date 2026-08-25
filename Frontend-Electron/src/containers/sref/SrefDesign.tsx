@@ -1177,38 +1177,6 @@ export default function SrefDesign() {
                   </div>
                 </details>
 
-                {feasibility && !feasibility.feasible ? (
-                  <div
-                    className="mt-3 border border-accent bg-accent-wash px-[14px] py-[11px]"
-                    role="alert"
-                  >
-                    <div className="font-mono text-label font-medium tracking-label text-accent-dark">
-                      DESIGN POINT OUTSIDE THE ALLOWED REGION
-                    </div>
-                    <ul className="mt-[8px] space-y-[4px] font-mono text-note text-ink-body">
-                      {feasibility.violations.map((violation) => (
-                        <li key={violation.key}>
-                          {violation.label} needs {violation.requires}
-                        </li>
-                      ))}
-                    </ul>
-                    {feasibility.ceilingWp !== null ? (
-                      <button
-                        className="mt-[10px] border border-accent px-[10px] py-[5px] font-mono text-[10.5px] tracking-band text-accent-dark hover:bg-accent hover:text-white"
-                        onClick={() =>
-                          pickPoint(
-                            Number(values.wingLoading),
-                            feasibility.ceilingWp as number
-                          )
-                        }
-                        type="button"
-                      >
-                        SNAP TO {formatNumber(feasibility.ceilingWp, 3)} lb/hp
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
-
                 <div className="px-[2px] py-4 font-mono text-meta text-ink-muted">
                   SHEET 02 OF 17 · MATCHING PLOT ·{" "}
                   {feasibility?.feasible ? (
@@ -1220,8 +1188,51 @@ export default function SrefDesign() {
               </section>
 
               <aside className="flex flex-col self-start bg-panel xl:border-l xl:border-rule-mid">
+                {/*
+                  The verdict on the design point sits beside the figure it is
+                  about. It used to follow the engine catalog, which is thirty
+                  rows long, so it landed far below the plot it referred to.
+                */}
+                {feasibility && !feasibility.feasible ? (
+                  <div
+                    className="border-b border-rule-mid bg-accent-wash px-[18px] py-[13px]"
+                    role="alert"
+                  >
+                    <div className="font-mono text-label font-medium tracking-label text-accent-dark">
+                      POINT OUTSIDE THE REGION
+                    </div>
+                    <ul className="mt-[8px] space-y-[5px] font-mono text-note text-ink-body">
+                      {feasibility.violations.map((violation) => (
+                        <li key={violation.key}>
+                          {violation.label} needs {violation.requires}
+                        </li>
+                      ))}
+                    </ul>
+                    {feasibility.ceilingWp !== null ? (
+                      <button
+                        className="mt-[10px] w-full border border-accent px-[10px] py-[6px] font-mono text-[10.5px] tracking-band text-accent-dark transition-colors hover:bg-accent hover:text-white"
+                        onClick={() =>
+                          pickPoint(
+                            Number(values.wingLoading),
+                            feasibility.ceilingWp as number
+                          )
+                        }
+                        type="button"
+                      >
+                        KEEP W/S · DROP W/P TO{" "}
+                        {formatNumber(feasibility.ceilingWp, 2)}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <h2 className="px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label">
                   SIZED FROM POINT
+                  {feasibility && !feasibility.feasible ? (
+                    <span className="ml-[7px] font-normal text-accent-dark">
+                      · NOT ALLOWED
+                    </span>
+                  ) : null}
                 </h2>
 
                 <div className="border-t border-rule-mid bg-field shadow-carried px-[18px] py-3">
