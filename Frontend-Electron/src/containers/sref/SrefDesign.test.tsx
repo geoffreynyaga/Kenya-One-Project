@@ -1,6 +1,7 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { Provider, createStore } from "jotai";
 
 import {
   SrefEngineSpec,
@@ -32,14 +33,12 @@ const result: SrefSizingResult = {
   weight_end_cruise_lb: 4760.409492467239,
   weight_average_cruise_lb: 5160.70974623362,
   induced_drag_factor: 0.054006965223581664,
+  // The workbook's own sweep either side of the stall limit, so the binding
+  // constraint in these tests is the one the real sheet reports.
   curves: [
-    {
-      wing_loading: 10,
-      wp_vmax: 5.965230373322869,
-      wp_takeoff: 16.54121527970375,
-      wp_climb: 11.372662139759335,
-      wp_ceiling: 19.61436792878416,
-    },
+    { wing_loading: 20, wp_vmax: 10.670738984542657, wp_takeoff: 10.591090504674812, wp_climb: 10.453481679267414, wp_ceiling: 14.50232001975658 },
+    { wing_loading: 22, wp_vmax: 11.401, wp_takeoff: 9.874, wp_climb: 10.315, wp_ceiling: 13.899 },
+    { wing_loading: 24, wp_vmax: 12.058, wp_takeoff: 9.248, wp_climb: 10.185, wp_ceiling: 13.367 },
   ],
   sizing: {
     wing_area_ft2: 257.802,
@@ -109,14 +108,21 @@ afterEach(() => {
   jest.clearAllMocks();
 });
 
+/**
+ * A fresh jotai store per render, so no test inherits another's design
+ * quantities. Anything that should survive a remount does so through
+ * localStorage, which setupTests clears between tests.
+ */
 function renderPage() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return render(
-    <QueryClientProvider client={queryClient}>
-      <SrefDesign />
-    </QueryClientProvider>
+    <Provider store={createStore()}>
+      <QueryClientProvider client={queryClient}>
+        <SrefDesign />
+      </QueryClientProvider>
+    </Provider>
   );
 }
 
@@ -213,6 +219,144 @@ test("wing loading tracks the stall limit until it is overridden", async () => {
 
   fireEvent.click(screen.getByRole("button", { name: "Override Wing loading" }));
   expect(screen.getByLabelText("Wing loading").tagName).toBe("INPUT");
+});
+
+test("values another stage owns are read-only, not typeable", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // CD0 comes from Drag analysis and e from Wing & Airfoil. Typing into them
+  // would write a number those stages overwrite the moment they run.
+  expect(screen.getByLabelText("Parasite drag coefficient").tagName).toBe(
+    "OUTPUT"
+  );
+  expect(screen.getByLabelText("Oswald span efficiency").tagName).toBe("OUTPUT");
+
+  // Aspect ratio is a genuine choice, so it stays editable.
+  expect(screen.getByLabelText("Aspect ratio").tagName).toBe("INPUT");
+
+  // The escape hatch is explicit.
+  fireEvent.click(
+    screen.getByRole("button", { name: "Override Parasite drag coefficient" })
+  );
+  expect(screen.getByLabelText("Parasite drag coefficient").tagName).toBe(
+    "INPUT"
+  );
+});
+
+test("quantities in a design loop carry a caution tag", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  const cd0Cell = screen
+    .getByLabelText("Parasite drag coefficient")
+    .closest("div")!;
+  expect(cd0Cell).toHaveTextContent("CD0 ⇄ AREA");
+
+  // A quantity outside every loop stays unmarked.
+  const clMaxCell = screen.getByLabelText("Max lift coefficient").closest("div")!;
+  expect(clMaxCell).not.toHaveTextContent("⇄");
+});
+
+test("shared quantities survive a remount, private ones too", async () => {
+  const { unmount } = renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  fireEvent.change(screen.getByLabelText("Aspect ratio"), {
+    target: { value: "9.2" },
+  });
+  fireEvent.change(screen.getByLabelText("Take-off run"), {
+    target: { value: "1800" },
+  });
+  unmount();
+
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+  expect(screen.getByLabelText("Aspect ratio")).toHaveValue(9.2);
+  expect(screen.getByLabelText("Take-off run")).toHaveValue(1800);
+});
+
+test("says plainly when the design point is outside the allowed region", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // W/S sits on the stall limit and W/P defaults to 11.5, but the take-off
+  // run needs W/P at or below the take-off curve.
+  expect(
+    screen.getByText("DESIGN POINT OUTSIDE THE ALLOWED REGION")
+  ).toBeInTheDocument();
+  expect(screen.getByRole("alert")).toHaveTextContent(/TAKE-OFF needs W\/P ≤/);
+  expect(screen.getAllByText("OUTSIDE THE REGION").length).toBeGreaterThan(0);
+});
+
+test("flipping a requirement sense flips which side is allowed", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // With take-off as a ceiling the point fails it. Read as a floor instead,
+  // the same point satisfies it.
+  expect(screen.getByRole("alert")).toHaveTextContent("TAKE-OFF");
+
+  fireEvent.click(screen.getByRole("button", { name: "TAKE-OFF at least" }));
+  expect(screen.queryByRole("alert")?.textContent ?? "").not.toContain(
+    "TAKE-OFF needs"
+  );
+});
+
+test("finds the allowed region and can place the point at its corner", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  expect(screen.getByText("ALLOWED REGION")).toBeInTheDocument();
+  // Top-right corner of the region: the stall line meeting the take-off curve.
+  expect(screen.getByText("22.691 lb/ft²")).toBeInTheDocument();
+  expect(screen.getByText("9.658 lb/hp")).toBeInTheDocument();
+
+  fireEvent.click(
+    screen.getByRole("button", { name: "PLACE THE DESIGN POINT HERE" })
+  );
+
+  // Placing the point at the corner has to actually land inside the region:
+  // rounding the stored value used to nudge it over the stall line.
+  expect(
+    Number((screen.getByLabelText("Power loading") as HTMLInputElement).value)
+  ).toBeCloseTo(9.658, 3);
+  expect(screen.queryByRole("alert")).toBeNull();
+
+  // And the figure has to follow, which means the point reaches the solver.
+  await waitFor(() => {
+    const last = fetchSrefSizingMock.mock.calls.at(-1)![0];
+    expect(last.design_point.power_loading_lb_per_hp).toBeCloseTo(9.658, 3);
+    expect(last.design_point.wing_loading_lb_per_ft2).toBeCloseTo(22.691, 3);
+  });
+});
+
+test("says so when the requirements contradict each other", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // Reading the ceiling as a cap puts its floor above the take-off ceiling.
+  fireEvent.click(screen.getByRole("button", { name: "CEILING at most" }));
+
+  expect(
+    screen.getByText(/The requirements contradict each other/)
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "PLACE THE DESIGN POINT HERE" })
+  ).toBeNull();
+});
+
+test("the requirement senses default to the conventional Part 23 reading", async () => {
+  renderPage();
+  await screen.findByRole("table", { name: "Engine catalog" });
+
+  // A stall speed and a take-off run are caps; climb, ceiling and speed are
+  // floors. Getting these backwards inverts the whole diagram.
+  expect(screen.getByRole("button", { name: "Stall speed at most" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "TAKE-OFF at most" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "CLIMB at least" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "CEILING at least" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "MAX SPEED at least" })).toHaveAttribute("aria-pressed", "true");
 });
 
 test("blocks solve with an invalid input", async () => {

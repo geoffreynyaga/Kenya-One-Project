@@ -1,5 +1,6 @@
 import React, { FormEvent, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useAtomValue } from "jotai";
 import {
   ColumnDef,
   flexRender,
@@ -19,22 +20,53 @@ import {
 import { usePersistentState } from "../../hooks/usePersistentState";
 import tokens from "../../design-tokens";
 import {
-  DEFAULT_VALUES,
   FieldSpec,
   FormField,
   FormValues,
   aerodynamicFields,
-  deriveValues,
   pointFields,
   requirementFields,
   weightFields,
 } from "./srefFields";
 import { computeLocal, recommendEngines } from "./srefCompute";
+import { useSrefSheet } from "./useSrefSheet";
+import {
+  CONSTRAINT_KEYS,
+  CURVE_FIELDS,
+  CONSTRAINT_LABELS,
+  ConstraintKey,
+  feasibleRegion,
+  DEFAULT_SENSE_STATE,
+  Sense,
+  Senses,
+  allowedBelow,
+  evaluatePoint,
+  allowedLeftOfStall,
+} from "./srefFeasibility";
+import {
+  powerPerEngineHpAtom,
+  powerRequiredHpAtom,
+  stallLimitWingLoadingAtom,
+  wingAreaM2Atom,
+} from "../../domain/atoms";
+import { loopsFor } from "../../domain/loops";
 
 const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
 
 const STORAGE_KEY = "kenya-one:sref:v1";
+
+/** The number each requirement sense applies to, for the toggle row. */
+const SENSE_VALUES: Record<
+  ConstraintKey | "stall",
+  (values: FormValues) => string
+> = {
+  stall: (v) => `${v.stallSpeed} kt`,
+  takeoff: (v) => `${v.takeoffRun} ft`,
+  climb: (v) => `${v.rateOfClimb} fpm`,
+  ceiling: (v) => `${v.serviceCeiling} ft`,
+  vmax: (v) => `${v.vmax} kt`,
+};
 
 const integerFields = new Set<FormField>(["engineCount"]);
 
@@ -48,23 +80,23 @@ const fractionFields = new Set<FormField>([
   "cruiseWeightRatio",
 ]);
 
-interface SheetState {
-  values: FormValues;
-  /** Derived fields the user has taken over by hand. */
-  overrides: FormField[];
-  /** Input bands left expanded. */
+/**
+ * What is left of this sheet's own state once the design quantities moved to
+ * `domain/atoms`: which bands are open and which engine is selected.
+ */
+interface ViewState {
   openSections: string[];
-  /** Engine chosen from the catalog, by catalog number. */
   engineNumber: number | null;
+  /** Whether each requirement is a floor or a ceiling — drives the shading. */
+  senses: Senses;
 }
 
 // The two bands you actually tune start open; the bands that are mostly
-// carried from other sheets start collapsed.
-const DEFAULT_SHEET: SheetState = {
-  values: DEFAULT_VALUES,
-  overrides: [],
+// consequences of other stages start collapsed.
+const DEFAULT_VIEW: ViewState = {
   openSections: ["REQUIREMENTS", "DESIGN POINT"],
   engineNumber: null,
+  senses: DEFAULT_SENSE_STATE,
 };
 
 function toRequest(values: FormValues): SrefSizingRequest {
@@ -206,7 +238,11 @@ interface ValueCellProps {
   values: FormValues;
   errors: Partial<Record<FormField, string>>;
   overridden: boolean;
+  /** What the owning stage still holds, when this cell has diverged from it. */
+  upstream: number | null;
   onChange: (field: FormField, value: string) => void;
+  /** Editing finished — the draft string can go, leaving the stored number. */
+  onBlur: (field: FormField) => void;
   onOverride: (field: FormField) => void;
   onRestore: (field: FormField) => void;
 }
@@ -216,7 +252,9 @@ function ValueCell({
   values,
   errors,
   overridden,
+  upstream,
   onChange,
+  onBlur,
   onOverride,
   onRestore,
 }: ValueCellProps) {
@@ -225,19 +263,29 @@ function ValueCell({
   const error = errors[field];
   const errorId = `${field}-error`;
   const raw = values[field];
-  const editable = source !== "derived" || overridden;
-  const carried = source === "carried";
+  // A consequence is read-only until you take it over by hand. Whether this
+  // stage computes it or another one does only changes the caption.
+  const editable = source !== "consequence" || overridden;
+  const hasOrigin = Boolean(spec.origin);
 
+  const provenance =
+    source === "consequence"
+      ? (spec.formula ?? `← ${spec.origin}`)
+      : source === "figure"
+        ? "← FIG. 2.1"
+        : null;
+  // An override here is sheet-local: the owning stage keeps its own number,
+  // so say which one it still has.
   const caption =
-    source === "derived" && !overridden
-      ? spec.formula
-      : source === "derived"
-        ? `OVERRIDDEN · ${spec.formula}`
-        : carried
-          ? `← ${spec.origin}`
-          : source === "figure"
-            ? "← FIG. 2.1"
-            : null;
+    provenance && overridden
+      ? upstream !== null
+        ? `DIVERGED · ${spec.origin ?? "SOURCE"} ${readable(String(upstream))}`
+        : `OVERRIDDEN · ${provenance}`
+      : provenance;
+
+  // CAUTION: quantities in a design loop carry a quiet tag here. It only turns
+  // loud when the loop actually fires — see domain/loops.ts.
+  const loops = spec.quantity ? loopsFor(spec.quantity) : [];
 
   const label = (
     <span className="min-w-0 text-body leading-[1.35] text-ink-muted">
@@ -259,8 +307,8 @@ function ValueCell({
     <div
       className={`grid grid-cols-[minmax(0,1fr)_104px] items-baseline gap-x-3 px-[18px] py-[7px] ${
         error ? "bg-accent-wash" : ""
-      } ${carried ? "shadow-carried" : ""} ${
-        source === "derived" ? "bg-field/70" : ""
+      } ${hasOrigin ? "shadow-carried" : ""} ${
+        source === "consequence" ? "bg-field/70" : ""
       } ${editable ? "hover:bg-white/70 focus-within:bg-white" : ""}`}
     >
       {editable ? (
@@ -280,7 +328,10 @@ function ValueCell({
           className="min-w-0 border-0 border-b border-dashed border-ink-faint bg-transparent px-[1px] pb-[3px] text-right font-mono text-body leading-none text-ink outline-none hover:border-accent focus:border-accent"
           id={field}
           inputMode="decimal"
-          onBlur={() => setFocused(false)}
+          onBlur={() => {
+            setFocused(false);
+            onBlur(field);
+          }}
           onChange={(event) => onChange(field, event.target.value)}
           onFocus={() => setFocused(true)}
           step="any"
@@ -300,7 +351,15 @@ function ValueCell({
       {caption ? (
         <span className="col-span-2 mt-[3px] flex items-baseline justify-between gap-2 font-mono text-[10px] tracking-band text-ink-faint">
           <span className="min-w-0 truncate">{caption}</span>
-          {source === "derived" ? (
+          {loops.length > 0 ? (
+            <span
+              className="shrink-0 whitespace-nowrap text-ink-faint"
+              title={loops.map((loop) => loop.because).join(" ")}
+            >
+              ⟳ {loops[0].label}
+            </span>
+          ) : null}
+          {source === "consequence" ? (
             <button
               aria-label={`${overridden ? "Restore" : "Override"} ${spec.label}`}
               className="shrink-0 border-b border-dashed border-ink-faint tracking-band text-ink-muted hover:border-accent hover:text-accent"
@@ -497,15 +556,68 @@ function EngineCatalog({
 function ConstraintFigure({
   result,
   picked,
+  senses,
   onPickPoint,
 }: {
   result: SrefSizingResult;
   picked: { wingLoading: number; powerLoading: number };
+  senses: Senses;
   onPickPoint: (wingLoading: number, powerLoading: number) => void;
 }) {
   const curves = result.curves;
   const x = curves.map((point) => point.wing_loading);
   const stallLimit = result.stall_limit_wing_loading;
+
+  // The plot has to cover the curves, the stall line and the picked point.
+  const allWp = curves.flatMap((c) => [
+    c.wp_vmax,
+    c.wp_takeoff,
+    c.wp_climb,
+    c.wp_ceiling,
+  ]);
+  const xMin = Math.min(...x);
+  const xMax = Math.max(...x, stallLimit);
+  const yMin = 0;
+  const yMax = Math.max(...allWp, picked.powerLoading) * 1.05;
+
+  /**
+   * One shaded shape per constraint, covering the half-plane its sense rules
+   * out. Overlaps darken, which is what the pencil hatching in the workbook
+   * did.
+   */
+  const region = feasibleRegion(curves, stallLimit, senses);
+
+  const shading = [
+    ...CONSTRAINT_KEYS.map((key) => {
+      const below = allowedBelow(key, senses.constraints[key]);
+      const edge = curves
+        .map(
+          (c, i) =>
+            `${i === 0 ? "M" : "L"}${c.wing_loading},${c[CURVE_FIELDS[key]]}`
+        )
+        .join(" ");
+      const close = below
+        ? `L${xMax},${yMax} L${xMin},${yMax} Z`
+        : `L${xMax},${yMin} L${xMin},${yMin} Z`;
+      return {
+        type: "path" as const,
+        path: `${edge} ${close}`,
+        fillcolor: "rgba(20,23,26,0.05)",
+        line: { width: 0 },
+        layer: "below" as const,
+      };
+    }),
+    {
+      type: "rect" as const,
+      x0: allowedLeftOfStall(senses.stall) ? stallLimit : xMin,
+      x1: allowedLeftOfStall(senses.stall) ? xMax : stallLimit,
+      y0: yMin,
+      y1: yMax,
+      fillcolor: "rgba(20,23,26,0.05)",
+      line: { width: 0 },
+      layer: "below" as const,
+    },
+  ];
 
   const seriesStyle = [
     { name: "TAKE-OFF", color: tokens.colors.series.compare, width: 1.6, dash: undefined },
@@ -554,6 +666,40 @@ function ConstraintFigure({
             name: "STALL LIMIT",
             line: { color: tokens.colors.accent.DEFAULT, width: 2 },
           },
+          ...(region.empty
+            ? []
+            : [
+                {
+                  x: region.outline.map((point) => point.x),
+                  y: region.outline.map((point) => point.y),
+                  type: "scatter" as const,
+                  mode: "lines" as const,
+                  name: "ALLOWED REGION",
+                  line: { color: tokens.colors.ink.DEFAULT, width: 1 },
+                  fill: "toself" as const,
+                  fillcolor: "rgba(255,255,255,0.55)",
+                  hoverinfo: "skip" as const,
+                },
+              ]),
+          ...(region.optimum
+            ? [
+                {
+                  x: [region.optimum.wingLoading],
+                  y: [region.optimum.powerLoading],
+                  type: "scatter" as const,
+                  mode: "markers" as const,
+                  name: "OPTIMUM",
+                  marker: {
+                    color: tokens.colors.field,
+                    size: 9,
+                    symbol: "circle-open",
+                    line: { color: tokens.colors.ink.DEFAULT, width: 1.4 },
+                  },
+                  hovertemplate:
+                    "OPTIMUM<br>W/S %{x:.3f} lb/ft² · W/P %{y:.3f} lb/hp<extra></extra>",
+                },
+              ]
+            : []),
           {
             x: [picked.wingLoading],
             y: [picked.powerLoading],
@@ -576,15 +722,18 @@ function ConstraintFigure({
           paper_bgcolor: tokens.colors.field,
           plot_bgcolor: tokens.colors.field,
           font: { family: MONO, size: 10, color: tokens.colors.ink.muted },
+          shapes: shading,
           xaxis: {
             title: "WING LOADING  W/S  [lb/ft²]",
             gridcolor: tokens.colors.rule.grid,
             zeroline: false,
+            range: [xMin, xMax],
           },
           yaxis: {
             title: "POWER LOADING  W/P  [lb/hp]",
             gridcolor: tokens.colors.rule.grid,
             zeroline: false,
+            range: [yMin, yMax],
           },
           legend: { orientation: "h", y: -0.23, x: 0 },
           hovermode: "closest",
@@ -593,7 +742,7 @@ function ConstraintFigure({
         useResizeHandler
       />
       <div className="flex items-center gap-[10px] px-[2px] pb-1 pt-2 font-mono text-[10.5px] tracking-[0.08em] text-ink-faint">
-        <span>CLICK THE PLOT TO MOVE THE DESIGN POINT</span>
+        <span>UNSHADED = ALLOWED · CLICK TO MOVE THE DESIGN POINT</span>
         <span className="h-[12px] w-px bg-rule-cell" />
         <span>
           DESIGN POINT · W/S {formatNumber(picked.wingLoading)} lb/ft² · W/P{" "}
@@ -605,25 +754,51 @@ function ConstraintFigure({
 }
 
 export default function SrefDesign() {
-  const [sheet, setSheet, resetSheet] = usePersistentState<SheetState>(
+  // The shared quantities come from domain/atoms; the ten fields only this
+  // sheet uses stay local. See useSrefSheet for the split.
+  const {
+    values,
+    setField,
+    commitField,
+    overrideField,
+    restoreField,
+    isOverridden,
+    upstreamValue,
+    reset: resetSheet,
+  } = useSrefSheet();
+
+  const [view, setView, resetView] = usePersistentState<ViewState>(
     STORAGE_KEY,
-    DEFAULT_SHEET
+    DEFAULT_VIEW
   );
   const [errors, setErrors] = useState<Partial<Record<FormField, string>>>({});
+  const senses = view.senses;
 
-  const overrides = useMemo(() => new Set(sheet.overrides), [sheet.overrides]);
-  const values = useMemo(
-    () => deriveValues(sheet.values, overrides),
-    [sheet.values, overrides]
+  // Sized outputs are shared quantities, so they are read, not recomputed.
+  const wingAreaM2 = useAtomValue(wingAreaM2Atom);
+  const powerRequiredHp = useAtomValue(powerRequiredHpAtom);
+  const powerPerEngineHp = useAtomValue(powerPerEngineHpAtom);
+  const stallLimitWingLoading = useAtomValue(stallLimitWingLoadingAtom);
+
+  // What is left is private to this sheet: atmosphere, mission weights, CLc.
+  const local = useMemo(
+    () =>
+      computeLocal({
+        altitudeFt: Number(values.altitude),
+        serviceCeilingFt: Number(values.serviceCeiling),
+        designWeightLb: Number(values.designWeight),
+        taxiFraction: Number(values.taxiFraction),
+        climbFraction: Number(values.climbFraction),
+        cruiseWeightRatio: Number(values.cruiseWeightRatio),
+        cruiseSpeedKnots: Number(values.cruiseSpeed),
+        wingAreaM2,
+      }),
+    [values, wingAreaM2]
   );
 
   const [submitted, setSubmitted] = useState<SrefSizingRequest>(() =>
-    toRequest(deriveValues(sheet.values, new Set(sheet.overrides)))
+    toRequest(values)
   );
-
-  // The closed-form values run here, so the tiles and the derived block track
-  // every keystroke. Only the constraint sweep needs the server.
-  const local = useMemo(() => computeLocal(values), [values]);
 
   const query = useQuery({
     queryKey: ["sref-sizing", submitted],
@@ -645,13 +820,13 @@ export default function SrefDesign() {
   const engines = useMemo(() => catalog.data ?? [], [catalog.data]);
 
   const recommendations = useMemo(
-    () => recommendEngines(engines, local.powerPerEngineHp),
-    [engines, local.powerPerEngineHp]
+    () => recommendEngines(engines, powerPerEngineHp),
+    [engines, powerPerEngineHp]
   );
 
   // Default to the closest engine that covers the requirement until picked.
   const selectedNumber =
-    sheet.engineNumber ?? recommendations[0]?.engine.number ?? null;
+    view.engineNumber ?? recommendations[0]?.engine.number ?? null;
   const selectedEngine =
     engines.find((engine) => engine.number === selectedNumber) ?? null;
 
@@ -661,37 +836,16 @@ export default function SrefDesign() {
   );
 
   const selectEngine = (number: number) =>
-    setSheet((current) => ({ ...current, engineNumber: number }));
+    setView((current) => ({ ...current, engineNumber: number }));
 
-  const setField = (field: FormField, value: string) => {
-    setSheet((current) => ({
-      ...current,
-      values: { ...current.values, [field]: value },
-    }));
+  const changeField = (field: FormField, value: string) => {
+    setField(field, value);
     setErrors((current) => {
       if (!current[field]) return current;
       const next = { ...current };
       delete next[field];
       return next;
     });
-  };
-
-  /** Freeze a derived cell at its current value and let the user edit it. */
-  const overrideField = (field: FormField) => {
-    setSheet((current) => ({
-      ...current,
-      values: { ...current.values, [field]: values[field] },
-      overrides: current.overrides.includes(field)
-        ? current.overrides
-        : [...current.overrides, field],
-    }));
-  };
-
-  const restoreField = (field: FormField) => {
-    setSheet((current) => ({
-      ...current,
-      overrides: current.overrides.filter((entry) => entry !== field),
-    }));
   };
 
   const submit = (event: FormEvent) => {
@@ -707,45 +861,82 @@ export default function SrefDesign() {
     }
   };
 
-  // Clicking the plot takes the design point off the stall limit, so the wing
-  // loading becomes an override rather than a derived cell.
+  // Clicking the plot takes the design point off the stall limit, which is an
+  // override on the shared wing-loading quantity.
   const pickPoint = (wingLoading: number, powerLoading: number) => {
-    const nextValues: FormValues = {
-      ...sheet.values,
-      wingLoading: String(Number(wingLoading.toFixed(4))),
-      powerLoading: String(Number(powerLoading.toFixed(4))),
+    // Stored at full precision: rounding here can nudge a point that sits
+    // exactly on a constraint over to the wrong side of it. Cells round for
+    // reading on their own.
+    const next: FormValues = {
+      ...values,
+      wingLoading: String(wingLoading),
+      powerLoading: String(powerLoading),
     };
-    const nextOverrides = sheet.overrides.includes("wingLoading")
-      ? sheet.overrides
-      : [...sheet.overrides, "wingLoading" as FormField];
-    setSheet((current) => ({
-      ...current,
-      values: nextValues,
-      overrides: nextOverrides,
-    }));
-    const resolved = deriveValues(nextValues, new Set(nextOverrides));
-    setErrors(validate(resolved));
-    setSubmitted(toRequest(resolved));
+    setField("wingLoading", next.wingLoading);
+    setField("powerLoading", next.powerLoading);
+    commitField("wingLoading");
+    commitField("powerLoading");
+
+    // The figure plots the submitted point, so moving the design point has to
+    // resolve the curves as well or nothing on the plot moves.
+    setErrors(validate(next));
+    setSubmitted(toRequest(next));
   };
 
   const reset = () => {
     resetSheet();
+    resetView();
     setErrors({});
-    setSubmitted(toRequest(deriveValues(DEFAULT_VALUES, new Set())));
   };
 
   const result = query.data;
 
+  // Which constraints the point actually satisfies, given the senses.
+  const feasibility = useMemo(
+    () =>
+      result
+        ? evaluatePoint(
+            result.curves,
+            result.stall_limit_wing_loading,
+            senses,
+            Number(values.wingLoading),
+            Number(values.powerLoading)
+          )
+        : null,
+    [result, senses, values.wingLoading, values.powerLoading]
+  );
+
+  const region = useMemo(
+    () =>
+      result
+        ? feasibleRegion(result.curves, result.stall_limit_wing_loading, senses)
+        : null,
+    [result, senses]
+  );
+
+  const setSense = (key: ConstraintKey | "stall", sense: Sense) =>
+    setView((current) => ({
+      ...current,
+      senses:
+        key === "stall"
+          ? { ...current.senses, stall: sense }
+          : {
+              ...current.senses,
+              constraints: { ...current.senses.constraints, [key]: sense },
+            },
+    }));
+
   const cellProps = {
     values,
     errors,
-    onChange: setField,
+    onChange: changeField,
+    onBlur: commitField,
     onOverride: overrideField,
     onRestore: restoreField,
   };
 
   const toggleSection = (key: string, open: boolean) => {
-    setSheet((current) => {
+    setView((current) => {
       const isOpen = current.openSections.includes(key);
       if (isOpen === open) return current;
       return {
@@ -761,14 +952,15 @@ export default function SrefDesign() {
     <InputSection
       count={specs.length}
       onToggle={(open) => toggleSection(key, open)}
-      open={sheet.openSections.includes(key)}
+      open={view.openSections.includes(key)}
       title={title}
     >
       {specs.map((spec) => (
         <ValueCell
           key={spec.field}
-          overridden={overrides.has(spec.field)}
+          overridden={isOverridden(spec.field)}
           spec={spec}
+          upstream={upstreamValue(spec.field)}
           {...cellProps}
         />
       ))}
@@ -776,11 +968,11 @@ export default function SrefDesign() {
   );
 
   const summaryItems: Array<[string, string]> = [
-    ["WING AREA SREF", `${formatNumber(local.wingAreaM2)} m²`],
-    ["POWER REQUIRED", `${formatNumber(local.powerRequiredHp, 1)} hp`],
+    ["WING AREA SREF", `${formatNumber(wingAreaM2)} m²`],
+    ["POWER REQUIRED", `${formatNumber(powerRequiredHp, 1)} hp`],
     [
       "PER ENGINE",
-      `${formatNumber(local.powerPerEngineHp, 1)} hp × ${values.engineCount}`,
+      `${formatNumber(powerPerEngineHp, 1)} hp × ${values.engineCount}`,
     ],
   ];
 
@@ -820,6 +1012,63 @@ export default function SrefDesign() {
           </div>
 
           {renderSection("REQUIREMENTS", "PERFORMANCE REQUIREMENTS", requirementFields)}
+
+          <section className="border-t border-rule-soft">
+            <h2 className="px-[18px] pb-[4px] pt-4 font-mono text-label font-medium tracking-label text-ink-label">
+              REQUIREMENT SENSE
+            </h2>
+            <p className="px-[18px] pb-[10px] font-mono text-[10px] leading-[1.5] tracking-band text-ink-faint">
+              IS THE NUMBER YOU TYPED THE LEAST YOU WILL ACCEPT, OR THE MOST?
+              THIS DECIDES WHICH SIDE OF EACH CURVE IS SHADED OUT.
+            </p>
+            {(
+              [
+                ["stall", "Stall speed"],
+                ...CONSTRAINT_KEYS.map(
+                  (key) => [key, CONSTRAINT_LABELS[key]] as const
+                ),
+              ] as Array<[ConstraintKey | "stall", string]>
+            ).map(([key, label]) => {
+              const current =
+                key === "stall" ? senses.stall : senses.constraints[key];
+              return (
+                <div
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-[18px] py-[6px] hover:bg-white/70"
+                  key={key}
+                >
+                  <span className="min-w-0 text-body leading-[1.25] text-ink-muted">
+                    {label}
+                    <span className="ml-[6px] font-mono text-micro text-ink-faint">
+                      {SENSE_VALUES[key](values)}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 border border-rule">
+                    {(
+                      [
+                        ["atMost", "AT MOST"],
+                        ["atLeast", "AT LEAST"],
+                      ] as Array<[Sense, string]>
+                    ).map(([sense, word]) => (
+                      <button
+                        aria-label={`${label} at ${sense === "atMost" ? "most" : "least"}`}
+                        aria-pressed={current === sense}
+                        className={`px-[8px] py-[4px] font-mono text-[10px] tracking-band ${
+                          current === sense
+                            ? "bg-ink font-medium text-panel"
+                            : "bg-transparent text-ink-faint hover:text-ink"
+                        }`}
+                        key={sense}
+                        onClick={() => setSense(key, sense)}
+                        type="button"
+                      >
+                        {word}
+                      </button>
+                    ))}
+                  </span>
+                </div>
+              );
+            })}
+          </section>
           {renderSection("AERODYNAMICS", "AERODYNAMICS", aerodynamicFields)}
           {renderSection("WEIGHTS", "WEIGHTS & CRUISE", weightFields)}
           {renderSection("DESIGN POINT", "DESIGN POINT", pointFields)}
@@ -859,6 +1108,7 @@ export default function SrefDesign() {
                 </div>
 
                 <ConstraintFigure
+                  senses={senses}
                   onPickPoint={(ws, wp) => pickPoint(ws, wp)}
                   picked={{
                     powerLoading: submitted.design_point.power_loading_lb_per_hp,
@@ -879,7 +1129,7 @@ export default function SrefDesign() {
                     {recommendations.length > 0 ? (
                       <div className="mb-3 border border-rule bg-field px-[14px] py-[10px]">
                         <div className="font-mono text-label tracking-label text-ink-label">
-                          RECOMMENDED FOR {formatNumber(local.powerPerEngineHp, 1)} HP
+                          RECOMMENDED FOR {formatNumber(powerPerEngineHp, 1)} HP
                           PER ENGINE
                         </div>
                         <ul className="mt-[9px] space-y-[6px] font-mono text-note">
@@ -927,8 +1177,45 @@ export default function SrefDesign() {
                   </div>
                 </details>
 
+                {feasibility && !feasibility.feasible ? (
+                  <div
+                    className="mt-3 border border-accent bg-accent-wash px-[14px] py-[11px]"
+                    role="alert"
+                  >
+                    <div className="font-mono text-label font-medium tracking-label text-accent-dark">
+                      DESIGN POINT OUTSIDE THE ALLOWED REGION
+                    </div>
+                    <ul className="mt-[8px] space-y-[4px] font-mono text-note text-ink-body">
+                      {feasibility.violations.map((violation) => (
+                        <li key={violation.key}>
+                          {violation.label} needs {violation.requires}
+                        </li>
+                      ))}
+                    </ul>
+                    {feasibility.ceilingWp !== null ? (
+                      <button
+                        className="mt-[10px] border border-accent px-[10px] py-[5px] font-mono text-[10.5px] tracking-band text-accent-dark hover:bg-accent hover:text-white"
+                        onClick={() =>
+                          pickPoint(
+                            Number(values.wingLoading),
+                            feasibility.ceilingWp as number
+                          )
+                        }
+                        type="button"
+                      >
+                        SNAP TO {formatNumber(feasibility.ceilingWp, 3)} lb/hp
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 <div className="px-[2px] py-4 font-mono text-meta text-ink-muted">
-                  SHEET 02 OF 17 · MATCHING PLOT · <span className="text-accent">FEASIBLE</span>
+                  SHEET 02 OF 17 · MATCHING PLOT ·{" "}
+                  {feasibility?.feasible ? (
+                    <span className="text-accent">INSIDE THE REGION</span>
+                  ) : (
+                    <span className="text-accent-dark">OUTSIDE THE REGION</span>
+                  )}
                 </div>
               </section>
 
@@ -941,7 +1228,7 @@ export default function SrefDesign() {
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="text-[12.5px] leading-[1.2] text-ink-body">Wing area Sref</span>
                     <span className="whitespace-nowrap font-mono text-value-lg font-medium text-accent">
-                      {formatNumber(local.wingAreaM2)} m²
+                      {formatNumber(wingAreaM2)} m²
                     </span>
                   </div>
                   <div className="mt-[6px] font-mono text-micro text-ink-faint">
@@ -953,7 +1240,7 @@ export default function SrefDesign() {
                   <div className="flex items-baseline justify-between gap-3">
                     <span className="text-[12.5px] leading-[1.2] text-ink-body">Power required</span>
                     <span className="whitespace-nowrap font-mono text-value-lg text-ink">
-                      {formatNumber(local.powerRequiredHp, 1)} hp
+                      {formatNumber(powerRequiredHp, 1)} hp
                     </span>
                   </div>
                   <div className="mt-[6px] font-mono text-micro text-ink-faint">
@@ -962,18 +1249,70 @@ export default function SrefDesign() {
                 </div>
 
                 <h2 className="mt-[14px] border-t border-rule-mid px-[18px] pb-[10px] pt-[15px] font-mono text-label font-medium tracking-label text-ink-label">
+                  ALLOWED REGION
+                </h2>
+                {region?.empty ?? true ? (
+                  <p className="px-[18px] pb-[14px] text-note leading-5 text-accent-dark">
+                    The requirements contradict each other — no wing loading
+                    satisfies all of them at once. Loosen one, or flip a sense.
+                  </p>
+                ) : (
+                  <div className="px-[18px] pb-[14px]">
+                    <dl className="space-y-[9px] font-mono text-note">
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-ink-label">W/S RANGE</dt>
+                        <dd className="text-ink">
+                          {formatNumber(region!.bands[0].wingLoading)} –{" "}
+                          {formatNumber(
+                            region!.bands[region!.bands.length - 1].wingLoading
+                          )}
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-ink-label">OPTIMUM W/S</dt>
+                        <dd className="text-ink">
+                          {formatNumber(region!.optimum!.wingLoading, 3)} lb/ft²
+                        </dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-ink-label">OPTIMUM W/P</dt>
+                        <dd className="text-ink">
+                          {formatNumber(region!.optimum!.powerLoading, 3)} lb/hp
+                        </dd>
+                      </div>
+                    </dl>
+                    <button
+                      className="mt-[11px] w-full border border-rule px-3 py-[7px] font-mono text-[10.5px] tracking-band text-ink-muted hover:border-accent hover:text-accent"
+                      onClick={() =>
+                        pickPoint(
+                          region!.optimum!.wingLoading,
+                          region!.optimum!.powerLoading
+                        )
+                      }
+                      type="button"
+                    >
+                      PLACE THE DESIGN POINT HERE
+                    </button>
+                    <p className="mt-[8px] font-mono text-[10px] leading-[1.5] tracking-band text-ink-faint">
+                      FARTHEST RIGHT IS THE SMALLEST WING · FARTHEST UP IS THE
+                      LEAST POWER
+                    </p>
+                  </div>
+                )}
+
+                <h2 className="border-t border-rule-mid px-[18px] pb-[10px] pt-[15px] font-mono text-label font-medium tracking-label text-ink-label">
                   DERIVED AT ALTITUDE
                 </h2>
                 <dl className="space-y-[9px] px-[18px] pb-[14px] font-mono text-note">
                   <div className="flex justify-between gap-3"><dt className="text-ink-label">ρ ALTITUDE</dt><dd className="text-ink">{local.rhoAltitude.toFixed(7)} slug/ft³</dd></div>
                   <div className="flex justify-between gap-3"><dt className="text-ink-label">σ DENSITY RATIO</dt><dd className="text-ink">{local.sigma.toFixed(4)}</dd></div>
                   <div className="flex justify-between gap-3"><dt className="text-ink-label">CRUISE CL</dt><dd className="text-ink">{local.cruiseCl.toFixed(4)}</dd></div>
-                  <div className="flex justify-between gap-3"><dt className="text-ink-label">STALL LIMIT W/S</dt><dd className="text-accent-dark">{formatNumber(local.stallLimitWingLoading)} lb/ft²</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-ink-label">STALL LIMIT W/S</dt><dd className="text-accent-dark">{formatNumber(stallLimitWingLoading)} lb/ft²</dd></div>
                 </dl>
 
                 <div className="space-y-[9px] border-t border-rule-mid px-[18px] py-[14px] font-mono text-note">
                   <div className="flex justify-between gap-3"><span className="text-ink-label">SELECTED ENGINE</span><span className="text-accent">{selectedEngine ? selectedEngine.name : "—"}</span></div>
-                  <div className="flex justify-between gap-3"><span className="text-ink-label">TOTAL HORSEPOWER</span><span className="text-ink">{formatNumber(local.totalHorsepowerHp, 1)}</span></div>
+                  <div className="flex justify-between gap-3"><span className="text-ink-label">TOTAL HORSEPOWER</span><span className="text-ink">{formatNumber(powerRequiredHp, 1)}</span></div>
                   <div className="flex justify-between gap-3"><span className="text-ink-label">TO SHEET</span><span className="text-ink">03 MISSION</span></div>
                 </div>
               </aside>

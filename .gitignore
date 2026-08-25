@@ -122,3 +122,6 @@ plans/
 
 # Local working backlog
 backlog.md
+
+# Excel lock files
+~$*

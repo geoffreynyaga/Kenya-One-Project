@@ -13,6 +13,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "electron-is-dev": "^1.1.0",
+    "jotai": "^2.20.3",
     "plotly.js": "^1.57.1",
     "plotly.js-basic-dist": "^1.52.1",
     "react": "^19.0.0",
