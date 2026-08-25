@@ -1,0 +1,203 @@
+/**
+ * The shared design quantities.
+ *
+ * Two kinds live here and nothing else does:
+ *
+ *   choices       a number a human picked. Writable, persisted.
+ *   consequences  a number that follows from choices. A derived atom, which
+ *                 computes on read and caches until a dependency changes, so
+ *                 it can never be stale and never recomputes needlessly.
+ *
+ * A quantity earns a place here by being read by a stage other than the one
+ * that owns it. That is measurable, not a matter of taste: 54 cells in
+ * `spreadsheets/1. initial sizing.xlsx` are read across a sheet boundary and
+ * this file is that list. Anything a single stage uses privately stays a plain
+ * function in that stage's folder.
+ *
+ * This module imports no stage and every stage imports it. That is what keeps
+ * the four design loops in `loops.ts` from becoming circular imports.
+ */
+
+import { atom } from "jotai";
+import { atomWithStorage } from "jotai/utils";
+
+import {
+  FT2_PER_M2,
+  KNOT_TO_FPS,
+  SEA_LEVEL_DENSITY_SLUG_FT3,
+} from "./constants";
+import { Stage, STAGES } from "./stages";
+
+const persisted = <T>(key: string, initial: T) =>
+  atomWithStorage<T>(`design:${key}`, initial, undefined, {
+    getOnInit: true,
+  });
+
+// ---------------------------------------------------------------------------
+// Choices — a human picked these
+// ---------------------------------------------------------------------------
+
+/** Maximum take-off weight, read off the sizing curve. Workbook MTOW!D65. */
+export const mtowLbAtom = persisted("mtowLb", 5850);
+
+/** Workbook Sref!B10. Read by Sref, Wing & Airfoil, V-n. */
+export const clMaxAtom = persisted("clMax", 1.8);
+
+/** Workbook Sref!B11. Read by Sref, Wing & Airfoil, performance. */
+export const stallSpeedKcasAtom = persisted("stallSpeedKcas", 61);
+
+/** Workbook Sref!B17. Read by Sref, Wing & Airfoil, drag. */
+export const aspectRatioAtom = persisted("aspectRatio", 7.8);
+
+/** Workbook Sref!B14. */
+export const vmaxKnotsAtom = persisted("vmaxKnots", 170);
+
+/** Workbook Sref!B4. */
+export const cruiseAltitudeFtAtom = persisted("cruiseAltitudeFt", 10000);
+
+/** Workbook MTOW!B27. Read by Sref and MTOW. */
+export const propEfficiencyCruiseAtom = persisted("propEfficiencyCruise", 0.8);
+
+/** Workbook Wing & Airfoil!B5. Read by Wing & Airfoil and Detailed Weights. */
+export const taperRatioAtom = persisted("taperRatio", 0.45);
+
+/** Workbook Wing & Airfoil!B32. Read by Wing & Airfoil and Detailed Weights. */
+export const thicknessToChordAtom = persisted("thicknessToChord", 0.12);
+
+/** Quarter-chord sweep, degrees. Workbook Wing & Airfoil!B12. */
+export const sweepQuarterChordDegAtom = persisted("sweepQuarterChordDeg", 0);
+
+/** Half-chord sweep, degrees. Workbook Wing & Airfoil!B14. */
+export const sweepHalfChordDegAtom = persisted("sweepHalfChordDeg", 8);
+
+/** Workbook V-n!C4. Read by V-n, Detailed Weights, Wing Structural. */
+export const ultimateLoadFactorAtom = persisted("ultimateLoadFactor", 5.7);
+
+/** Workbook V-n!C5. */
+export const landingLoadFactorAtom = persisted("landingLoadFactor", 4.5);
+
+/** Workbook MTOW!B14. */
+export const pilotCountAtom = persisted("pilotCount", 2);
+
+/**
+ * Wing loading, picked off the matching plot. The workbook parks it on the
+ * stall limit (D80 = K3) until a human moves it, which `wingLoadingAtom`
+ * below reproduces.
+ */
+export const wingLoadingOverrideAtom = persisted<number | null>(
+  "wingLoadingOverride",
+  null
+);
+
+/** Power loading, picked off the matching plot. Workbook Sref!D79. */
+export const powerLoadingAtom = persisted("powerLoading", 11.5);
+
+/** Installed engine count. */
+export const engineCountAtom = persisted("engineCount", 2);
+
+/**
+ * CAUTION: closes a design loop — see DESIGN_LOOPS.cd0Area.
+ *
+ * Parasite drag is a consequence: Drag analysis builds it up per component and
+ * divides by the wing area. Until that stage is live it is a choice seeded
+ * from the workbook, and it is marked provisional wherever it is read.
+ * Do not wire this one-way into Sref without reading `loops.ts` first.
+ * Workbook Drag!E15, read by Sref!B15.
+ */
+export const cd0Atom = persisted("cd0", 0.02521994401080592);
+
+/**
+ * CAUTION: closes a design loop — see DESIGN_LOOPS.oswaldPlanform.
+ *
+ * Span efficiency is a consequence of the planform, which comes from the wing
+ * area and aspect ratio that the curves — which use e — produced. Seeded from
+ * the workbook until Wing & Airfoil is a live stage.
+ * Workbook Wing & Airfoil!M33, read by Sref!B18.
+ */
+export const oswaldEfficiencyAtom = persisted(
+  "oswaldEfficiency",
+  0.7555260492234778
+);
+
+// ---------------------------------------------------------------------------
+// Consequences — these follow, and are read by more than one stage
+// ---------------------------------------------------------------------------
+
+/** Workbook Sref!B16: k = 1/(pi * AR * e). */
+export const inducedDragFactorAtom = atom(
+  (get) => 1 / (Math.PI * get(aspectRatioAtom) * get(oswaldEfficiencyAtom))
+);
+
+/** Workbook MTOW!B25: L/Dmax = 1/(2 * sqrt(k * CD0)). Read by Sref and MTOW. */
+export const ldMaxAtom = atom(
+  (get) => 1 / (2 * Math.sqrt(get(inducedDragFactorAtom) * get(cd0Atom)))
+);
+
+/** Workbook Sref!K3: the stall-limit line, W/S = 1/2 rho0 CLmax (Vs * 1.688)^2. */
+export const stallLimitWingLoadingAtom = atom(
+  (get) =>
+    0.5 *
+    SEA_LEVEL_DENSITY_SLUG_FT3 *
+    get(clMaxAtom) *
+    (get(stallSpeedKcasAtom) * KNOT_TO_FPS) ** 2
+);
+
+/** Workbook Sref!D80 = K3 until a human moves the design point. */
+export const wingLoadingAtom = atom(
+  (get) => get(wingLoadingOverrideAtom) ?? get(stallLimitWingLoadingAtom)
+);
+
+/**
+ * CAUTION: closes a design loop — see DESIGN_LOOPS.cd0Area and
+ * DESIGN_LOOPS.oswaldPlanform. Wing area is the most-read quantity in the
+ * model (112 references) and both Drag analysis and Wing & Airfoil compute
+ * values from it that feed back into the curves it came from.
+ * Workbook Sref!H80.
+ */
+export const wingAreaFt2Atom = atom(
+  (get) => get(mtowLbAtom) / get(wingLoadingAtom)
+);
+
+export const wingAreaM2Atom = atom((get) => get(wingAreaFt2Atom) / FT2_PER_M2);
+
+/** Workbook Sref!H82. */
+export const powerRequiredHpAtom = atom(
+  (get) => get(mtowLbAtom) / get(powerLoadingAtom)
+);
+
+export const powerPerEngineHpAtom = atom(
+  (get) => get(powerRequiredHpAtom) / get(engineCountAtom)
+);
+
+/** Workbook Wing & Airfoil!B6: b = sqrt(S * AR). */
+export const wingspanFtAtom = atom((get) =>
+  Math.sqrt(get(wingAreaFt2Atom) * get(aspectRatioAtom))
+);
+
+/** Workbook Wing & Airfoil!B7. */
+export const meanChordFtAtom = atom(
+  (get) => get(wingAreaFt2Atom) / get(wingspanFtAtom)
+);
+
+/** Workbook Wing & Airfoil!B8: root chord from mean chord and taper. */
+export const rootChordFtAtom = atom(
+  (get) => (2 * get(meanChordFtAtom)) / (1 + get(taperRatioAtom))
+);
+
+// ---------------------------------------------------------------------------
+// Stage commitment
+// ---------------------------------------------------------------------------
+
+/**
+ * Which stages a human has committed. Every stage is explorable from the
+ * start on seeded defaults; this only records whether the decision that stage
+ * exists to make has actually been made, so downstream stages can say what
+ * ground they are standing on.
+ */
+export const committedStagesAtom = persisted<Record<Stage, boolean>>(
+  "committedStages",
+  Object.fromEntries(STAGES.map((stage) => [stage, false])) as Record<
+    Stage,
+    boolean
+  >
+);
