@@ -44,6 +44,7 @@ import DragAnalysis from "./drag/DragAnalysis";
 import WingStructural from "./wingAndAirfoil/WingStructural";
 import SheetIndex from "../navigation/SheetIndex";
 import MTOWSizing from "./InitialSizing/MTOWSizing";
+import CostAnalysis from "./costs/CostAnalysis";
 
 const ProjectDetail = () => {
 
@@ -98,6 +99,12 @@ const ProjectDetail = () => {
       exact: true,
 
       component: WingStructural,
+    },
+    {
+      path: "/projects/project1/cost-analysis",
+      exact: true,
+
+      component: CostAnalysis,
     },
   ];
 

@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "accounts",
     "initial_sizing",
+    "designs",
 ]
 
 MIDDLEWARE = [

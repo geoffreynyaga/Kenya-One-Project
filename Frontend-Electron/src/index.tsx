@@ -33,6 +33,7 @@
  */
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 import * as serviceWorker from "./serviceWorker";
 
@@ -46,11 +47,22 @@ if (!rootElement) {
 }
 
 const root = createRoot(rootElement);
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 root.render(
-  <Router>
-    <AuthScreen />
-  </Router>
+  <QueryClientProvider client={queryClient}>
+    <Router>
+      <AuthScreen />
+    </Router>
+  </QueryClientProvider>
 );
 
 // If you want your app to work offline and load faster, you can change
