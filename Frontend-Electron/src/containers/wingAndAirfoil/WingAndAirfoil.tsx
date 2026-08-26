@@ -81,8 +81,11 @@ function Field({
 }) {
   return (
     <label
-      className="flex items-baseline gap-2 px-[18px] py-[5px]"
+      className={`flex items-baseline gap-2 py-[5px] pr-[18px] ${
+        spec.origin ? "shadow-carried pl-[16px]" : "pl-[18px]"
+      }`}
       htmlFor={`aero-${spec.field}`}
+      title={spec.label}
     >
       <span className="min-w-0 flex-1 truncate text-note text-ink-body">
         {spec.label}
@@ -98,15 +101,16 @@ function Field({
         ) : null}
       </span>
       <input
-        className={`w-[92px] shrink-0 bg-transparent pb-[2px] text-right font-mono text-value outline-none ${
+        className={`w-[104px] shrink-0 bg-transparent pb-[2px] text-right font-mono text-value outline-none ${
           spec.origin
-            ? "text-ink-muted shadow-carried"
+            ? "text-ink-muted"
             : "border-b border-dashed border-rule text-ink focus:border-solid focus:border-accent"
         }`}
         id={`aero-${spec.field}`}
         inputMode="decimal"
         onChange={(event) => onChange(Number(event.target.value))}
-        value={value}
+        readOnly={Boolean(spec.origin)}
+        value={spec.origin ? nf(value, 4) : value}
       />
     </label>
   );
