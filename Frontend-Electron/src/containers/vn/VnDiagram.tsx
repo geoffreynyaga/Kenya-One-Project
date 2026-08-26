@@ -6,6 +6,7 @@ import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
 import { usePersistentState } from "../../hooks/usePersistentState";
+import { Hint, HintSpec } from "../../components/sheet/Hint";
 import tokens from "../../design-tokens";
 import {
   deriveVn,
@@ -27,24 +28,82 @@ const nf = (value: number, digits = 2) => {
   }).format(value);
 };
 
-interface EntrySpec {
+interface EntrySpec extends HintSpec {
   field: keyof VnInputs;
-  label: string;
   unit?: string;
-  cell: string;
   source: "entry" | "carried" | "seed";
-  origin?: string;
 }
 
 const FIELDS: EntrySpec[] = [
-  { field: "limitLoadFactor", label: "Limit load factor", cell: "C3", source: "entry" },
-  { field: "gearLoadFactor", label: "Gear load factor", cell: "C6", source: "entry" },
-  { field: "negativeClMax", label: "Negative CL max", cell: "C8", source: "entry" },
-  { field: "mtowLb", label: "MTOW", unit: "lb", cell: "I32", source: "carried", origin: "SHEET 01" },
-  { field: "wingAreaM2", label: "Wing area", unit: "m²", cell: "H80", source: "carried", origin: "SHEET 02" },
-  { field: "clMax", label: "CL max", cell: "B10", source: "carried", origin: "SHEET 02" },
-  { field: "stallSpeedKcas", label: "Stall speed", unit: "kt", cell: "B11", source: "carried", origin: "SHEET 02" },
-  { field: "cruiseSpeedKcas", label: "Cruise speed", unit: "kt", cell: "B16", source: "seed", origin: "SEED · TAKE-OFF WB" },
+  {
+    field: "limitLoadFactor",
+    label: "Limit load factor",
+    cell: "C3",
+    source: "entry",
+    body: "The most g the structure is designed to take without permanent deformation. Everything on Sheet 04 is sized against 1.5 times this.",
+    typical: "FAR 23 requires at least 2.1 + 24000/(W + 10000).",
+    cite: "FAR 23.337",
+  },
+  {
+    field: "gearLoadFactor",
+    label: "Gear load factor",
+    cell: "C6",
+    source: "entry",
+    body: "Landing load factor at the gear. The landing case on C5 is 1.5 times it.",
+    cite: "FAR 23.473",
+  },
+  {
+    field: "negativeClMax",
+    label: "Negative CL max",
+    cell: "C8",
+    source: "entry",
+    body: "Maximum lift the wing makes inverted. Sets the lower stall parabola and so the inverted stall speed.",
+    typical: "Usually smaller in magnitude than the positive CL max.",
+  },
+  {
+    field: "mtowLb",
+    label: "MTOW",
+    unit: "lb",
+    cell: "I32",
+    source: "carried",
+    origin: "SHEET 01",
+    body: "Design gross weight. It sets the FAR 23 floor on the limit load factor and divides both stall parabolas.",
+  },
+  {
+    field: "wingAreaM2",
+    label: "Wing area",
+    unit: "m²",
+    cell: "H80",
+    source: "carried",
+    origin: "SHEET 02",
+    body: "Reference area. With CL max it fixes how much load factor the wing can pull at a given speed.",
+  },
+  {
+    field: "clMax",
+    label: "CL max",
+    cell: "B10",
+    source: "carried",
+    origin: "SHEET 02",
+    body: "Maximum lift coefficient clean. Sets the upper stall parabola and with it the corner speed.",
+  },
+  {
+    field: "stallSpeedKcas",
+    label: "Stall speed",
+    unit: "kt",
+    cell: "B11",
+    source: "carried",
+    origin: "SHEET 02",
+    body: "One-g stall. Named on the abscissa so the envelope's corner lands exactly on a sample.",
+  },
+  {
+    field: "cruiseSpeedKcas",
+    label: "Cruise speed",
+    unit: "kt",
+    cell: "B16",
+    source: "seed",
+    origin: "TAKE-OFF WB",
+    body: "Design cruise speed. The dive speed on C9 is 1.4 times it. Seeded until the take-off sheet is ported.",
+  },
 ];
 
 interface ViewState {
@@ -151,12 +210,8 @@ export default function VnDiagram() {
                     [{spec.unit}]
                   </span>
                 ) : null}
-                {spec.origin ? (
-                  <span className="block font-mono text-label tracking-band text-ink-faint">
-                    {spec.origin} · {spec.cell}
-                  </span>
-                ) : null}
               </span>
+              <Hint inputId={`vn-${spec.field}`} spec={spec} />
               <input
                 className={`w-[104px] shrink-0 bg-transparent pb-[2px] text-right font-mono text-value outline-none ${
                   spec.source === "carried"
