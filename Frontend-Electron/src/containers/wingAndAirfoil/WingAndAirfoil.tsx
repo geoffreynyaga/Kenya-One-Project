@@ -14,6 +14,7 @@ import {
 } from "./aerofoilCompute";
 import { WORKBOOK_INPUTS } from "./aerofoilFixture";
 import AirfoilPicker, { AirfoilSelection } from "./AirfoilPicker";
+import WingPlanform from "./WingPlanform";
 
 const nf = (value: number, digits = 3) => {
   if (!Number.isFinite(value)) return "—";
@@ -276,8 +277,19 @@ export default function WingAndAirfoil() {
             ) : null}
           </div>
 
-          <div className="mb-4">
+          <div className="mb-4 grid gap-4 xl:grid-cols-[minmax(0,1fr)_312px]">
             <AirfoilPicker onApply={applySection} />
+            <WingPlanform
+              dihedralDeg={inputs.dihedralDeg}
+              incidenceDeg={inputs.incidenceDeg}
+              meanChordM={result.plan.meanChordM}
+              rootChordM={result.plan.rootChordM}
+              spanM={result.plan.spanM}
+              sweepLeadingEdgeDeg={inputs.sweepLeadingEdgeDeg}
+              tipChordM={result.plan.tipChordM}
+              twistDeg={inputs.twistDeg}
+              yMgcM={result.plan.yMgcM}
+            />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
