@@ -21,7 +21,7 @@ export const WORKBOOK_INPUTS: WeightsInputs = {
     nEngines: 2,
     nTanks: 2,
     leDistanceM: 2.6,
-    wInstrumentsLb: 86.80000000000001,
+    wInstrumentsLb: 86.8,
     nIntegralTanks: 0,
     integralTankFraction: 0,
   },
