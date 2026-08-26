@@ -4,6 +4,8 @@
 import React, { useMemo } from "react";
 
 import { usePersistentState } from "../../hooks/usePersistentState";
+import { Hint, HintSpec } from "../../components/sheet/Hint";
+import { ValueRow } from "../../components/sheet/ValueRow";
 import {
   AVAILABLE_SHEET_THICKNESSES_IN,
   selectSheet,
@@ -21,40 +23,37 @@ const nf = (value: number, digits = 3) => {
   }).format(value);
 };
 
-interface EntrySpec {
+interface EntrySpec extends HintSpec {
   field: keyof StructureInputs;
-  label: string;
   unit?: string;
-  cell: string;
-  origin?: string;
 }
 
 const MATERIAL_FIELDS: EntrySpec[] = [
-  { field: "ultimateShearStressPsi", label: "Ultimate shear", unit: "psi", cell: "B5" },
-  { field: "ultimateCompressiveStressPsi", label: "Ultimate compressive", unit: "psi", cell: "B6" },
-  { field: "aluminiumDensityLbfIn3", label: "ρ 2024", unit: "lbf/in³", cell: "F2" },
-  { field: "rearSparChordFraction", label: "Rear spar", unit: "chord", cell: "B7" },
+  { field: "ultimateShearStressPsi", label: "Ultimate shear", unit: "psi", cell: "B5", body: "Shear the skin and web are allowed to carry. Sets both required gauges." },
+  { field: "ultimateCompressiveStressPsi", label: "Ultimate compressive", unit: "psi", cell: "B6", body: "Compression the spar caps are allowed to carry. Sets the cap area." },
+  { field: "aluminiumDensityLbfIn3", label: "ρ 2024", unit: "lbf/in³", cell: "F2", body: "Density of 2024 aluminium. Every member weight is this times a volume." },
+  { field: "rearSparChordFraction", label: "Rear spar", unit: "chord", cell: "B7", body: "Where the rear spar sits, as a fraction of chord. With the root chord it fixes the torsion cell length." },
 ];
 
 const GAUGE_FIELDS: EntrySpec[] = [
-  { field: "skinThicknessIn", label: "Skin, root", unit: "in", cell: "I13" },
-  { field: "skinThicknessTipIn", label: "Skin, tip", unit: "in", cell: "I14" },
-  { field: "webThicknessIn", label: "Web, root", unit: "in", cell: "I20" },
-  { field: "webThicknessTipIn", label: "Web, tip", unit: "in", cell: "I21" },
+  { field: "skinThicknessIn", label: "Skin, root", unit: "in", cell: "I13", body: "Skin gauge selected from stock at the root. Must clear what torsion requires." },
+  { field: "skinThicknessTipIn", label: "Skin, tip", unit: "in", cell: "I14", body: "Skin gauge at the tip." },
+  { field: "webThicknessIn", label: "Web, root", unit: "in", cell: "I20", body: "Web gauge selected from stock at the root. Must clear what shear requires." },
+  { field: "webThicknessTipIn", label: "Web, tip", unit: "in", cell: "I21", body: "Web gauge at the tip." },
 ];
 
 const CARRIED_FIELDS: EntrySpec[] = [
-  { field: "wingAreaFt2", label: "Wing area", unit: "ft²", cell: "H80", origin: "SHEET 02" },
-  { field: "designWeightLbf", label: "Design weight", unit: "lbf", cell: "I32", origin: "SHEET 01" },
-  { field: "ultimateLoadFactor", label: "Ultimate n", cell: "C4", origin: "SHEET 05" },
-  { field: "diveSpeedKcas", label: "Dive speed", unit: "kt", cell: "C9", origin: "SHEET 05" },
-  { field: "taperRatio", label: "Taper ratio", cell: "B5", origin: "SHEET 06" },
-  { field: "spanM", label: "Span", unit: "m", cell: "B6", origin: "SHEET 06" },
-  { field: "meanChordM", label: "Mean chord", unit: "m", cell: "B7", origin: "SHEET 06" },
-  { field: "rootChordM", label: "Root chord", unit: "m", cell: "B8", origin: "SHEET 06" },
-  { field: "yMgcM", label: "y at MGC", unit: "m", cell: "B16", origin: "SHEET 06" },
-  { field: "thicknessToChord", label: "t/c", cell: "B32", origin: "SHEET 06" },
-  { field: "sectionMomentCoefficient", label: "Cm", cell: "B28", origin: "SHEET 06" },
+  { field: "wingAreaFt2", label: "Wing area", unit: "ft²", cell: "H80", origin: "SHEET 02", body: "Reference area, in square feet on this sheet rather than metres." },
+  { field: "designWeightLbf", label: "Design weight", unit: "lbf", cell: "I32", origin: "SHEET 01", body: "Design gross weight. Every load on this sheet scales on it." },
+  { field: "ultimateLoadFactor", label: "Ultimate n", cell: "C4", origin: "SHEET 05", body: "Ultimate load factor from Sheet 05. Multiplied by the weight to give the design load." },
+  { field: "diveSpeedKcas", label: "Dive speed", unit: "kt", cell: "C9", origin: "SHEET 05", body: "Dive speed from Sheet 05. The torsion is taken at this speed, where dynamic pressure is highest." },
+  { field: "taperRatio", label: "Taper ratio", cell: "B5", origin: "SHEET 06", body: "Tip chord over root chord. Appears in the cap area, in IXX and in every member weight." },
+  { field: "spanM", label: "Span", unit: "m", cell: "B6", origin: "SHEET 06", body: "Span. Every member weight is a length times a section area times this." },
+  { field: "meanChordM", label: "Mean chord", unit: "m", cell: "B7", origin: "SHEET 06", body: "Mean chord, the reference length for the torsion." },
+  { field: "rootChordM", label: "Root chord", unit: "m", cell: "B8", origin: "SHEET 06", body: "Root chord. With the thickness ratio it gives the structural depth the box is built in." },
+  { field: "yMgcM", label: "y at MGC", unit: "m", cell: "B16", origin: "SHEET 06", body: "Spanwise station of the mean chord. The bending moment is taken about it." },
+  { field: "thicknessToChord", label: "t/c", cell: "B32", origin: "SHEET 06", body: "Thickness ratio. Sets the structural depth, so a thinner wing needs heavier caps." },
+  { field: "sectionMomentCoefficient", label: "Cm", cell: "B28", origin: "SHEET 06", body: "Section pitching moment. Negative, so the torsion comes out negative — it is the magnitude that sizes the skin." },
 ];
 
 interface ViewState {
@@ -113,12 +112,8 @@ export default function WingStructural() {
             [{spec.unit}]
           </span>
         ) : null}
-        {spec.origin ? (
-          <span className="block font-mono text-label tracking-band text-ink-faint">
-            {spec.origin} · {spec.cell}
-          </span>
-        ) : null}
       </span>
+      <Hint inputId={`str-${spec.field}`} spec={spec} />
       <input
         className={`w-[104px] shrink-0 bg-transparent pb-[2px] text-right font-mono text-value outline-none ${
           spec.origin
@@ -162,13 +157,13 @@ export default function WingStructural() {
     [`Ribs · ${result.ribCount}`, result.ribWeightLbf, "I28"],
   ];
 
-  const loads: Array<[string, string, string]> = [
-    ["Max bending moment", `${nf(result.maxBendingMomentLbf, 0)} lbf`, "B11"],
-    ["Torsion", `${nf(result.torsionLbf, 0)} lbf`, "I10"],
-    ["Shear force", `${nf(result.shearForceLbf, 0)} lbf`, "I17"],
-    ["Bending force", `${nf(result.bendingForceLbf, 0)} lbf`, "I23"],
-    ["Spar cap area", `${nf(result.requiredCapAreaIn2, 3)} in²`, "I24"],
-    ["IXX", `${nf(result.secondMomentFt4, 6)} ft⁴`, "B13"],
+  const loads: Array<[string, string, string, string]> = [
+    ["Max bending moment", `${nf(result.maxBendingMomentLbf, 0)} lbf`, "B11", "Root bending moment at the ultimate load factor."],
+    ["Torsion", `${nf(result.torsionLbf, 0)} lbf`, "I10", "Taken at the dive speed, where dynamic pressure is highest. Negative because the section moment is; the magnitude sizes the skin."],
+    ["Shear force", `${nf(result.shearForceLbf, 0)} lbf`, "I17", "Half the ultimate design load, carried by one wing's web."],
+    ["Bending force", `${nf(result.bendingForceLbf, 0)} lbf`, "I23", "The couple the spar caps resolve the bending moment into, over the structural depth."],
+    ["Spar cap area", `${nf(result.requiredCapAreaIn2, 3)} in²`, "I24", "Cap area that force needs at the allowable compressive stress."],
+    ["IXX", `${nf(result.secondMomentFt4, 6)} ft⁴`, "B13", "Second moment of area of the box. Carries the B562 defect noted below."],
   ];
 
   const summary: Array<[string, string]> = [
@@ -238,7 +233,6 @@ export default function WingStructural() {
                   <th className="px-4 py-2 text-right font-medium">Required in</th>
                   <th className="px-4 py-2 text-right font-medium">Stock in</th>
                   <th className="px-4 py-2 text-right font-medium">Selected in</th>
-                  <th className="px-4 py-2 text-right font-medium">Cell</th>
                 </tr>
               </thead>
               <tbody className="text-ink-body">
@@ -248,7 +242,18 @@ export default function WingStructural() {
                   return (
                     <tr className={short ? "bg-accent-wash" : ""} key={label}>
                       <td className="border-t border-rule-hair px-4 py-[7px] text-ink">
-                        {label}
+                        <span className="mr-2">{label}</span>
+                        <Hint
+                          inputId={`gauge-${cell}`}
+                          spec={{
+                            label,
+                            cell,
+                            body:
+                              label === "Skin"
+                                ? "Thickness torsion requires in the box skin."
+                                : "Thickness shear requires in the spar web.",
+                          }}
+                        />
                       </td>
                       <td className="border-t border-rule-hair px-4 py-[7px] text-right">
                         {nf(required, 4)}
@@ -262,9 +267,6 @@ export default function WingStructural() {
                         }`}
                       >
                         {nf(selected, 3)}
-                      </td>
-                      <td className="border-t border-rule-hair px-4 py-[7px] text-right text-label text-ink-faint">
-                        {cell}
                       </td>
                     </tr>
                   );
@@ -285,17 +287,14 @@ export default function WingStructural() {
                 LOADS
               </h3>
               <dl className="px-4 py-2 font-mono text-note">
-                {loads.map(([label, value, cell]) => (
-                  <div
-                    className="flex items-baseline justify-between gap-3 border-b border-rule-hair py-[6px] last:border-b-0"
+                {loads.map(([label, value, cell, body]) => (
+                  <ValueRow
+                    hint={{ cell, body }}
+                    id={`str-load-${cell}`}
                     key={label}
-                  >
-                    <dt className="min-w-0 truncate text-ink-body">{label}</dt>
-                    <dd className="flex shrink-0 items-baseline gap-3">
-                      <span className="text-label text-ink-faint">{cell}</span>
-                      <span className="text-ink">{value}</span>
-                    </dd>
-                  </div>
+                    label={label}
+                    value={value}
+                  />
                 ))}
               </dl>
             </section>
@@ -306,28 +305,28 @@ export default function WingStructural() {
               </h3>
               <dl className="px-4 py-2 font-mono text-note">
                 {weights.map(([label, value, cell]) => (
-                  <div
-                    className="flex items-baseline justify-between gap-3 border-b border-rule-hair py-[6px]"
+                  <ValueRow
+                    hint={{
+                      cell,
+                      body: `Weight of the ${label.toLowerCase().split(" · ")[0]} in one wing.`,
+                    }}
+                    id={`str-weight-${cell}`}
                     key={label}
-                  >
-                    <dt className="text-ink-body">{label}</dt>
-                    <dd className="flex shrink-0 items-baseline gap-3">
-                      <span className="text-label text-ink-faint">{cell}</span>
-                      <span className="w-[66px] text-right text-ink">
-                        {nf(value, 2)} lbf
-                      </span>
-                    </dd>
-                  </div>
+                    label={label}
+                    value={`${nf(value, 2)} lbf`}
+                  />
                 ))}
-                <div className="mt-1 flex items-baseline justify-between gap-3 border-t border-rule-mid py-[8px] pt-[10px]">
-                  <dt className="font-medium text-ink">Both wings</dt>
-                  <dd className="flex shrink-0 items-baseline gap-3">
-                    <span className="text-label text-ink-faint">I30</span>
-                    <span className="w-[66px] text-right font-medium text-accent-dark">
-                      {nf(result.wingWeightLbf, 2)} lbf
-                    </span>
-                  </dd>
-                </div>
+                <ValueRow
+                  emphasis
+                  hint={{
+                    cell: "I30",
+                    formula: "2 × (skin + web + caps + ribs)",
+                    body: "Compare it with the wing weight the estimation methods on Sheet 04 produce.",
+                  }}
+                  id="str-weight-total"
+                  label="Both wings"
+                  value={`${nf(result.wingWeightLbf, 2)} lbf`}
+                />
               </dl>
             </section>
           </div>
