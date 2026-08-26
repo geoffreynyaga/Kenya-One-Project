@@ -268,7 +268,7 @@ export const derivedFields: FieldSpec[] = [
     source: "derived",
     cell: "B15",
     formula: "1 ÷ (3.142·AR·e)",
-    body: "Induced drag factor. The workbook evaluates this with a literal 3.142 for pi — kept for parity, so it differs from the domain atom in the fifth decimal.",
+    body: "Induced drag factor. This sheet evaluates it with a literal 3.142 for pi rather than the full constant, so it differs from the same quantity elsewhere in the fifth decimal.",
     typical: "0.04–0.06.",
   },
   {
