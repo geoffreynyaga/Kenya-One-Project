@@ -266,8 +266,10 @@ export default function AirfoilPicker({
                 </button>
               </div>
 
-              <div className="border border-rule-hair bg-paper px-2 py-1">
-                <SectionPlot section={section} />
+              <div className="flex items-center justify-center border border-rule-hair bg-paper px-2 py-2">
+                <div className="w-full max-w-[420px]">
+                  <SectionPlot section={section} />
+                </div>
               </div>
 
               <dl className="mt-2 grid gap-x-7 font-mono text-note sm:grid-cols-2 xl:grid-cols-3">
