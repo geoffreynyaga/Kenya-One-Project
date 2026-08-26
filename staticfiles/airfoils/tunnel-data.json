@@ -1,0 +1,20 @@
+{
+  "$comment": "Wind-tunnel section data. Only what cannot be derived lives here: thin-airfoil theory is inviscid, so it has no stall and therefore no CL max, and no amount of geometry gives you one. Section shape and the theoretical coefficients are generated in the browser from the designation (Frontend-Electron/src/domain/naca.ts) rather than stored, so this file never duplicates them. Add a section only with a named source.",
+  "sections": [
+    {
+      "designation": "4412",
+      "name": "NACA 4412",
+      "source": "NACA R-824, as transcribed in `spreadsheets/1. initial sizing.xlsx`, sheet Wing & Airfoil, I2:N6",
+      "note": "The cd_min column in the workbook reads 0.068, 0.062 and 0.060. Those are an order of magnitude above any published section drag for this airfoil and are almost certainly a decimal slip for 0.0068, 0.0062 and 0.0060. Carried here as the workbook has them, flagged rather than silently corrected.",
+      "zero_lift_alpha_deg": -4.0,
+      "lift_slope_per_deg": 0.106,
+      "lift_at_zero_alpha": 0.4,
+      "min_drag_lift_coefficient": 0.4,
+      "reynolds": [
+        { "reynolds": 3000000, "cl_max": 1.53, "cd_min": 0.068 },
+        { "reynolds": 6000000, "cl_max": 1.66, "cd_min": 0.062 },
+        { "reynolds": 9000000, "cl_max": 1.87, "cd_min": 0.06 }
+      ]
+    }
+  ]
+}

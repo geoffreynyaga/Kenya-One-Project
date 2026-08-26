@@ -13,6 +13,7 @@ import {
   aerofoilWarnings,
 } from "./aerofoilCompute";
 import { WORKBOOK_INPUTS } from "./aerofoilFixture";
+import AirfoilPicker, { AirfoilSelection } from "./AirfoilPicker";
 
 const nf = (value: number, digits = 3) => {
   if (!Number.isFinite(value)) return "—";
@@ -62,11 +63,14 @@ const CARRIED_FIELDS: EntrySpec[] = [
 interface ViewState {
   inputs: AerofoilInputs;
   openSections: string[];
+  /** The catalogue section the 2-D coefficients were taken from, if any. */
+  sectionName: string | null;
 }
 
 const DEFAULT_VIEW: ViewState = {
   inputs: WORKBOOK_INPUTS,
   openSections: ["planform"],
+  sectionName: null,
 };
 
 function Field({
@@ -150,6 +154,26 @@ export default function WingAndAirfoil() {
     () => aerofoilWarnings(inputs, result),
     [inputs, result]
   );
+
+  const applySection = (selection: AirfoilSelection, name: string) =>
+    setView((current) => ({
+      ...current,
+      sectionName: name,
+      inputs: {
+        ...current.inputs,
+        sectionLiftSlopePerDeg: selection.sectionLiftSlopePerDeg,
+        zeroLiftAlphaDeg: selection.zeroLiftAlphaDeg,
+        sectionMomentSlope: selection.sectionMomentSlope,
+        thicknessToChord: selection.thicknessToChord,
+        // The workbook keeps the tail's (x/c)m separately; this is the wing's.
+        ...(selection.clmaxAtRe3M === undefined
+          ? {}
+          : { clmaxAtRe3M: selection.clmaxAtRe3M }),
+        ...(selection.clmaxAtRe6M === undefined
+          ? {}
+          : { clmaxAtRe6M: selection.clmaxAtRe6M }),
+      },
+    }));
 
   const setField = (field: keyof AerofoilInputs, next: number) =>
     setView((current) => ({
@@ -245,6 +269,15 @@ export default function WingAndAirfoil() {
               SHEET 06 / WING &amp; AIRFOIL
             </div>
             <h2 className="text-sheet">Planform and section</h2>
+            {view.sectionName ? (
+              <p className="mt-[6px] font-mono text-meta tracking-band text-ink-muted">
+                SECTION · {view.sectionName.toUpperCase()}
+              </p>
+            ) : null}
+          </div>
+
+          <div className="mb-4">
+            <AirfoilPicker onApply={applySection} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
