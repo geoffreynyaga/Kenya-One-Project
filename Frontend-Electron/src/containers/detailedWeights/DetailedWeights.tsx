@@ -51,7 +51,7 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
   { field: "lFusM", label: "Fuselage length", unit: "m", cell: "S5" },
   { field: "deltaP", label: "Cabin pressure differential", cell: "S6" },
   { field: "vPressurisedFt3", label: "Pressurised volume", unit: "ft³", cell: "S7" },
-  { field: "dFsFt", label: "Fuselage structural depth", unit: "ft", cell: "S8" },
+  { field: "dFsFt", label: "Structural depth", unit: "ft", cell: "S8" },
   { field: "wFuselageFt", label: "Fuselage width", unit: "ft", cell: "S9" },
   { field: "dFuselageFt", label: "Fuselage depth", unit: "ft", cell: "S10" },
   { field: "lMainGearIn", label: "Main gear strut", unit: "in", cell: "S11" },
@@ -60,7 +60,7 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
   { field: "nEngines", label: "Engines", cell: "S14" },
   { field: "nTanks", label: "Fuel tanks", cell: "S15" },
   { field: "leDistanceM", label: "Leading-edge datum", unit: "m", cell: "S16" },
-  { field: "wInstrumentsLb", label: "Instruments and avionics", unit: "lb", cell: "S17" },
+  { field: "wInstrumentsLb", label: "Instruments", unit: "lb", cell: "S17" },
   { field: "nIntegralTanks", label: "Integral tanks", cell: "S18" },
   { field: "integralTankFraction", label: "Integral tank fraction", cell: "S19" },
 ];
@@ -119,7 +119,8 @@ function GeometryRow({
       className="flex items-baseline gap-2 px-[18px] py-[5px]"
       htmlFor={`weights-${spec.field}`}
     >
-      <span className="min-w-0 flex-1 truncate text-note text-ink-body">
+      <span className="min-w-0 flex-1 truncate text-note text-ink-body"
+        title={spec.label}>
         {spec.label}
         {spec.unit ? (
           <span className="ml-[5px] font-mono text-label text-ink-faint">
@@ -129,7 +130,7 @@ function GeometryRow({
       </span>
       <span className="font-mono text-label text-ink-faint">{spec.cell}</span>
       <input
-        className="w-[86px] shrink-0 border-b border-dashed border-rule bg-transparent pb-[2px] text-right font-mono text-value text-ink outline-none focus:border-solid focus:border-accent"
+        className="w-[96px] shrink-0 border-b border-dashed border-rule bg-transparent pb-[2px] text-right font-mono text-value text-ink outline-none focus:border-solid focus:border-accent"
         id={`weights-${spec.field}`}
         inputMode="decimal"
         onChange={(event) => onChange(Number(event.target.value))}
@@ -335,7 +336,7 @@ export default function DetailedWeights() {
               COMPONENT GEOMETRY
             </div>
             <p className="mt-[9px] font-mono text-label leading-[1.6] tracking-band text-ink-faint">
-              S4:S20 · THE ONLY BLOCK TYPED ON THIS SHEET
+              S4:S19 · CELLS IN COLUMN S OF THE WORKBOOK SHEET
             </p>
           </div>
 
