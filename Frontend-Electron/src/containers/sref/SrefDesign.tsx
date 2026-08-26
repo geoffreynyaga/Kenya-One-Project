@@ -471,15 +471,15 @@ function EngineCatalog({
         id: "rating",
         header: "Rating",
         cell: ({ row }) =>
-          row.original.engine_type === "turbofan"
+          (row.original.engine_type === "turbofan"
             ? `${formatNumber(row.original.thrust_lbf ?? 0, 0)} lbf`
-            : `${formatNumber(row.original.hp, 0)} ${row.original.engine_type === "turboprop" ? "shp" : "hp"}`,
+            : `${formatNumber(row.original.hp, 0)} ${row.original.engine_type === "turboprop" ? "shp" : "hp"}`),
       },
       {
         accessorKey: "rpm",
         header: "RPM",
         cell: ({ getValue }) =>
-          getValue<number>() === 0 ? "—" : formatNumber(getValue<number>(), 0),
+          (getValue<number>() === 0 ? "—" : formatNumber(getValue<number>(), 0)),
       },
       {
         accessorKey: "tbo_hours",
@@ -565,7 +565,7 @@ function ConstraintFigure({
   senses: Senses;
   onPickPoint: (wingLoading: number, powerLoading: number) => void;
 }) {
-  const curves = result.curves;
+  const { curves } = result;
   const x = curves.map((point) => point.wing_loading);
   const stallLimit = result.stall_limit_wing_loading;
 
@@ -773,7 +773,7 @@ export default function SrefDesign() {
     DEFAULT_VIEW
   );
   const [errors, setErrors] = useState<Partial<Record<FormField, string>>>({});
-  const senses = view.senses;
+  const { senses } = view;
 
   // Sized outputs are shared quantities, so they are read, not recomputed.
   const wingAreaM2 = useAtomValue(wingAreaM2Atom);
@@ -895,7 +895,7 @@ export default function SrefDesign() {
   // Which constraints the point actually satisfies, given the senses.
   const feasibility = useMemo(
     () =>
-      result
+      (result
         ? evaluatePoint(
             result.curves,
             result.stall_limit_wing_loading,
@@ -903,15 +903,15 @@ export default function SrefDesign() {
             Number(values.wingLoading),
             Number(values.powerLoading)
           )
-        : null,
+        : null),
     [result, senses, values.wingLoading, values.powerLoading]
   );
 
   const region = useMemo(
     () =>
-      result
+      (result
         ? feasibleRegion(result.curves, result.stall_limit_wing_loading, senses)
-        : null,
+        : null),
     [result, senses]
   );
 
@@ -1252,8 +1252,7 @@ export default function SrefDesign() {
                           pickPoint(
                             Number(values.wingLoading),
                             feasibility.ceilingWp as number
-                          )
-                        }
+                          )}
                         type="button"
                       >
                         KEEP W/S · DROP W/P TO{" "}
@@ -1341,8 +1340,7 @@ export default function SrefDesign() {
                         pickPoint(
                           region!.optimum!.wingLoading,
                           region!.optimum!.powerLoading
-                        )
-                      }
+                        )}
                       type="button"
                     >
                       USE THIS POINT → {formatNumber(region!.optimum!.wingLoading, 1)}{" "}

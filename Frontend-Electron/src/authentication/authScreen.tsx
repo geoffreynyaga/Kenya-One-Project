@@ -7,12 +7,10 @@ function AuthScreen() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [token, setToken] = useState<null | string>(null);
 
-  const getToken = async () => {
+  const getToken = async () =>
     //   await fetch
-    return "";
-  };
-
-  useEffect(() => {
+     "";
+useEffect(() => {
     getToken().then((result) => {
       if (result !== null && result !== "") {
         setToken(result);

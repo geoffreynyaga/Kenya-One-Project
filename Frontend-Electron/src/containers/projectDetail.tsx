@@ -35,7 +35,6 @@
 import React from "react";
 
 import { Switch, Route } from "react-router-dom";
-import SrefAndPowerSizing from "./sref/SrefAndPowerSizing";
 import SrefDesign from "./sref/SrefDesign";
 import PerformanceConstraints from "./performanceConstraints/PerformanceConstraints";
 import DetailedWeights from "./detailedWeights/DetailedWeights";
@@ -48,7 +47,6 @@ import MTOWSizing from "./InitialSizing/MTOWSizing";
 import CostAnalysis from "./costs/CostAnalysis";
 
 const ProjectDetail = () => {
-
   const routes = [
     {
       path: "/projects/project1/mtow",

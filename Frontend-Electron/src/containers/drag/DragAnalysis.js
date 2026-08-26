@@ -13,13 +13,12 @@
  * Copyright (c) 2020 MFUKO PAYMENTS SERVICES Ltd.
  */
 import React from "react";
-import PropTypes from "prop-types";
 import "../../styles/data-table.css";
-import { Badge, Col, Container, InputGroup, Row } from "../../components/shards";
+import { Badge, Col, Container, Row } from "../../components/shards";
 import MyInputGroup from "../utils/InputGroup";
 import InputCard from "../utils/InputCard";
 
-function DragAnalysis(props) {
+function DragAnalysis() {
   function renderTable() {
     const items = [
       {
@@ -30,38 +29,36 @@ function DragAnalysis(props) {
         CDo: 0.003601588,
       },
       {
-        name: "WING	",
+        name: "WING  ",
         Reynolds: "8,643,292.69",
         cf: 0.003,
         FormFactor: 1.291,
         CDo: 0.007202488,
       },
       {
-        name: "H.TAIL	",
+        name: "H.TAIL  ",
         Reynolds: "6,372,628.94",
         cf: 0.003,
         FormFactor: 1.212,
         CDo: 0.002319223,
       },
       {
-        name: "V.TAIL	",
+        name: "V.TAIL  ",
         Reynolds: "8,284,677.62",
         cf: 0.002,
         FormFactor: 1.193,
         CDo: 0.002746996,
       },
     ];
-    return items.map((item, index) => {
-      return (
-        <tr key={index}>
-          <td>{item.name}</td>
-          <td>{item.Reynolds}</td>
-          <td>{item.cf}</td>
-          <td>{item.FormFactor}</td>
-          <td>{item.CDo}</td>
-        </tr>
-      );
-    });
+    return items.map((item, index) => (
+      <tr key={index}>
+        <td>{item.name}</td>
+        <td>{item.Reynolds}</td>
+        <td>{item.cf}</td>
+        <td>{item.FormFactor}</td>
+        <td>{item.CDo}</td>
+      </tr>
+      ));
   }
   function renderTable2() {
     const items = [
@@ -73,24 +70,22 @@ function DragAnalysis(props) {
         CDo: 0.001774343,
       },
       {
-        name: "COCKPIT	",
+        name: "COCKPIT  ",
         Reynolds: "",
         cf: "",
         FormFactor: "",
         CDo: 0.00272972,
       },
     ];
-    return items.map((item, index) => {
-      return (
-        <tr key={index}>
-          <td>{item.name}</td>
-          <td>{item.Reynolds}</td>
-          <td>{item.cf}</td>
-          <td>{item.FormFactor}</td>
-          <td>{item.CDo}</td>
-        </tr>
-      );
-    });
+    return items.map((item, index) => (
+      <tr key={index}>
+        <td>{item.name}</td>
+        <td>{item.Reynolds}</td>
+        <td>{item.cf}</td>
+        <td>{item.FormFactor}</td>
+        <td>{item.CDo}</td>
+      </tr>
+      ));
   }
   function renderTable3() {
     const items = [
@@ -102,24 +97,22 @@ function DragAnalysis(props) {
         CDo: 0.003423468,
       },
       {
-        name: "MISC	",
+        name: "MISC  ",
         Reynolds: 0.104,
         cf: "",
         FormFactor: "",
         CDo: 0.000403401,
       },
     ];
-    return items.map((item, index) => {
-      return (
-        <tr key={index}>
-          <td>{item.name}</td>
-          <td>{item.Reynolds}</td>
-          <td>{item.cf}</td>
-          <td>{item.FormFactor}</td>
-          <td>{item.CDo}</td>
-        </tr>
-      );
-    });
+    return items.map((item, index) => (
+      <tr key={index}>
+        <td>{item.name}</td>
+        <td>{item.Reynolds}</td>
+        <td>{item.cf}</td>
+        <td>{item.FormFactor}</td>
+        <td>{item.CDo}</td>
+      </tr>
+      ));
   }
   return (
     <Container>
@@ -254,7 +247,7 @@ function DragAnalysis(props) {
           >
             <table id="components">
               <tr>
-                <th></th>
+                <th />
                 <th>Reynolds no.</th>
                 <th>Cf</th>
                 <th>Form Factor</th>
@@ -262,11 +255,11 @@ function DragAnalysis(props) {
               </tr>
               <tbody>{renderTable()}</tbody>
               <tr>
-                <th style={{ backgroundColor: "transparent" }}></th>
+                <th style={{ backgroundColor: "transparent" }} />
                 <th title="This is Title">D/q</th>
                 <th> D/q</th>
-                <th style={{ backgroundColor: "transparent" }}></th>
-                <th style={{ backgroundColor: "transparent" }}></th>
+                <th style={{ backgroundColor: "transparent" }} />
+                <th style={{ backgroundColor: "transparent" }} />
               </tr>
               <tbody>
                 {renderTable2()}
@@ -283,7 +276,7 @@ function DragAnalysis(props) {
                 {renderTable3()}
               </tbody>
             </table>
-            <hr></hr>
+            <hr />
             <p
               style={{
                 fontSize: 16,

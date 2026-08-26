@@ -16,6 +16,7 @@
     "jotai": "^2.20.3",
     "plotly.js": "^1.57.1",
     "plotly.js-basic-dist": "^1.52.1",
+    "prop-types": "^15.8.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-plotly.js": "^2.4.0",

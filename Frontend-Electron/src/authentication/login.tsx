@@ -14,8 +14,8 @@ function Login() {
       <br />
       <br />
 
-      <button>Submit</button>
-      <hr></hr>
+      <button type="submit">Submit</button>
+      <hr />
       <br />
 
       <p>No account?</p>

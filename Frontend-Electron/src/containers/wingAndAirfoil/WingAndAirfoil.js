@@ -13,32 +13,11 @@
  * Copyright (c) 2020 MFUKO PAYMENTS SERVICES Ltd.
  */
 import React from "react";
-import PropTypes from "prop-types";
-import { Badge, Card, Col, Container, InputGroup, Row } from "../../components/shards";
+import { Badge, Col, Container, Row } from "../../components/shards";
 import MyInputGroup from "../utils/InputGroup";
 import InputCard from "../utils/InputCard";
 
-function WingAndAirfoil(props) {
-  function renderTable() {
-    const items = [
-      { name: "VA", speed: 1234, units: "kcas", xValue: 3.8 },
-      { name: "vs", speed: 1234, units: "kcas", xValue: 1 },
-      { name: "vs1", speed: 1234, units: "kcas", xValue: -1 },
-      { name: "vj", speed: 1234, units: "kcas", xValue: -3 },
-      { name: "vf", speed: 1234, units: "kcas", xValue: 3.8 },
-    ];
-    return items.map((item, index) => {
-      return (
-        <tr key={index}>
-          <td>{item.name}</td>
-          <td>{item.speed}</td>
-          <td>{item.units}</td>
-          <td>{item.xValue}</td>
-        </tr>
-      );
-    });
-  }
-
+function WingAndAirfoil() {
   return (
     <Container>
       <div style={{ marginBottom: 15 }}>
@@ -151,13 +130,13 @@ function WingAndAirfoil(props) {
             </p>
 
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
-              Stall Speed: <Badge theme="info"> {"3,766,006.10"} </Badge>
+              Stall Speed: <Badge theme="info"> 3,766,006.10 </Badge>
             </p>
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
-              Take Off: <Badge theme="info"> {"6,766,006.10"} </Badge>
+              Take Off: <Badge theme="info"> 6,766,006.10 </Badge>
             </p>
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
-              Cruise: <Badge theme="info"> {"9,766,006.10"} </Badge>
+              Cruise: <Badge theme="info"> 9,766,006.10 </Badge>
             </p>
             <p
               style={{
@@ -171,7 +150,7 @@ function WingAndAirfoil(props) {
               at Root
             </p>
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
-              Stall Speed: <Badge theme="info"> {"4,766,006.10"} </Badge>
+              Stall Speed: <Badge theme="info"> 4,766,006.10 </Badge>
             </p>
 
             <p
@@ -186,17 +165,17 @@ function WingAndAirfoil(props) {
               at Tip
             </p>
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
-              Stall Speed: <Badge theme="info"> {"2,766,006.10"} </Badge>
+              Stall Speed: <Badge theme="info"> 2,766,006.10 </Badge>
             </p>
             <hr />
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
-              Mach(at stall): <Badge theme="info"> {"0.092252734"} </Badge>
+              Mach(at stall): <Badge theme="info"> 0.092252734 </Badge>
             </p>
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
-              β(Prandtl Guert): <Badge theme="info"> {"0.995735624"} </Badge>
+              β(Prandtl Guert): <Badge theme="info"> 0.995735624 </Badge>
             </p>
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
-              k: <Badge theme="info"> {"0.966549968"} </Badge>
+              k: <Badge theme="info"> 0.966549968 </Badge>
             </p>
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
               r: <Badge theme="info"> {0.379583615} </Badge>
@@ -340,7 +319,7 @@ function WingAndAirfoil(props) {
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
               CLmaxo: <Badge theme="info"> {1.4428} </Badge>
             </p>
-            <hr></hr>
+            <hr />
             <p
               style={{
                 fontSize: 20,

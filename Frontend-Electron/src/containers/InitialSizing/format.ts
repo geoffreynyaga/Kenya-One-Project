@@ -12,19 +12,20 @@
  * number, or undefined when the sheet has not been solved yet.
  */
 export const toNumber = (value: unknown): number | undefined => {
-  if (Array.isArray(value)) {
-    if (value.length !== 1) return undefined;
-    value = value[0];
+  let raw: unknown = value;
+  if (Array.isArray(raw)) {
+    if (raw.length !== 1) return undefined;
+    [raw] = raw;
   }
-  if (value === null || value === undefined || value === "") return undefined;
+  if (raw === null || raw === undefined || raw === "") return undefined;
 
-  const n = Number(value);
+  const n = Number(raw);
   return Number.isFinite(n) ? n : undefined;
 };
 
 /** Rounded for reading — full precision stays available on the figure. */
 export const formatValue = (value: number | undefined): string =>
-  value === undefined ? "—" : Math.round(value).toLocaleString("en-US");
+  (value === undefined ? "—" : Math.round(value).toLocaleString("en-US"));
 
 /** Signed delta against a reference, e.g. "+45 lbf · +0.8%". */
 export const formatDelta = (

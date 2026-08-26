@@ -230,7 +230,7 @@ const InitialValues = (props) => {
       body: JSON.stringify({
         yAxisLimits: context,
         xAxisLimits: context,
-        aircraft_type: aircraft_type,
+        aircraft_type,
         altitude: Number(altitude),
         pax: Number(pax),
         propellerEfficiency: Number(propellerEfficiency),

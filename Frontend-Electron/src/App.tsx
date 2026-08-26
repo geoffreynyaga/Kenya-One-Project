@@ -33,9 +33,8 @@
  */
 
 import React from "react";
-import { Col, Container, Row } from "./components/shards";
-
 import { Switch, Route } from "react-router-dom";
+import { Col, Container, Row } from "./components/shards";
 
 import RightNavPerformance from "./navigation/RightNavPerformance";
 import RightNavSizing from "./navigation/RightNavSizing";
@@ -47,16 +46,13 @@ import VnDiagram from "./containers/vn/VnDiagram";
 import WingAndAirfoil from "./containers/wingAndAirfoil/WingAndAirfoil";
 import DragAnalysis from "./containers/drag/DragAnalysis";
 import WingStructural from "./containers/wingAndAirfoil/WingStructural";
-import MTOWSizing from "./containers/InitialSizing/MTOWSizing";
 import AuthScreen from "./authentication/authScreen";
 import ProjectDetail from "./containers/projectDetail";
 
 const App = () => {
-  const text = () => {
-    return(
-      <AuthScreen />
-    )
-  };
+  const text = () => (
+    <AuthScreen />
+    );
   text.displayName = "text";
 
   // {
@@ -122,8 +118,9 @@ const App = () => {
                 key={index}
                 path={route.path}
                 exact={route.exact}
-                children={<route.main />}
-              />
+              >
+                <route.main />
+              </Route>
             ))}
           </Switch>
         </Col>

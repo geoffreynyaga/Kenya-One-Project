@@ -20,8 +20,8 @@ import { FormInput, InputGroup, InputGroupAddon, InputGroupText } from "../../co
 function MyInputGroup(props) {
   return (
     <InputGroup
-      row={true}
-      inline={true}
+      row
+      inline
       style={{ marginTop: !props.top ? 10 : 0 }}
     >
       <InputGroupAddon type="prepend">

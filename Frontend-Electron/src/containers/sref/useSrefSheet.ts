@@ -249,9 +249,9 @@ export function useSrefSheet(): SrefSheet {
 
   const isOverridden = useCallback(
     (field: FormField) =>
-      field === "wingLoading"
+      (field === "wingLoading"
         ? wingLoadingOverride !== null
-        : field in shadows,
+        : field in shadows),
     [shadows, wingLoadingOverride]
   );
 

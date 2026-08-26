@@ -477,7 +477,7 @@ function CostResults({
   result: CostAnalysisResult;
   inputs: CostAnalysisRequest;
 }) {
-  const breakdown = result.development.breakdown;
+  const { breakdown } = result.development;
   const developmentRows: ResultRow[] = [
     { label: "Engineering", value: breakdown.engineering, unit: "project" },
     { label: "Development support", value: breakdown.development_support, unit: "project" },
@@ -495,7 +495,7 @@ function CostResults({
     { label: "Total cost to produce", value: breakdown.total_to_produce, unit: "aircraft", total: true },
     { label: "Minimum selling price", value: breakdown.minimum_selling_price, unit: "aircraft", total: true },
   ];
-  const operating = result.operating;
+  const { operating } = result;
   const labourRows: LabourRow[] = [
     {
       label: "Engineering",
@@ -535,7 +535,7 @@ function CostResults({
     { label: "Total yearly cost", value: operating.total_per_year, unit: "per year", total: true },
     { label: "Cost per flight hour", value: operating.cost_per_flight_hour, unit: "per hour", total: true, digits: 2 },
   ];
-  const chart = result.break_even.chart;
+  const { chart } = result.break_even;
 
   return (
     <>
@@ -804,39 +804,39 @@ export default function CostAnalysis() {
             </div>
           </div>
 
-            <InputSection title="ENTRY · DEVELOPMENT">
-              {developmentFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
-            </InputSection>
+          <InputSection title="ENTRY · DEVELOPMENT">
+            {developmentFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
+          </InputSection>
 
-            <InputSection title="ENTRY · COST BASIS">
-              {costBasisFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
-            </InputSection>
+          <InputSection title="ENTRY · COST BASIS">
+            {costBasisFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
+          </InputSection>
 
-            <InputSection title="ENTRY · SELLING PRICE">
-              <InputCell field="sellingPrice1" label="Scenario 1" unit="$" {...inputProps} />
-              <InputCell field="sellingPrice2" label="Scenario 2" unit="$" {...inputProps} />
-              <InputCell field="sellingPrice3" label="Scenario 3" unit="$" {...inputProps} />
-            </InputSection>
+          <InputSection title="ENTRY · SELLING PRICE">
+            <InputCell field="sellingPrice1" label="Scenario 1" unit="$" {...inputProps} />
+            <InputCell field="sellingPrice2" label="Scenario 2" unit="$" {...inputProps} />
+            <InputCell field="sellingPrice3" label="Scenario 3" unit="$" {...inputProps} />
+          </InputSection>
 
-            <InputSection title="ENTRY · OPERATING">
-              {maintenanceFields.map((field, index) => <InputCell field={field} key={field} label={`${maintenanceLabels[index]} · F${index + 1}`} {...inputProps} />)}
-              {operatingFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
-            </InputSection>
+          <InputSection title="ENTRY · OPERATING">
+            {maintenanceFields.map((field, index) => <InputCell field={field} key={field} label={`${maintenanceLabels[index]} · F${index + 1}`} {...inputProps} />)}
+            {operatingFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
+          </InputSection>
 
-            <InputSection title="ENTRY · FINANCING">
-              <InputCell field="loanPrincipal" label="Loan principal — blank uses minimum price" unit="$" {...inputProps} />
-              <InputCell field="loanTerm" label="Repayment term" unit="years" {...inputProps} />
-              <InputCell field="interestRate" label="Annual interest" unit="%" {...inputProps} />
-            </InputSection>
+          <InputSection title="ENTRY · FINANCING">
+            <InputCell field="loanPrincipal" label="Loan principal — blank uses minimum price" unit="$" {...inputProps} />
+            <InputCell field="loanTerm" label="Repayment term" unit="years" {...inputProps} />
+            <InputCell field="interestRate" label="Annual interest" unit="%" {...inputProps} />
+          </InputSection>
 
-            <button className="sticky bottom-0 mt-4 w-full border border-accent bg-accent px-4 py-3 font-mono text-meta font-medium tracking-tab text-white transition-colors hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-wait disabled:border-rule disabled:bg-panel disabled:text-ink-faint" disabled={query.isFetching} type="submit">
-              {query.isFetching ? "SOLVING…" : "SOLVE COST MODEL"}
-            </button>
-          </form>
+          <button className="sticky bottom-0 mt-4 w-full border border-accent bg-accent px-4 py-3 font-mono text-meta font-medium tracking-tab text-white transition-colors hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-wait disabled:border-rule disabled:bg-panel disabled:text-ink-faint" disabled={query.isFetching} type="submit">
+            {query.isFetching ? "SOLVING…" : "SOLVE COST MODEL"}
+          </button>
+        </form>
 
-          <div aria-live="polite" className="min-w-0 xl:col-span-2">
-            {query.isPending ? (
-              <div className="m-5 border border-rule bg-field p-8 font-mono text-note text-ink-muted">Calculating the workbook model…</div>
+        <div aria-live="polite" className="min-w-0 xl:col-span-2">
+          {query.isPending ? (
+            <div className="m-5 border border-rule bg-field p-8 font-mono text-note text-ink-muted">Calculating the workbook model…</div>
             ) : query.isError ? (
               <div className="m-5 border border-accent bg-accent-wash p-5 text-body text-accent-dark" role="alert">
                 <div className="font-medium">Cost model unavailable</div>
@@ -847,8 +847,8 @@ export default function CostAnalysis() {
                 <CostResults inputs={submitted} result={query.data} />
               </div>
             ) : null}
-          </div>
         </div>
+      </div>
     </main>
   );
 }

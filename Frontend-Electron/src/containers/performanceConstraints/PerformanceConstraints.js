@@ -16,6 +16,8 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 
+import Plotly from "plotly.js-basic-dist";
+import createPlotlyComponent from "react-plotly.js/factory";
 import {
   Badge,
   Card,
@@ -28,11 +30,9 @@ import {
   InputGroupText,
   Row,
 } from "../../components/shards";
-
-import Plotly from "plotly.js-basic-dist";
-import createPlotlyComponent from "react-plotly.js/factory";
 import MyInputGroup from "../utils/InputGroup";
 import InputCard from "../utils/InputCard";
+
 const Plot = createPlotlyComponent(Plotly);
 
 function PerformanceConstraints(props) {
@@ -96,11 +96,11 @@ function PerformanceConstraints(props) {
             alignItems: "center",
           }}
         >
-          <Card style={{ width: 100 + "%" }}>
+          <Card style={{ width: `${100}%` }}>
             <Plot
               data={[]}
               layout={{
-                width: 100 + "%",
+                width: `${100}%`,
                 height: 500,
                 title: "BHP and Stall Speed Requirements - Normalised to S-L",
                 font: {
@@ -120,11 +120,11 @@ function PerformanceConstraints(props) {
             />
           </Card>
 
-          <Card style={{ width: 100 + "%", marginTop: 20 }}>
+          <Card style={{ width: `${100}%`, marginTop: 20 }}>
             <Plot
               data={[]}
               layout={{
-                width: 100 + "%",
+                width: `${100}%`,
                 height: 500,
                 title: "Constraint Diagram",
                 font: {
@@ -147,7 +147,7 @@ function PerformanceConstraints(props) {
           <InputCard
             title="RESULTS NOTE:"
             style={{
-              width: 100 + "%",
+              width: `${100}%`,
               backgroundColor: "#21e6c1",
               marginTop: 20,
               paddingRight: 40,

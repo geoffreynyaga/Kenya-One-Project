@@ -35,9 +35,9 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
+import { BrowserRouter as Router } from "react-router-dom";
 import * as serviceWorker from "./serviceWorker";
 
-import { BrowserRouter as Router } from "react-router-dom";
 import AuthScreen from "./authentication/authScreen";
 
 const rootElement = document.getElementById("root");

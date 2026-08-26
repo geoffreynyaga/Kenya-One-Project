@@ -34,11 +34,11 @@
 
 import React from "react";
 
+import { useRouteMatch } from "react-router-dom";
 import { Nav, NavItem, NavLink } from "../components/shards";
-import { useRouteMatch, Link } from "react-router-dom";
 
 export default function RightNavSizing() {
-  let { path, url } = useRouteMatch();
+  const { url } = useRouteMatch();
   return (
     <div style={{ marginTop: 20, backgroundColor: "#fccde2" }}>
       <Nav pills vertical>

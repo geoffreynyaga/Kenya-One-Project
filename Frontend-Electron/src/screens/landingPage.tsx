@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, Switch, Route } from "react-router-dom";
 
-import ProjectDetail from "../../src/containers/projectDetail";
+import ProjectDetail from "../containers/projectDetail";
 
 function MyComp() {
   return (
@@ -19,7 +19,7 @@ function MyComp() {
         }}
       >
         <div>
-          <button style={{ width: "100px" }}>
+          <button type="button" style={{ width: "100px" }}>
             <Link to="/projects/create">Create Project</Link>
           </button>
         </div>
