@@ -134,6 +134,8 @@ export interface WeightsGeometry {
 export interface WeightsCarried {
   /** MTOW & WEIGHTS I32 header — the design gross weight, lb. */
   mtowLb: number;
+  /** Drag analysis P8 — overall fuselage length, m. S5 works back from it. */
+  fuselageOverallLengthM: number;
   /** MTOW & WEIGHTS I34 — the empty weight this sheet is checking. */
   initialEmptyWeightLb: number;
   /** MTOW & WEIGHTS I35 — mission fuel, lb. */
@@ -215,6 +217,32 @@ export interface WeightsSeeded {
   verticalTailThicknessRatio: number;
   /** [2]Rudder K8 — vertical tail taper ratio. */
   verticalTailTaperRatio: number;
+}
+
+/**
+ * The part of the geometry block a human actually types. The workbook derives
+ * the rest: S5 from the drag sheet's overall length, S10 by mirroring S8, and
+ * S17 from MTOW. Storing those would let them go stale.
+ */
+export type WeightsGeometryEntry = Omit<
+  WeightsGeometry,
+  "lFusM" | "dFuselageFt" | "wInstrumentsLb"
+>;
+
+/** Fills in the three cells column S computes rather than takes. */
+export function completeGeometry(
+  entry: WeightsGeometryEntry,
+  context: { fuselageOverallLengthM: number; mtowLb: number }
+): WeightsGeometry {
+  return {
+    ...entry,
+    // S5: the workbook drops the spinner and prop off the overall length.
+    lFusM: context.fuselageOverallLengthM - 0.966,
+    // S10: the workbook mirrors the structural depth rather than measuring it.
+    dFuselageFt: entry.dFsFt,
+    // S17: the instruments and avionics allowance.
+    wInstrumentsLb: 40 + 0.008 * context.mtowLb,
+  };
 }
 
 /** Workbook column N — the moment arm of each component from the datum, m. */
