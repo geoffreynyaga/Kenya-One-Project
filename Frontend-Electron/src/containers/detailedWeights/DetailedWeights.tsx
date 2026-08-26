@@ -66,7 +66,7 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
     label: "Fuselage length",
     unit: "m",
     cell: "S5",
-    body: "Length the weight equations use. The workbook takes the drag sheet's overall length less 0.966 m, which is the spinner and prop.",
+    body: "Length the weight equations use: the overall fuselage length from Sheet 07 less 0.966 m, which is the spinner and prop.",
   },
   {
     field: "deltaP",
@@ -105,7 +105,7 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
     label: "Fuselage depth",
     unit: "ft",
     cell: "S10",
-    body: "Maximum depth. The workbook mirrors the structural depth on S8 rather than entering it separately.",
+    body: "Maximum depth. Mirrors the structural depth above rather than being entered separately.",
   },
   {
     field: "lMainGearIn",
@@ -162,7 +162,7 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
     label: "Instruments",
     unit: "lb",
     cell: "S17",
-    body: "Installed instruments and avionics. The workbook sets it at 40 + 0.008 × MTOW, which is 86.8 lb here.",
+    body: "Installed instruments and avionics, set at 40 + 0.008 × MTOW, which is 86.8 lb at this weight.",
     formula: "40 + 0.008 × MTOW",
   },
   {
