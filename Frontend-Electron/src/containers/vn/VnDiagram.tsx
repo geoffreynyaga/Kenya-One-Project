@@ -361,8 +361,9 @@ export default function VnDiagram() {
           </section>
 
           <div className="mt-auto border-t border-rule-mid pt-3 font-mono text-label tracking-band text-ink-faint">
-            THIS SHEET <span className="text-accent">EXPORTS C4 · C5</span> TO
-            SHEET 04
+            THIS SHEET SETS THE{" "}
+            <span className="text-accent">ULTIMATE AND LANDING LOAD FACTORS</span>{" "}
+            EVERY COMPONENT ON SHEET 04 IS SIZED AGAINST
           </div>
         </aside>
       </div>

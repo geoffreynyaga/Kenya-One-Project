@@ -159,7 +159,10 @@ export function vnEnvelope(inputs: VnInputs, derived: VnDerived): VnPoint[] {
 export interface VnWarning {
   key: string;
   severity: "defect" | "check";
+  /** Names the quantity, never a cell — the reader has no workbook open. */
   message: string;
+  /** The workbook cell, for whoever is auditing. Shown only on hover. */
+  cell?: string;
 }
 
 export function vnWarnings(inputs: VnInputs, derived: VnDerived): VnWarning[] {
@@ -169,6 +172,7 @@ export function vnWarnings(inputs: VnInputs, derived: VnDerived): VnWarning[] {
     warnings.push({
       key: "below-far23-floor",
       severity: "check",
+      cell: "C2",
       message:
         `The chosen limit load factor ${inputs.limitLoadFactor} sits below the ` +
         `${derived.minimumLimitLoadFactor.toFixed(3)} that ` +
@@ -180,6 +184,7 @@ export function vnWarnings(inputs: VnInputs, derived: VnDerived): VnWarning[] {
     warnings.push({
       key: "corner-beyond-dive",
       severity: "check",
+      cell: "F3",
       message:
         "The corner speed is past the dive speed, so the envelope never " +
         "reaches its limit load factor before redline.",
