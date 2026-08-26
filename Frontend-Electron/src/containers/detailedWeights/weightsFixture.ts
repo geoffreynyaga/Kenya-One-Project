@@ -27,6 +27,7 @@ export const WORKBOOK_INPUTS: WeightsInputs = {
   },
   carried: {
     mtowLb: 5850,
+    fuselageOverallLengthM: 9.1,
     initialEmptyWeightLb: 3687.7945428857965,
     fuelWeightLb: 842.2054571142032,
     fuelGallons: 143.47622778776886,

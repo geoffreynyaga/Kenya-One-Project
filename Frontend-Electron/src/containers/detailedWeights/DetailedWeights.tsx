@@ -15,13 +15,16 @@ import {
 
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { Hint, HintSpec } from "../../components/sheet/Hint";
+import { ValueRow } from "../../components/sheet/ValueRow";
 import {
   ComponentRow,
   METHOD_LABELS,
   METHODS,
   MethodKey,
+  completeGeometry,
   weightsBreakdown,
   WeightsGeometry,
+  WeightsGeometryEntry,
   weightsWarnings,
 } from "./weightsCompute";
 import { WORKBOOK_INPUTS } from "./weightsFixture";
@@ -43,12 +46,14 @@ const pct = (value: number, digits = 1) => {
 interface GeometrySpec extends HintSpec {
   field: keyof WeightsGeometry;
   unit?: string;
+  source: "entry" | "carried" | "derived";
 }
 
 const GEOMETRY_FIELDS: GeometrySpec[] = [
   {
     field: "sFusM2",
-    label: "Fuselage wetted area",
+    source: "entry",
+    label: "Wetted area",
     unit: "m²",
     cell: "S4",
     body: "The whole outer surface the boundary layer sees. Raymer's fuselage weight scales on it, and the drag sheet reads the same number.",
@@ -56,6 +61,8 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
   },
   {
     field: "lFusM",
+    origin: "SHEET 07",
+    source: "derived",
     label: "Fuselage length",
     unit: "m",
     cell: "S5",
@@ -63,19 +70,22 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
   },
   {
     field: "deltaP",
-    label: "Cabin pressure differential",
+    source: "entry",
+    label: "Cabin Δp",
     cell: "S6",
     body: "Zero for an unpressurised cabin, which drops the pressurisation term out of Raymer's fuselage weight entirely.",
   },
   {
     field: "vPressurisedFt3",
-    label: "Pressurised volume",
+    source: "entry",
+    label: "Press. volume",
     unit: "ft³",
     cell: "S7",
     body: "Only bites when the pressure differential is non-zero; the two are multiplied together.",
   },
   {
     field: "dFsFt",
+    source: "entry",
     label: "Structural depth",
     unit: "ft",
     cell: "S8",
@@ -83,6 +93,7 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
   },
   {
     field: "wFuselageFt",
+    source: "entry",
     label: "Fuselage width",
     unit: "ft",
     cell: "S9",
@@ -90,6 +101,7 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
   },
   {
     field: "dFuselageFt",
+    source: "derived",
     label: "Fuselage depth",
     unit: "ft",
     cell: "S10",
@@ -97,6 +109,7 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
   },
   {
     field: "lMainGearIn",
+    source: "entry",
     label: "Main gear strut",
     unit: "in",
     cell: "S11",
@@ -105,6 +118,7 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
   },
   {
     field: "lNoseGearIn",
+    source: "entry",
     label: "Nose gear strut",
     unit: "in",
     cell: "S12",
@@ -112,32 +126,39 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
   },
   {
     field: "wEngineLb",
-    label: "Bare engine weight",
+    origin: "SHEET 02",
+    source: "carried",
+    label: "Bare engine wt",
     unit: "lb",
     cell: "S13",
     body: "One engine, dry, before installation. Raymer multiplies it by 2.575 to cover mounts, cowling and accessories.",
   },
   {
     field: "nEngines",
+    origin: "SHEET 02",
+    source: "carried",
     label: "Engines",
     cell: "S14",
     body: "Number of engines. Also feeds the fuel-system weight, which scales on tanks and engines together.",
   },
   {
     field: "nTanks",
+    source: "entry",
     label: "Fuel tanks",
     cell: "S15",
     body: "Separate tanks. More tanks means more plumbing and more system weight for the same fuel.",
   },
   {
     field: "leDistanceM",
-    label: "Leading-edge datum",
+    source: "entry",
+    label: "LE datum",
     unit: "m",
     cell: "S16",
     body: "The datum every CG on this sheet is measured from. Move it and every %MAC figure moves with it.",
   },
   {
     field: "wInstrumentsLb",
+    source: "derived",
     label: "Instruments",
     unit: "lb",
     cell: "S17",
@@ -146,20 +167,23 @@ const GEOMETRY_FIELDS: GeometrySpec[] = [
   },
   {
     field: "nIntegralTanks",
+    source: "entry",
     label: "Integral tanks",
     cell: "S18",
     body: "Wet-wing tanks, which carry no separate bladder. Zero here, so the integral term drops out of the fuel-system weight.",
   },
   {
     field: "integralTankFraction",
-    label: "Integral tank fraction",
+    source: "entry",
+    label: "Integral fraction",
     cell: "S19",
     body: "Fraction of the fuel carried integrally. Multiplied by the tank count on S18 to give the term Raymer and Nicolai use.",
   },
 ];
 
 interface ViewState {
-  geometry: WeightsGeometry;
+  /** Only the cells a human types. The rest are derived on every render. */
+  geometry: WeightsGeometryEntry;
   openSections: string[];
 }
 
@@ -207,9 +231,12 @@ function GeometryRow({
   value: number;
   onChange: (next: number) => void;
 }) {
+  const readOnly = spec.source !== "entry";
   return (
     <label
-      className="flex items-baseline gap-2 px-[18px] py-[5px]"
+      className={`flex items-baseline gap-2 py-[5px] pr-[18px] ${
+        readOnly ? "shadow-carried pl-[16px]" : "pl-[18px]"
+      }`}
       htmlFor={`weights-${spec.field}`}
     >
       <span
@@ -225,11 +252,16 @@ function GeometryRow({
       </span>
       <Hint inputId={`weights-${spec.field}`} spec={spec} />
       <input
-        className="w-[96px] shrink-0 border-b border-dashed border-rule bg-transparent pb-[2px] text-right font-mono text-value text-ink outline-none focus:border-solid focus:border-accent"
+        className={`w-[92px] shrink-0 bg-transparent pb-[2px] text-right font-mono text-value outline-none ${
+          readOnly
+            ? "text-ink-muted"
+            : "border-b border-dashed border-rule text-ink focus:border-solid focus:border-accent"
+        }`}
         id={`weights-${spec.field}`}
         inputMode="decimal"
         onChange={(event) => onChange(Number(event.target.value))}
-        value={value}
+        readOnly={readOnly}
+        value={readOnly ? nf(value, 3) : value}
       />
     </label>
   );
@@ -369,14 +401,22 @@ export default function DetailedWeights() {
     DEFAULT_VIEW
   );
 
-  const result = useMemo(
+  const geometry = useMemo(
     () =>
-      weightsBreakdown({ ...WORKBOOK_INPUTS, geometry: view.geometry }),
+      completeGeometry(view.geometry, {
+        fuselageOverallLengthM: WORKBOOK_INPUTS.carried.fuselageOverallLengthM,
+        mtowLb: WORKBOOK_INPUTS.carried.mtowLb,
+      }),
     [view.geometry]
+  );
+
+  const result = useMemo(
+    () => weightsBreakdown({ ...WORKBOOK_INPUTS, geometry }),
+    [geometry]
   );
   const warnings = useMemo(() => weightsWarnings(result), [result]);
 
-  const setGeometry = (field: keyof WeightsGeometry, next: number) =>
+  const setGeometry = (field: keyof WeightsGeometryEntry, next: number) =>
     setView((current) => ({
       ...current,
       geometry: { ...current.geometry, [field]: next },
@@ -430,9 +470,16 @@ export default function DetailedWeights() {
             <div className="font-mono text-label font-medium tracking-label text-ink-label">
               COMPONENT GEOMETRY
             </div>
-            <p className="mt-[9px] font-mono text-label leading-[1.6] tracking-band text-ink-faint">
-              S4:S19 · CELLS IN COLUMN S OF THE WORKBOOK SHEET
-            </p>
+            <dl className="mt-[9px] space-y-[5px] font-mono text-label tracking-band text-ink-faint">
+              <div className="flex items-center gap-[7px]">
+                <span className="inline-block w-[14px] border-b border-dashed border-ink-faint" />
+                <span>ENTRY · TYPED HERE</span>
+              </div>
+              <div className="flex items-center gap-[7px]">
+                <span className="h-[10px] w-[14px] shadow-carried" />
+                <span>CARRIED OR DERIVED · READ-ONLY</span>
+              </div>
+            </dl>
           </div>
 
           <Section
@@ -444,9 +491,10 @@ export default function DetailedWeights() {
             {GEOMETRY_FIELDS.map((spec) => (
               <GeometryRow
                 key={spec.field}
-                onChange={(next) => setGeometry(spec.field, next)}
+                onChange={(next) =>
+                  setGeometry(spec.field as keyof WeightsGeometryEntry, next)}
                 spec={spec}
-                value={view.geometry[spec.field]}
+                value={geometry[spec.field]}
               />
             ))}
           </Section>
@@ -483,18 +531,16 @@ export default function DetailedWeights() {
               </h3>
               <dl className="px-4 py-2 font-mono text-note">
                 {result.loads.map((load) => (
-                  <div
-                    className="flex items-baseline justify-between gap-3 border-b border-rule-hair py-[6px] last:border-b-0"
+                  <ValueRow
+                    hint={{
+                      body: `${load.label} at ${nf(load.armM, 3)} m from the leading-edge datum, ${pct(load.fractionOfMtow, 2)} of MTOW.`,
+                      cell: `L${{ fuel: 22, oil: 23, passengers: 24, payload: 25, crew: 26 }[load.key]}`,
+                    }}
+                    id={`load-${load.key}`}
                     key={load.key}
-                  >
-                    <dt className="text-ink-body">{load.label}</dt>
-                    <dd className="flex items-baseline gap-4">
-                      <span className="text-ink-faint">{pct(load.fractionOfMtow, 2)}</span>
-                      <span className="w-[74px] text-right text-ink">
-                        {nf(load.weightLb, 0)} lb
-                      </span>
-                    </dd>
-                  </div>
+                    label={load.label}
+                    value={`${nf(load.weightLb, 0)} lb`}
+                  />
                 ))}
               </dl>
             </section>
@@ -505,20 +551,20 @@ export default function DetailedWeights() {
               </h3>
               <dl className="px-4 py-2 font-mono text-note">
                 {result.cases.map((entry) => (
-                  <div
-                    className="flex items-baseline justify-between gap-3 border-b border-rule-hair py-[6px] last:border-b-0"
+                  <ValueRow
+                    hint={{
+                      body: `${nf(entry.weightLb, 0)} lb, centre of gravity ${nf(entry.cgM, 3)} m aft of the leading-edge datum.`,
+                      cell: `N${{ crewFuel: 29, empty: 31, noPayload: 33, mtow: 35 }[entry.key as "crewFuel"]}`,
+                    }}
+                    id={`cg-${entry.key}`}
                     key={entry.key}
-                  >
-                    <dt className="min-w-0 flex-1 text-ink-body">{entry.label}</dt>
-                    <dd className="flex shrink-0 items-baseline gap-4">
-                      <span className="text-ink-faint">
-                        {nf(entry.weightLb, 0)} lb
-                      </span>
-                      <span className="w-[64px] text-right text-accent-dark">
+                    label={entry.label}
+                    value={
+                      <span className="text-accent-dark">
                         {pct(entry.cgFractionMac, 1)} MAC
                       </span>
-                    </dd>
-                  </div>
+                    }
+                  />
                 ))}
               </dl>
             </section>
