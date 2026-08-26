@@ -33,7 +33,7 @@
  */
 
 import React from "react";
-import { Switch, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import { Col, Container, Row } from "./components/shards";
 
 import RightNavPerformance from "./navigation/RightNavPerformance";
@@ -63,7 +63,6 @@ const App = () => {
   const routes = [
     {
       path: "/",
-      exact: true,
       main: () => text(),
     },
     {
@@ -110,19 +109,17 @@ const App = () => {
           <RightNavControlSurfaces />
         </Col>
         <Col sm="10" lg="10">
-          <Switch>
+          <Routes>
             {routes.map((route, index) => (
               // Render more <Route>s with the same paths as
               // above, but different components this time.
               <Route
                 key={index}
                 path={route.path}
-                exact={route.exact}
-              >
-                <route.main />
-              </Route>
+                element={<route.main />}
+              />
             ))}
-          </Switch>
+          </Routes>
         </Col>
       </Row>
     </Container>

@@ -19,7 +19,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-plotly.js": "^2.4.0",
-    "react-router-dom": "^5.2.0",
+    "react-router-dom": "^7",
     "request-promise": "^4.2.5"
   },
   "scripts": {
@@ -45,7 +45,6 @@
     ]
   },
   "devDependencies": {
-    "@types/react-router-dom": "^5.1.6",
     "@typescript-eslint/eslint-plugin": "^4.4.1",
     "@vitejs/plugin-react": "^6.1.0",
     "autoprefixer": "^10.5.4",

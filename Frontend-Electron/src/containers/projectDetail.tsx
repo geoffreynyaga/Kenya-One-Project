@@ -34,7 +34,7 @@
 
 import React from "react";
 
-import { Switch, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 import SrefDesign from "./sref/SrefDesign";
 import PerformanceConstraints from "./performanceConstraints/PerformanceConstraints";
 import DetailedWeights from "./detailedWeights/DetailedWeights";
@@ -49,60 +49,42 @@ import CostAnalysis from "./costs/CostAnalysis";
 const ProjectDetail = () => {
   const routes = [
     {
-      path: "/projects/project1/mtow",
-
-      exact: true,
+      path: "mtow",
       component: MTOWSizing,
     },
 
     {
-      path: "/projects/project1/sref",
-
-      exact: true,
+      path: "sref",
       component: SrefDesign,
       // main: () => <SrefDesign />,
     },
     {
-      path: "/projects/project1/performance-constraints",
-      exact: true,
-
+      path: "performance-constraints",
       component: PerformanceConstraints,
     },
 
     {
-      path: "/projects/project1/detailed-weights",
-      exact: true,
-
+      path: "detailed-weights",
       component: DetailedWeights,
     },
     {
-      path: "/projects/project1/vn-diagram",
-      exact: true,
-
+      path: "vn-diagram",
       component: VnDiagram,
     },
     {
-      path: "/projects/project1/wing-and-airfoil",
-      exact: true,
-
+      path: "wing-and-airfoil",
       component: WingAndAirfoil,
     },
     {
-      path: "/projects/project1/drag-analysis",
-      exact: true,
-
+      path: "drag-analysis",
       component: DragAnalysis,
     },
     {
-      path: "/projects/project1/wing-structural",
-      exact: true,
-
+      path: "wing-structural",
       component: WingStructural,
     },
     {
-      path: "/projects/project1/cost-analysis",
-      exact: true,
-
+      path: "cost-analysis",
       component: CostAnalysis,
     },
   ];
@@ -110,19 +92,17 @@ const ProjectDetail = () => {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <SheetIndex />
-      <Switch>
+      <Routes>
         {routes.map((route, index) => (
           // Render more <Route>s with the same paths as
           // above, but different components this time.
           <Route
             key={index}
             path={route.path}
-            exact={route.exact}
-            // children={<route.main />}
-            component={route.component}
+            element={<route.component />}
           />
         ))}
-      </Switch>
+      </Routes>
     </div>
   );
 };
