@@ -336,7 +336,10 @@ export function aerofoil(inputs: AerofoilInputs): AerofoilResult {
 export interface AerofoilWarning {
   key: string;
   severity: "defect" | "check";
+  /** Names the quantity, never a cell — the reader has no workbook open. */
   message: string;
+  /** The workbook cell, for whoever is auditing. Shown only on hover. */
+  cell?: string;
 }
 
 export function aerofoilWarnings(
@@ -349,11 +352,12 @@ export function aerofoilWarnings(
     warnings.push({
       key: "clmax-sweep-blank",
       severity: "defect",
+      cell: "L18",
       message:
-        "L18 corrects the wing CLmax by cos(B120), but this sheet ends at row " +
-        "33, so B120 is blank and the correction is always cos(0) = 1. This " +
-        "wing is unswept at the quarter chord, so the cached value happens to " +
-        "be right; on a swept wing it would not be.",
+        "The wing maximum lift is corrected for sweep, but the sweep angle it " +
+        "reads was never filled in, so the correction is always one. This wing " +
+        "is unswept at the quarter chord, so the number happens to come out " +
+        "right; on a swept wing it would be too high.",
     });
   }
 
@@ -362,10 +366,13 @@ export function aerofoilWarnings(
     warnings.push({
       key: "oswald-average-excludes-straight",
       severity: "check",
+      cell: "M33",
       message:
-        `M33 averages only the swept, Brandt and Douglas methods, giving ` +
-        `${result.oswald.average.toFixed(4)}. Sheet 03 sizes its constraint ` +
-        `diagram on the straight-wing method alone, ${straight.value.toFixed(4)}.`,
+        `The span efficiency this sheet reports, ` +
+        `${result.oswald.average.toFixed(4)}, averages the swept, Brandt and ` +
+        `Douglas methods and leaves the straight-wing one out. The Mission ` +
+        `sheet sizes its whole constraint diagram on that omitted method ` +
+        `alone, ${straight.value.toFixed(4)}.`,
     });
   }
 
@@ -376,8 +383,9 @@ export function aerofoilWarnings(
     warnings.push({
       key: "oswald-spread",
       severity: "check",
-      message: `The four span-efficiency methods spread ${spread.toFixed(3)}, ` +
-        "which carries straight into the induced drag.",
+      message:
+        `The four span-efficiency methods spread ${spread.toFixed(3)} between ` +
+        "them, and that spread carries straight into the induced drag.",
     });
   }
 
