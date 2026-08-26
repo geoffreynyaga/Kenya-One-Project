@@ -61,7 +61,10 @@ describe("structureCompute parity with the Wing Structural sheet", () => {
     );
     expect(warning).toBeDefined();
     expect(warning!.severity).toBe("defect");
-    expect(warning!.message).toContain("row 33");
+    // The message names the quantity; the cell is only for the hover.
+    expect(warning!.message).toContain("taper term");
+    expect(warning!.message).not.toMatch(/B\d{2,}/);
+    expect(warning!.cell).toBe("B12 · B13");
   });
 
   it("picks the thinnest stock sheet above the requirement and the rule of thumb", () => {

@@ -277,7 +277,10 @@ export function selectSheet(requiredIn: number): number | null {
 export interface StructureWarning {
   key: string;
   severity: "defect" | "check";
+  /** Names the quantity, never a cell — the reader has no workbook open. */
   message: string;
+  /** The workbook cell, for whoever is auditing. Shown only on hover. */
+  cell?: string;
 }
 
 export function structureWarnings(
@@ -289,13 +292,14 @@ export function structureWarnings(
   warnings.push({
     key: "b562",
     severity: "defect",
+    cell: "B12 · B13",
     message: CORRECT_B562_TO_TAPER_SQUARED
-      ? "B12 and B13 are being sized on the corrected taper-squared term, " +
-        "which departs from the workbook's cached values by design."
-      : "B12 and B13 reference Wing & Airfoil B562, but that sheet ends at " +
-        "row 33, so Excel reads the blank as zero. Both terms sit where the " +
-        "taper ratio squared belongs. Reproduced as the workbook computes it; " +
-        "correcting it raises the spar-cap area 17.2% and lowers IXX 4.3%.",
+      ? "The spar-cap area and second moment are being sized on the corrected " +
+        "taper-squared term, which departs from the workbook by design."
+      : "The spar-cap area and the second moment of area both read a taper " +
+        "term that was never filled in, so it counts as zero. Reproduced as " +
+        "the workbook has it; correcting it raises the required cap area " +
+        "17.2% and lowers the second moment 4.3%.",
   });
 
   const skin = selectSheet(result.requiredSkinThicknessIn);

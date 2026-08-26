@@ -352,6 +352,18 @@ export default function WingStructural() {
                   </span>
                   <span className="font-mono text-meta leading-[1.6] text-ink-muted">
                     {warning.message}
+                    {warning.cell ? (
+                      <span className="ml-2 inline-flex align-middle">
+                        <Hint
+                          inputId={`warn-${warning.key}`}
+                          spec={{
+                            label: "Where this comes from",
+                            body: warning.message,
+                            cell: warning.cell,
+                          }}
+                        />
+                      </span>
+                    ) : null}
                   </span>
                 </li>
               ))}
