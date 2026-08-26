@@ -333,12 +333,12 @@ function VerdictTable({ rows }: { rows: MissionVerdictRow[] }) {
       },
       {
         accessorKey: "bhpSeaLevel",
-        header: "BHP (S-L)",
-        cell: ({ getValue }) => `${formatNumber(getValue<number>(), 1)} hp`,
+        header: "BHP S-L · hp",
+        cell: ({ getValue }) => formatNumber(getValue<number>(), 1),
       },
       {
         accessorKey: "marginHp",
-        header: "Margin",
+        header: "Margin · hp",
         cell: ({ getValue, row }) => (
           <span
             className={
@@ -346,7 +346,7 @@ function VerdictTable({ rows }: { rows: MissionVerdictRow[] }) {
             }
           >
             {getValue<number>() >= 0 ? "+" : ""}
-            {formatNumber(getValue<number>(), 1)} hp
+            {formatNumber(getValue<number>(), 1)}
           </span>
         ),
       },
@@ -387,7 +387,7 @@ function VerdictTable({ rows }: { rows: MissionVerdictRow[] }) {
             >
               {row.getVisibleCells().map((cell, index) => (
                 <td
-                  className={`border-b border-rule-hair px-3 py-[7px] ${
+                  className={`whitespace-nowrap border-b border-rule-hair px-3 py-[7px] ${
                     index > 0 ? "text-right" : ""
                   }`}
                   key={cell.id}
@@ -510,7 +510,7 @@ export default function PerformanceConstraints() {
 
       <div className="grid min-h-0 xl:grid-cols-[296px_minmax(520px,1fr)_330px]">
         <form
-          className="bg-panel pb-0 xl:border-r xl:border-rule-mid"
+          className="bg-panel pb-5 xl:border-r xl:border-rule-mid"
           onSubmit={(event) => event.preventDefault()}
         >
           <div className="px-[18px] pb-[11px] pt-[15px]">
@@ -544,7 +544,7 @@ export default function PerformanceConstraints() {
           </button>
         </form>
 
-        <div aria-live="polite" className="min-w-0 xl:col-span-2">
+        <div aria-live="polite" className="min-w-0">
           <div className="min-w-0 bg-paper px-[22px] pb-0 pt-[18px]">
             <div className="mb-[10px]">
               <div className="font-mono text-label tracking-label text-ink-faint">SHEET 03 / PERFORMANCE SIZING</div>
