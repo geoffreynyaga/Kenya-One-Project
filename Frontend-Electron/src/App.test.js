@@ -33,11 +33,18 @@
  */
 
 import React from "react";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import App from "./App";
 
-test("renders learn react link", () => {
-  const { getByText } = render(<App />);
-  const linkElement = getByText(/learn react/i);
-  expect(linkElement).toBeInTheDocument();
+// The old assertion looked for Create React App's "learn react" link, which
+// this app has never rendered. App is the router shell, so the thing worth
+// asserting is that it mounts inside a router and puts the sheet rail up.
+test("mounts inside a router and renders the sizing rail", () => {
+  render(
+    <MemoryRouter initialEntries={["/mtow"]}>
+      <App />
+    </MemoryRouter>
+  );
+  expect(screen.getByText(/MTOW & Weights/i)).toBeInTheDocument();
 });

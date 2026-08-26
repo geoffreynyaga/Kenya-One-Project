@@ -2,16 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+/*
+ * Typography and page tone come from the Tailwind theme, which is generated
+ * from src/design-tokens.js. Nothing here restates a font stack or a colour.
+ */
+@layer base {
+  body {
+    margin: 0;
+    background-color: theme(colors.paper);
+    color: theme(colors.ink.DEFAULT);
+    font-family: theme(fontFamily.sans);
+    font-size: theme(fontSize.body[0]);
+    line-height: theme(fontSize.body[1]);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+  code {
+    font-family: theme(fontFamily.mono);
+  }
 }

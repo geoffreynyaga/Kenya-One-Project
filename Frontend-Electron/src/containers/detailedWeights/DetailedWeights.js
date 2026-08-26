@@ -13,13 +13,12 @@
  * Copyright (c) 2020 MFUKO PAYMENTS SERVICES Ltd.
  */
 import React from "react";
-import PropTypes from "prop-types";
-import "./componentWeights.css";
+import "../../styles/data-table.css";
 import { Badge, Col, Container, Row } from "../../components/shards";
 import MyInputGroup from "../utils/InputGroup";
 import InputCard from "../utils/InputCard";
 
-function DetailedWeights(props) {
+function DetailedWeights() {
   const components = [
     {
       name: "Wing",
@@ -247,103 +246,7 @@ function DetailedWeights(props) {
         FractionOfMTOW,
         Xdist,
         moment,
-      } = component; //destructuring
-      return (
-        <tr key={index}>
-          <td>{name}</td>
-          <td>{lowerLimit}</td>
-          <td>{upperLimit}</td>
-          <td>{RAYMER}</td>
-          <td>{ROSKAM}</td>
-          <td>{USAF}</td>
-          <td>{TORENBEEK}</td>
-          <td>{SADRAEY}</td>
-          <td>{CESSNA}</td>
-          <td>{NICOLAI}</td>
-          <td>{Average}</td>
-          <td>{FractionOfMTOW}</td>
-          <td>{Xdist}</td>
-          <td>{moment}</td>
-        </tr>
-      );
-    });
-  }
-  function renderSubTotals() {
-    const components = [
-      {
-        NICOLAI: "TOTAL",
-        Average: 12345,
-        FractionOfMTOW: 432,
-        Xdist: 123,
-        moment: 12,
-      },
-      {
-        NICOLAI: "INITIAL VALUE",
-        Average: 12345,
-        FractionOfMTOW: 432,
-        Xdist: 123,
-        moment: 12,
-      },
-      {
-        NICOLAI: "ERROR",
-        Average: 12345,
-        FractionOfMTOW: 432,
-        Xdist: 123,
-        moment: 12,
-      },
-      {
-        NICOLAI: "Fuel ",
-        Average: 12345,
-        FractionOfMTOW: 432,
-        Xdist: 123,
-        moment: 12,
-      },
-      {
-        NICOLAI: "Oil",
-        Average: 12345,
-        FractionOfMTOW: 432,
-        Xdist: 123,
-        moment: 12,
-      },
-      {
-        NICOLAI: "Passengers",
-        Average: 12345,
-        FractionOfMTOW: 432,
-        Xdist: 123,
-        moment: 12,
-      },
-      {
-        NICOLAI: "Payload",
-        Average: 12345,
-        FractionOfMTOW: 432,
-        Xdist: 123,
-        moment: 12,
-      },
-      {
-        NICOLAI: "Crew",
-        Average: 12345,
-        FractionOfMTOW: 432,
-        Xdist: 123,
-        moment: 12,
-      },
-    ];
-    return components.map((student, index) => {
-      const {
-        name,
-        lowerLimit,
-        upperLimit,
-        RAYMER,
-        ROSKAM,
-        USAF,
-        TORENBEEK,
-        SADRAEY,
-        CESSNA,
-        NICOLAI,
-        Average,
-        FractionOfMTOW,
-        Xdist,
-        moment,
-      } = student; //destructuring
+      } = component; // destructuring
       return (
         <tr key={index}>
           <td>{name}</td>
@@ -413,7 +316,7 @@ function DetailedWeights(props) {
                     backgroundColor: "transparent",
                     // border: "0px transparent",
                   }}
-                ></th>
+                />
                 <th colSpan={2}>Generalised</th>
               </tr>
               <tr>
@@ -434,26 +337,26 @@ function DetailedWeights(props) {
               </tr>
               <tbody>{renderTableData()}</tbody>
               <tr>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
-                <th></th>
+                <th />
+                <th />
+                <th />
+                <th />
+                <th />
+                <th />
+                <th />
+                <th />
+                <th />
+                <th />
+                <th />
+                <th />
+                <th />
+                <th />
               </tr>
             </table>
           </div>
           <InputCard
             style={{
-              width: 100 + "%",
+              width: `${100}%`,
               backgroundColor: "#21e6c1",
               marginTop: 20,
               paddingRight: 40,

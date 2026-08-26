@@ -128,7 +128,6 @@ describe("optimumPoint", () => {
   });
 });
 
-
 describe("feasibleRegion", () => {
   it("stops at the stall line and tops out on the binding curve", () => {
     const region = feasibleRegion(curves, STALL_LIMIT, DEFAULT_SENSE_STATE);
@@ -184,7 +183,6 @@ describe("feasibleRegion", () => {
     );
   });
 });
-
 
 describe("flippedSenses", () => {
   it("says nothing when every requirement reads the usual way", () => {

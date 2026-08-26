@@ -13,10 +13,11 @@
  * Copyright (c) 2020 MFUKO PAYMENTS SERVICES Ltd.
  */
 
-import React, { useState, useEffect } from "react";
-import PropTypes from "prop-types";
-import "./studentTable.css";
+import React from "react";
+import "../../styles/data-table.css";
 
+import Plotly from "plotly.js-basic-dist";
+import createPlotlyComponent from "react-plotly.js/factory";
 import {
   Badge,
   Card,
@@ -30,11 +31,9 @@ import {
   Row,
 } from "../../components/shards";
 
-import Plotly from "plotly.js-basic-dist";
-import createPlotlyComponent from "react-plotly.js/factory";
 const Plot = createPlotlyComponent(Plotly);
 
-function SrefAndPowerSizing(props) {
+function SrefAndPowerSizing() {
   const students = [
     {
       id: 1,
@@ -93,8 +92,8 @@ function SrefAndPowerSizing(props) {
   ];
 
   function renderTableData() {
-    return students.map((student, index) => {
-      const { id, name, hp, rpm, CR, TBO, Weight } = student; //destructuring
+    return students.map((student) => {
+      const { id, name, hp, rpm, CR, TBO, Weight } = student; // destructuring
       return (
         <tr key={id}>
           <td>{id}</td>
@@ -129,7 +128,7 @@ function SrefAndPowerSizing(props) {
               Stall Speed Requirement
             </CardTitle>
 
-            <InputGroup row={true} inline={true}>
+            <InputGroup row inline>
               <InputGroupAddon type="prepend">
                 <InputGroupText>CLmax</InputGroupText>
               </InputGroupAddon>
@@ -144,7 +143,7 @@ function SrefAndPowerSizing(props) {
               />
             </InputGroup>
 
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>Stall Speed</InputGroupText>
               </InputGroupAddon>
@@ -176,7 +175,7 @@ function SrefAndPowerSizing(props) {
               Max Speed Requirement
             </CardTitle>
 
-            <InputGroup row={true} inline={true}>
+            <InputGroup row inline>
               <InputGroupAddon type="prepend">
                 <InputGroupText>Vmax</InputGroupText>
               </InputGroupAddon>
@@ -193,7 +192,7 @@ function SrefAndPowerSizing(props) {
                 <InputGroupText>Knots</InputGroupText>
               </InputGroupAddon>
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>cdo</InputGroupText>
               </InputGroupAddon>
@@ -207,7 +206,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>Aspect Ratio</InputGroupText>
               </InputGroupAddon>
@@ -221,7 +220,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>k</InputGroupText>
               </InputGroupAddon>
@@ -236,7 +235,7 @@ function SrefAndPowerSizing(props) {
               />
             </InputGroup>
 
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>e</InputGroupText>
               </InputGroupAddon>
@@ -264,7 +263,7 @@ function SrefAndPowerSizing(props) {
             >
               Take-off Run Requirement
             </CardTitle>
-            <InputGroup row={true} inline={true}>
+            <InputGroup row inline>
               <InputGroupAddon type="prepend">
                 <InputGroupText>STO</InputGroupText>
               </InputGroupAddon>
@@ -281,7 +280,7 @@ function SrefAndPowerSizing(props) {
                 <InputGroupText>ft</InputGroupText>
               </InputGroupAddon>
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>CLTO</InputGroupText>
               </InputGroupAddon>
@@ -295,7 +294,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>Vtake-off</InputGroupText>
               </InputGroupAddon>
@@ -312,7 +311,7 @@ function SrefAndPowerSizing(props) {
                 <InputGroupText>knots</InputGroupText>
               </InputGroupAddon>
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>CDOHLD_TO</InputGroupText>
               </InputGroupAddon>
@@ -326,7 +325,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>CDoTO</InputGroupText>
               </InputGroupAddon>
@@ -340,7 +339,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>CDTO</InputGroupText>
               </InputGroupAddon>
@@ -354,7 +353,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>CLR</InputGroupText>
               </InputGroupAddon>
@@ -368,7 +367,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>ηP(Take-off)</InputGroupText>
               </InputGroupAddon>
@@ -382,7 +381,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>CDG</InputGroupText>
               </InputGroupAddon>
@@ -396,7 +395,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>μ</InputGroupText>
               </InputGroupAddon>
@@ -424,7 +423,7 @@ function SrefAndPowerSizing(props) {
             >
               Rate of Climb Requirement
             </CardTitle>
-            <InputGroup row={true} inline={true}>
+            <InputGroup row inline>
               <InputGroupAddon type="prepend">
                 <InputGroupText>ROC</InputGroupText>
               </InputGroupAddon>
@@ -442,7 +441,7 @@ function SrefAndPowerSizing(props) {
               </InputGroupAddon>
             </InputGroup>
 
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>ηp (climb)</InputGroupText>
               </InputGroupAddon>
@@ -470,7 +469,7 @@ function SrefAndPowerSizing(props) {
             >
               Service Ceiling Requirement
             </CardTitle>
-            <InputGroup row={true} inline={true}>
+            <InputGroup row inline>
               <InputGroupAddon type="prepend">
                 <InputGroupText>Ceiling</InputGroupText>
               </InputGroupAddon>
@@ -487,7 +486,7 @@ function SrefAndPowerSizing(props) {
                 <InputGroupText>ft</InputGroupText>
               </InputGroupAddon>
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>ρ ceiling</InputGroupText>
               </InputGroupAddon>
@@ -501,7 +500,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>σ</InputGroupText>
               </InputGroupAddon>
@@ -515,7 +514,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>ROC</InputGroupText>
               </InputGroupAddon>
@@ -546,7 +545,7 @@ function SrefAndPowerSizing(props) {
             >
               Rate of Climb Requirement
             </CardTitle>
-            <InputGroup row={true} inline={true}>
+            <InputGroup row inline>
               <InputGroupAddon type="prepend">
                 <InputGroupText>ROC</InputGroupText>
               </InputGroupAddon>
@@ -564,7 +563,7 @@ function SrefAndPowerSizing(props) {
               </InputGroupAddon>
             </InputGroup>
 
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>ηp (climb)</InputGroupText>
               </InputGroupAddon>
@@ -592,7 +591,7 @@ function SrefAndPowerSizing(props) {
             >
               Service Ceiling Requirement
             </CardTitle>
-            <InputGroup row={true} inline={true}>
+            <InputGroup row inline>
               <InputGroupAddon type="prepend">
                 <InputGroupText>Ceiling</InputGroupText>
               </InputGroupAddon>
@@ -609,7 +608,7 @@ function SrefAndPowerSizing(props) {
                 <InputGroupText>ft</InputGroupText>
               </InputGroupAddon>
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>ρ ceiling</InputGroupText>
               </InputGroupAddon>
@@ -623,7 +622,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>σ</InputGroupText>
               </InputGroupAddon>
@@ -637,7 +636,7 @@ function SrefAndPowerSizing(props) {
                 }}
               />
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>ROC</InputGroupText>
               </InputGroupAddon>
@@ -666,11 +665,11 @@ function SrefAndPowerSizing(props) {
             alignItems: "center",
           }}
         >
-          <Card style={{ width: 100 + "%" }}>
+          <Card style={{ width: `${100}%` }}>
             <Plot
               data={[]}
               layout={{
-                width: 100 + "%",
+                width: `${100}%`,
                 height: 500,
                 title: "Power Loading Vs Wing Loading",
                 font: {
@@ -692,7 +691,7 @@ function SrefAndPowerSizing(props) {
 
           <Card
             style={{
-              width: 100 + "%",
+              width: `${100}%`,
               backgroundColor: "#21e6c1",
               marginTop: 20,
               paddingRight: 40,
@@ -711,7 +710,7 @@ function SrefAndPowerSizing(props) {
             >
               WING AREA AND BHP CALCULATIONS
             </CardTitle>
-            <InputGroup row={true} inline={true}>
+            <InputGroup row inline>
               <InputGroupAddon type="prepend">
                 <InputGroupText>POWER LOADING(graph) </InputGroupText>
               </InputGroupAddon>
@@ -728,7 +727,7 @@ function SrefAndPowerSizing(props) {
                 <InputGroupText>fpm</InputGroupText>
               </InputGroupAddon>
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>WING LOADING (graph) </InputGroupText>
               </InputGroupAddon>
@@ -745,7 +744,7 @@ function SrefAndPowerSizing(props) {
                 <InputGroupText>fpm</InputGroupText>
               </InputGroupAddon>
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>WING AREA= Sref = </InputGroupText>
               </InputGroupAddon>
@@ -762,7 +761,7 @@ function SrefAndPowerSizing(props) {
                 <InputGroupText>m2</InputGroupText>
               </InputGroupAddon>
             </InputGroup>
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>POWER REQUIRED</InputGroupText>
               </InputGroupAddon>
@@ -783,7 +782,7 @@ function SrefAndPowerSizing(props) {
 
           <Card
             style={{
-              width: 100 + "%",
+              width: `${100}%`,
               backgroundColor: "#21e6c1",
               marginTop: 20,
               paddingRight: 40,
@@ -802,7 +801,7 @@ function SrefAndPowerSizing(props) {
             >
               Engine Selection
             </CardTitle>
-            <InputGroup row={true} inline={true}>
+            <InputGroup row inline>
               <InputGroupAddon type="prepend">
                 <InputGroupText>NE</InputGroupText>
               </InputGroupAddon>
@@ -837,7 +836,7 @@ function SrefAndPowerSizing(props) {
               </table>
             </div>
 
-            <InputGroup row={true} inline={true} style={{ marginTop: 10 }}>
+            <InputGroup row inline style={{ marginTop: 10 }}>
               <InputGroupAddon type="prepend">
                 <InputGroupText>Enter Engine Choice </InputGroupText>
               </InputGroupAddon>
@@ -855,7 +854,7 @@ function SrefAndPowerSizing(props) {
               style={{
                 marginTop: 10,
                 flexDirection: "row",
-                width: 100 + "%",
+                width: `${100}%`,
                 justifyContent: "center",
                 alignItems: "center",
                 borderWidth: 2,

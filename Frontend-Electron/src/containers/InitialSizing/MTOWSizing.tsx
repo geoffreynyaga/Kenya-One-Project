@@ -41,7 +41,7 @@ import VariantsRail from "./VariantsRail";
 
 import { ServerData } from "./types";
 
-export default function MTOWSizing(props) {
+export default function MTOWSizing() {
   const [data, setData] = useState<{} | null>({});
   // const [axisRange, setAxisRange] = useState<number[]>([2000, 6000]);
   const [context, setContext] = useState([3000, 6000]);
@@ -64,8 +64,8 @@ export default function MTOWSizing(props) {
           getChildData={handleDataInChildren}
         />
         <div className="grid min-h-0 flex-1 grid-cols-[1fr_300px]">
-          <InitialSizing data={data ? data : {}} />
-          <VariantsRail data={data ? data : {}} />
+          <InitialSizing data={data || {}} />
+          <VariantsRail data={data || {}} />
         </div>
       </div>
     </SliderValueContext.Provider>

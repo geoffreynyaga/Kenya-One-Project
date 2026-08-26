@@ -3,7 +3,9 @@ import { render, screen } from "@testing-library/react";
 
 import InitialSizing from "./InitialSizing";
 
-jest.mock("react-plotly.js", () => () => <div data-testid="mtow-plot" />);
+jest.mock("react-plotly.js", () => function MockPlot() {
+  return <div data-testid="mtow-plot" />;
+});
 
 test("backend-driven chart does not show manual sweep controls", () => {
   render(

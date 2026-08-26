@@ -219,7 +219,6 @@ export function optimumPoint(
   };
 }
 
-
 export interface RegionBand {
   wingLoading: number;
   /** Highest allowed power loading here, or null if nothing caps it. */
@@ -305,7 +304,6 @@ export function feasibleRegion(
     empty: false,
   };
 }
-
 
 export interface FlippedSense {
   key: ConstraintKey | "stall";

@@ -32,7 +32,6 @@ test("missing intersections are not presented as zero-weight solutions", () => {
   expect(raymerRow).not.toHaveTextContent("0 lbf");
 });
 
-
 const solved = {
   raymerIntersect: [2798],
   gudmundssonIntersect: [2673],

@@ -13,13 +13,12 @@
  * Copyright (c) 2020 MFUKO PAYMENTS SERVICES Ltd.
  */
 import React from "react";
-import PropTypes from "prop-types";
-import "../detailedWeights/componentWeights.css";
-import { Badge, Col, Container, InputGroup, Row } from "../../components/shards";
+import "../../styles/data-table.css";
+import { Badge, Col, Container, Row } from "../../components/shards";
 import MyInputGroup from "../utils/InputGroup";
 import InputCard from "../utils/InputCard";
 
-function WingStructural(props) {
+function WingStructural() {
   function renderTable() {
     // Structural geometry at root and tip
     const items = [
@@ -31,16 +30,14 @@ function WingStructural(props) {
       { A: "Torsion", B: "T", C: 8871.22, D: "lbf" },
       { A: "skin thickness", B: "tskin ≥", C: 0.00283, D: "" },
     ];
-    return items.map((item, index) => {
-      return (
-        <tr key={index}>
-          <td style={{ textAlign: "right" }}>{item.A}</td>
-          <td>{item.B}</td>
-          <td>{item.C}</td>
-          <td>{item.D}</td>
-        </tr>
-      );
-    });
+    return items.map((item, index) => (
+      <tr key={index}>
+        <td style={{ textAlign: "right" }}>{item.A}</td>
+        <td>{item.B}</td>
+        <td>{item.C}</td>
+        <td>{item.D}</td>
+      </tr>
+      ));
   }
 
   function renderTable2() {
@@ -69,16 +66,14 @@ function WingStructural(props) {
       { A: "NUMBER OF RIBS", B: "Nrib", C: 8, D: "" },
       { A: "Weight of ribs", B: "Wribs", C: 8.316781636, D: "lbf" },
     ];
-    return items.map((item, index) => {
-      return (
-        <tr key={index}>
-          <td style={{ textAlign: "right" }}>{item.A}</td>
-          <td>{item.B}</td>
-          <td>{item.C}</td>
-          <td>{item.D}</td>
-        </tr>
-      );
-    });
+    return items.map((item, index) => (
+      <tr key={index}>
+        <td style={{ textAlign: "right" }}>{item.A}</td>
+        <td>{item.B}</td>
+        <td>{item.C}</td>
+        <td>{item.D}</td>
+      </tr>
+      ));
   }
 
   return (
@@ -88,7 +83,7 @@ function WingStructural(props) {
           Wing Structural Analysis
         </h4>
         <p style={{ fontSize: 14, padding: 6, textAlign: "center" }}>
-          subscript "T"denotes tip
+          subscript &quot;T&quot; denotes tip
         </p>
       </div>
       <Row>
@@ -128,7 +123,7 @@ function WingStructural(props) {
             <hr />
 
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
-              Mmax = <Badge theme="info"> {"163,279.1"} lbf </Badge>
+              Mmax = <Badge theme="info"> 163,279.1 lbf </Badge>
             </p>
             <p style={{ marginBottom: 6, textAlign: "end", color: "#1F4287" }}>
               Acap = <Badge theme="info"> {2.963719743} in2 </Badge>
@@ -146,7 +141,7 @@ function WingStructural(props) {
           sm={1}
           xs={1}
           style={{ backgroundColor: "#FEFEFE", padding: 5 }}
-        ></Col>
+        />
 
         <Col sm={7} xs={7} style={{ backgroundColor: "#FEFEFE" }}>
           <InputCard
@@ -155,7 +150,7 @@ function WingStructural(props) {
           >
             <Row
               style={{
-                width: 100 + "%",
+                width: `${100}%`,
                 // border: "5px solid black",
                 borderColor: "red",
                 marginLeft: 10,
@@ -170,11 +165,11 @@ function WingStructural(props) {
                   textAlign: "center",
                   padding: 6,
                   margin: 0,
-                  width: 100 + "%",
+                  width: `${100}%`,
                 }}
               >
-                Available Aluminium Sheets thicknesses: 0.016",
-                0.020",0.025",0.032",0.040",0.050" , 0.063"
+                Available Aluminium Sheets thicknesses: 0.016&quot;,
+                0.020&quot;,0.025&quot;,0.032&quot;,0.040&quot;,0.050&quot; , 0.063&quot;
               </p>
               <p
                 style={{
@@ -187,11 +182,11 @@ function WingStructural(props) {
                 }}
               >
                 Rule of thumb: its always advisable not to use thickness below
-                0.02"
+                0.02&quot;
               </p>
             </Row>
 
-            <hr></hr>
+            <hr />
 
             <table id="components">
               <tr>
@@ -200,14 +195,14 @@ function WingStructural(props) {
               <tbody>
                 {renderTable()}
                 <tr>
-                  <th style={{ backgroundColor: "transparent" }}></th>
+                  <th style={{ backgroundColor: "transparent" }} />
                   <th colSpan={2}>selected sheet thickness</th>
-                  <th style={{ backgroundColor: "transparent" }}></th>
+                  <th style={{ backgroundColor: "transparent" }} />
                 </tr>
                 {renderTable2()}
               </tbody>
             </table>
-            <p style={{ padding: 6, margin: 6 }}></p>
+            <p style={{ padding: 6, margin: 6 }} />
             <p
               style={{
                 fontSize: 18,

@@ -13,17 +13,15 @@
  * Copyright (c) 2020 MFUKO PAYMENTS SERVICES Ltd.
  */
 import React from "react";
-import PropTypes from "prop-types";
+import Plotly from "plotly.js-basic-dist";
+import createPlotlyComponent from "react-plotly.js/factory";
 import { Badge, Card, Col, Container, Row } from "../../components/shards";
 import MyInputGroup from "../utils/InputGroup";
 import InputCard from "../utils/InputCard";
 
-import Plotly from "plotly.js-basic-dist";
-import createPlotlyComponent from "react-plotly.js/factory";
-
 const Plot = createPlotlyComponent(Plotly);
 
-function VnDiagram(props) {
+function VnDiagram() {
   function renderTable() {
     const items = [
       { name: "VA", speed: 1234, units: "kcas", xValue: 3.8 },
@@ -32,16 +30,14 @@ function VnDiagram(props) {
       { name: "vj", speed: 1234, units: "kcas", xValue: -3 },
       { name: "vf", speed: 1234, units: "kcas", xValue: 3.8 },
     ];
-    return items.map((item, index) => {
-      return (
-        <tr key={index}>
-          <td>{item.name}</td>
-          <td>{item.speed}</td>
-          <td>{item.units}</td>
-          <td>{item.xValue}</td>
-        </tr>
-      );
-    });
+    return items.map((item, index) => (
+      <tr key={index}>
+        <td>{item.name}</td>
+        <td>{item.speed}</td>
+        <td>{item.units}</td>
+        <td>{item.xValue}</td>
+      </tr>
+      ));
   }
 
   return (
@@ -95,7 +91,7 @@ function VnDiagram(props) {
           >
             <table>
               <tr>
-                <th></th>
+                <th />
                 <th colSpan={2}>y-axis</th>
                 <th>x-axis</th>
               </tr>
@@ -123,11 +119,11 @@ function VnDiagram(props) {
           </InputCard>
         </Col>
         <Col sm={8} xs={8} style={{ backgroundColor: "#FEFEFE" }}>
-          <Card style={{ width: 100 + "%", marginTop: 0 }}>
+          <Card style={{ width: `${100}%`, marginTop: 0 }}>
             <Plot
               data={[]}
               layout={{
-                width: 100 + "%",
+                width: `${100}%`,
                 height: 500,
                 title: "V-n Diagram ",
                 font: {
@@ -146,11 +142,11 @@ function VnDiagram(props) {
               }}
             />
           </Card>
-          <Card style={{ width: 100 + "%", marginTop: 20 }}>
+          <Card style={{ width: `${100}%`, marginTop: 20 }}>
             <Plot
               data={[]}
               layout={{
-                width: 100 + "%",
+                width: `${100}%`,
                 height: 500,
                 title: "Combined V-n Diagram ",
                 font: {

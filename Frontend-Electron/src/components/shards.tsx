@@ -23,28 +23,31 @@ type ElementProps<T extends keyof React.JSX.IntrinsicElements> =
 const joinClasses = (...classes: Array<string | false | null | undefined>) =>
   classes.filter(Boolean).join(" ");
 
+// Vermilion is the only chromatic colour, so the six Bootstrap themes collapse
+// onto the graphite scale and the accent. Weight carries the emphasis that hue
+// used to: neutral reads as context, wash as noteworthy, solid as the result.
 const THEME_BADGE: Record<string, string> = {
-  primary: "bg-blue-100 text-blue-800",
-  secondary: "bg-gray-100 text-gray-800",
-  success: "bg-green-100 text-green-800",
-  danger: "bg-red-100 text-red-800",
-  warning: "bg-yellow-100 text-yellow-800",
-  info: "bg-cyan-100 text-cyan-800",
+  primary: "bg-accent-wash text-accent-dark",
+  secondary: "bg-panel text-ink-muted",
+  success: "bg-accent-wash text-accent-dark",
+  danger: "bg-accent text-paper",
+  warning: "bg-accent-wash text-accent-dark",
+  info: "bg-panel text-ink-body",
 };
 
 const THEME_BUTTON: Record<string, string> = {
-  primary: "bg-blue-600 hover:bg-blue-700 text-white",
-  secondary: "bg-gray-600 hover:bg-gray-700 text-white",
-  success: "bg-green-600 hover:bg-green-700 text-white",
-  danger: "bg-red-600 hover:bg-red-700 text-white",
-  warning: "bg-yellow-500 hover:bg-yellow-600 text-white",
-  info: "bg-cyan-600 hover:bg-cyan-700 text-white",
+  primary: "bg-accent hover:bg-accent-dark text-paper",
+  secondary: "bg-panel hover:bg-accent-wash text-ink",
+  success: "bg-accent hover:bg-accent-dark text-paper",
+  danger: "bg-accent-dark hover:bg-accent text-paper",
+  warning: "bg-accent hover:bg-accent-dark text-paper",
+  info: "bg-panel hover:bg-accent-wash text-ink-body",
 };
 
 export const Badge = ({ className, theme = "primary", ...props }: ElementProps<"span">) => (
   <span
     className={joinClasses(
-      "inline-block rounded px-2 py-0.5 text-xs font-semibold",
+      "inline-block px-2 py-0.5 font-mono text-meta font-medium",
       THEME_BADGE[theme] ?? THEME_BADGE.primary,
       className
     )}
@@ -62,7 +65,7 @@ export const Button = ({
 }: ElementProps<"button">) => (
   <button
     className={joinClasses(
-      "rounded px-4 py-2 text-sm font-medium",
+      "px-4 py-2 text-body font-medium",
       outline ? "border border-current bg-transparent" : THEME_BUTTON[theme] ?? THEME_BUTTON.primary,
       block && "block w-full",
       className
@@ -73,7 +76,7 @@ export const Button = ({
 );
 
 export const Card = ({ className, ...props }: ElementProps<"div">) => (
-  <div className={joinClasses("rounded border border-gray-200 bg-white", className)} {...props} />
+  <div className={joinClasses("border border-rule-soft bg-field", className)} {...props} />
 );
 
 export const CardBody = ({ className, ...props }: ElementProps<"div">) => (
@@ -81,26 +84,26 @@ export const CardBody = ({ className, ...props }: ElementProps<"div">) => (
 );
 
 export const CardHeader = ({ className, ...props }: ElementProps<"div">) => (
-  <div className={joinClasses("border-b border-gray-200 p-4", className)} {...props} />
+  <div className={joinClasses("border-b border-rule-soft p-4", className)} {...props} />
 );
 
 export const CardTitle = ({ className, ...props }: ElementProps<"h5">) => (
-  <h5 className={joinClasses("text-lg font-semibold", className)} {...props} />
+  <h5 className={joinClasses("text-value-lg font-semibold text-ink", className)} {...props} />
 );
 
 const COL_WIDTHS: Record<string, string> = {
-  "1": "w-1/12",
-  "2": "w-2/12",
-  "3": "w-3/12",
-  "4": "w-4/12",
-  "5": "w-5/12",
-  "6": "w-6/12",
-  "7": "w-7/12",
-  "8": "w-8/12",
-  "9": "w-9/12",
-  "10": "w-10/12",
-  "11": "w-11/12",
-  "12": "w-12/12",
+  1: "w-1/12",
+  2: "w-2/12",
+  3: "w-3/12",
+  4: "w-4/12",
+  5: "w-5/12",
+  6: "w-6/12",
+  7: "w-7/12",
+  8: "w-8/12",
+  9: "w-9/12",
+  10: "w-10/12",
+  11: "w-11/12",
+  12: "w-12/12",
 };
 
 export const Col = ({ className, sm, xs, lg, ...props }: ElementProps<"div">) => {
@@ -125,14 +128,14 @@ export const FormGroup = ({ className, ...props }: ElementProps<"div">) => (
 
 export const FormInput = ({ className, size: _size, ...props }: ElementProps<"input">) => (
   <input
-    className={joinClasses("w-full rounded border border-gray-300 px-3 py-1.5 text-sm", className)}
+    className={joinClasses("w-full border border-rule-mid bg-field px-3 py-1.5 font-mono text-body text-ink", className)}
     {...props}
   />
 );
 
 export const FormSelect = ({ className, size: _size, ...props }: ElementProps<"select">) => (
   <select
-    className={joinClasses("w-full rounded border border-gray-300 px-3 py-1.5 text-sm", className)}
+    className={joinClasses("w-full border border-rule-mid bg-field px-3 py-1.5 font-mono text-body text-ink", className)}
     {...props}
   />
 );
@@ -153,7 +156,7 @@ export const InputGroupAddon = ({ className, type: _type, ...props }: ElementPro
 );
 
 export const InputGroupText = ({ className, ...props }: ElementProps<"span">) => (
-  <span className={joinClasses("rounded bg-gray-100 px-2 py-1 text-sm", className)} {...props} />
+  <span className={joinClasses("bg-panel px-2 py-1 text-body text-ink-muted", className)} {...props} />
 );
 
 export const Nav = ({ className, navbar: _navbar, pills: _pills, vertical, ...props }: ElementProps<"ul">) => (
@@ -166,7 +169,7 @@ export const NavItem = ({ className, ...props }: ElementProps<"li">) => (
 
 export const NavLink = ({ active, className, ...props }: ElementProps<"a">) => (
   <a
-    className={joinClasses("block px-3 py-2 text-sm", active && "font-semibold text-blue-600", className)}
+    className={joinClasses("block px-3 py-2 text-body", active && "font-semibold text-accent", className)}
     {...props}
   />
 );
@@ -181,11 +184,11 @@ export const Navbar = ({
 );
 
 export const NavbarBrand = ({ className, ...props }: ElementProps<"a">) => (
-  <a className={joinClasses("text-lg font-bold", className)} {...props} />
+  <a className={joinClasses("text-value-lg font-bold text-ink", className)} {...props} />
 );
 
 export const NavbarToggler = ({ className, children, type: _type, ...props }: ElementProps<"button">) => (
-  <button className={joinClasses("rounded border border-gray-300 p-2", className)} type="button" {...props}>
+  <button className={joinClasses("border border-rule-mid p-2", className)} type="button" {...props}>
     {children ?? <span>☰</span>}
   </button>
 );
