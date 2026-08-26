@@ -55,6 +55,8 @@ const fontFamily = {
 };
 
 const fontSize = {
+  // Glyph badges and the smallest annotations on a figure.
+  tag: ["9px", "1"],
   label: ["10px", "1"],
   micro: ["10.5px", "1"],
   meta: ["11px", "1"],
@@ -62,6 +64,8 @@ const fontSize = {
   body: ["12.5px", "1.5"],
   value: ["13px", "1"],
   "value-lg": ["15px", "1"],
+  // The figure a sheet leads with, in the summary band across its head.
+  readout: ["18px", "1"],
   sheet: ["20px", "1.1"],
 };
 
