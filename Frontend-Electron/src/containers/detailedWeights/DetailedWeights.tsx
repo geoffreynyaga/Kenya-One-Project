@@ -14,6 +14,7 @@ import {
 } from "@tanstack/react-table";
 
 import { usePersistentState } from "../../hooks/usePersistentState";
+import { Hint, HintSpec } from "../../components/sheet/Hint";
 import {
   ComponentRow,
   METHOD_LABELS,
@@ -38,31 +39,123 @@ const pct = (value: number, digits = 1) => {
   return `${(value * 100).toFixed(digits)}%`;
 };
 
-/** The geometry block, S4:S20, is the only thing typed on this sheet. */
-interface GeometrySpec {
+/** The geometry block, S4:S19, is the only thing typed on this sheet. */
+interface GeometrySpec extends HintSpec {
   field: keyof WeightsGeometry;
-  label: string;
   unit?: string;
-  cell: string;
 }
 
 const GEOMETRY_FIELDS: GeometrySpec[] = [
-  { field: "sFusM2", label: "Fuselage wetted area", unit: "m²", cell: "S4" },
-  { field: "lFusM", label: "Fuselage length", unit: "m", cell: "S5" },
-  { field: "deltaP", label: "Cabin pressure differential", cell: "S6" },
-  { field: "vPressurisedFt3", label: "Pressurised volume", unit: "ft³", cell: "S7" },
-  { field: "dFsFt", label: "Structural depth", unit: "ft", cell: "S8" },
-  { field: "wFuselageFt", label: "Fuselage width", unit: "ft", cell: "S9" },
-  { field: "dFuselageFt", label: "Fuselage depth", unit: "ft", cell: "S10" },
-  { field: "lMainGearIn", label: "Main gear strut", unit: "in", cell: "S11" },
-  { field: "lNoseGearIn", label: "Nose gear strut", unit: "in", cell: "S12" },
-  { field: "wEngineLb", label: "Bare engine weight", unit: "lb", cell: "S13" },
-  { field: "nEngines", label: "Engines", cell: "S14" },
-  { field: "nTanks", label: "Fuel tanks", cell: "S15" },
-  { field: "leDistanceM", label: "Leading-edge datum", unit: "m", cell: "S16" },
-  { field: "wInstrumentsLb", label: "Instruments", unit: "lb", cell: "S17" },
-  { field: "nIntegralTanks", label: "Integral tanks", cell: "S18" },
-  { field: "integralTankFraction", label: "Integral tank fraction", cell: "S19" },
+  {
+    field: "sFusM2",
+    label: "Fuselage wetted area",
+    unit: "m²",
+    cell: "S4",
+    body: "The whole outer surface the boundary layer sees. Raymer's fuselage weight scales on it, and the drag sheet reads the same number.",
+    cite: "Raymer §15.2",
+  },
+  {
+    field: "lFusM",
+    label: "Fuselage length",
+    unit: "m",
+    cell: "S5",
+    body: "Length the weight equations use. The workbook takes the drag sheet's overall length less 0.966 m, which is the spinner and prop.",
+  },
+  {
+    field: "deltaP",
+    label: "Cabin pressure differential",
+    cell: "S6",
+    body: "Zero for an unpressurised cabin, which drops the pressurisation term out of Raymer's fuselage weight entirely.",
+  },
+  {
+    field: "vPressurisedFt3",
+    label: "Pressurised volume",
+    unit: "ft³",
+    cell: "S7",
+    body: "Only bites when the pressure differential is non-zero; the two are multiplied together.",
+  },
+  {
+    field: "dFsFt",
+    label: "Structural depth",
+    unit: "ft",
+    cell: "S8",
+    body: "Depth of the fuselage structure at the main frame. Raymer's fuselage weight uses the length-to-depth ratio.",
+  },
+  {
+    field: "wFuselageFt",
+    label: "Fuselage width",
+    unit: "ft",
+    cell: "S9",
+    body: "Maximum width. Nicolai's fuselage weight uses width plus depth, and the Aerofoil sheet's Douglas span efficiency reads it against the span.",
+  },
+  {
+    field: "dFuselageFt",
+    label: "Fuselage depth",
+    unit: "ft",
+    cell: "S10",
+    body: "Maximum depth. The workbook mirrors the structural depth on S8 rather than entering it separately.",
+  },
+  {
+    field: "lMainGearIn",
+    label: "Main gear strut",
+    unit: "in",
+    cell: "S11",
+    body: "Strut length from the trunnion to the axle. Raymer and Nicolai both scale the gear weight on it.",
+    cite: "Raymer §15.2",
+  },
+  {
+    field: "lNoseGearIn",
+    label: "Nose gear strut",
+    unit: "in",
+    cell: "S12",
+    body: "The same for the nose leg, which carries far less load and so scales differently.",
+  },
+  {
+    field: "wEngineLb",
+    label: "Bare engine weight",
+    unit: "lb",
+    cell: "S13",
+    body: "One engine, dry, before installation. Raymer multiplies it by 2.575 to cover mounts, cowling and accessories.",
+  },
+  {
+    field: "nEngines",
+    label: "Engines",
+    cell: "S14",
+    body: "Number of engines. Also feeds the fuel-system weight, which scales on tanks and engines together.",
+  },
+  {
+    field: "nTanks",
+    label: "Fuel tanks",
+    cell: "S15",
+    body: "Separate tanks. More tanks means more plumbing and more system weight for the same fuel.",
+  },
+  {
+    field: "leDistanceM",
+    label: "Leading-edge datum",
+    unit: "m",
+    cell: "S16",
+    body: "The datum every CG on this sheet is measured from. Move it and every %MAC figure moves with it.",
+  },
+  {
+    field: "wInstrumentsLb",
+    label: "Instruments",
+    unit: "lb",
+    cell: "S17",
+    body: "Installed instruments and avionics. The workbook sets it at 40 + 0.008 × MTOW, which is 86.8 lb here.",
+    formula: "40 + 0.008 × MTOW",
+  },
+  {
+    field: "nIntegralTanks",
+    label: "Integral tanks",
+    cell: "S18",
+    body: "Wet-wing tanks, which carry no separate bladder. Zero here, so the integral term drops out of the fuel-system weight.",
+  },
+  {
+    field: "integralTankFraction",
+    label: "Integral tank fraction",
+    cell: "S19",
+    body: "Fraction of the fuel carried integrally. Multiplied by the tank count on S18 to give the term Raymer and Nicolai use.",
+  },
 ];
 
 interface ViewState {
@@ -130,7 +223,7 @@ function GeometryRow({
           </span>
         ) : null}
       </span>
-      <span className="font-mono text-label text-ink-faint">{spec.cell}</span>
+      <Hint inputId={`weights-${spec.field}`} spec={spec} />
       <input
         className="w-[96px] shrink-0 border-b border-dashed border-rule bg-transparent pb-[2px] text-right font-mono text-value text-ink outline-none focus:border-solid focus:border-accent"
         id={`weights-${spec.field}`}
