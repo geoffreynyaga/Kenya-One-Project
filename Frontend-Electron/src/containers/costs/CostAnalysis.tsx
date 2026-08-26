@@ -790,7 +790,7 @@ export default function CostAnalysis() {
             key={label}
           >
             <span className="font-mono text-label tracking-tab text-ink-label">{label}</span>
-            <span className="font-mono text-[18px] font-medium leading-none text-ink">{value}</span>
+            <span className="font-mono text-readout font-medium leading-none text-ink">{value}</span>
           </div>
         ))}
       </div>

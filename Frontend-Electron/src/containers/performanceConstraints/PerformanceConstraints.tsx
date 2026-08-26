@@ -57,7 +57,7 @@ function Hint({ inputId, spec }: { inputId: string; spec: FieldSpec }) {
       <button
         aria-describedby={helpId}
         aria-label={`Help for ${spec.label}`}
-        className="flex h-4 w-4 items-center justify-center border border-rule bg-transparent font-mono text-[9px] leading-none text-ink-muted outline-none hover:border-ink focus:border-accent focus:text-accent"
+        className="flex h-4 w-4 items-center justify-center border border-rule bg-transparent font-mono text-tag leading-none text-ink-muted outline-none hover:border-ink focus:border-accent focus:text-accent"
         data-testid={`help-${inputId}`}
         onClick={(event) => event.preventDefault()}
         type="button"
@@ -503,7 +503,7 @@ export default function PerformanceConstraints() {
             key={label}
           >
             <span className="font-mono text-label tracking-tab text-ink-label">{label}</span>
-            <span className="font-mono text-[18px] font-medium leading-none text-ink">{value}</span>
+            <span className="font-mono text-readout font-medium leading-none text-ink">{value}</span>
           </div>
         ))}
       </div>
