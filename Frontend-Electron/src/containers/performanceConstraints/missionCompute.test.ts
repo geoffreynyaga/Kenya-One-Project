@@ -49,6 +49,7 @@ const WORKBOOK = {
     bhpCruise: 711.279581947,
     bhpServiceCeiling: 179.043699216,
     bhpTurnSeaLevel: 1038.377140269,
+    bhpRateOfClimbSeaLevel: 527.8348831962398,
     bhpGroundRunSeaLevel: 604.53940539,
     bhpCruiseSeaLevel: 1010.419718515,
     bhpServiceCeilingSeaLevel: 477.13351175,
@@ -68,8 +69,13 @@ const WORKBOOK = {
     bhpCruise: 254.696763512,
     bhpServiceCeiling: 163.355700263,
     bhpTurnSeaLevel: 473.643295372,
+    bhpRateOfClimbSeaLevel: 503.5233914804096,
+    bhpGroundRunSeaLevel: 466.3939714504225,
     bhpCruiseSeaLevel: 361.813608356,
     bhpServiceCeilingSeaLevel: 435.326567047,
+    clStallBase: 1.9038153867493408,
+    clStallPlus5: 1.6262849068168728,
+    clStallMinus5: 2.2589595198004777,
   },
 };
 
@@ -106,6 +112,7 @@ describe("missionCompute parity with PERFORMANCE SIZING sheet", () => {
     expect(close(first.bhpCruise, WORKBOOK.row6.bhpCruise)).toBe(true);
     expect(close(first.bhpServiceCeiling, WORKBOOK.row6.bhpServiceCeiling)).toBe(true);
     expect(close(first.bhpTurnSeaLevel, WORKBOOK.row6.bhpTurnSeaLevel)).toBe(true);
+    expect(close(first.bhpRateOfClimbSeaLevel, WORKBOOK.row6.bhpRateOfClimbSeaLevel)).toBe(true);
     expect(close(first.bhpGroundRunSeaLevel, WORKBOOK.row6.bhpGroundRunSeaLevel)).toBe(true);
     expect(close(first.bhpCruiseSeaLevel, WORKBOOK.row6.bhpCruiseSeaLevel)).toBe(true);
     expect(close(first.bhpServiceCeilingSeaLevel, WORKBOOK.row6.bhpServiceCeilingSeaLevel)).toBe(true);
@@ -130,8 +137,13 @@ describe("missionCompute parity with PERFORMANCE SIZING sheet", () => {
     expect(close(row!.bhpCruise, WORKBOOK.row24.bhpCruise)).toBe(true);
     expect(close(row!.bhpServiceCeiling, WORKBOOK.row24.bhpServiceCeiling)).toBe(true);
     expect(close(row!.bhpTurnSeaLevel, WORKBOOK.row24.bhpTurnSeaLevel)).toBe(true);
+    expect(close(row!.bhpRateOfClimbSeaLevel, WORKBOOK.row24.bhpRateOfClimbSeaLevel)).toBe(true);
+    expect(close(row!.bhpGroundRunSeaLevel, WORKBOOK.row24.bhpGroundRunSeaLevel)).toBe(true);
     expect(close(row!.bhpCruiseSeaLevel, WORKBOOK.row24.bhpCruiseSeaLevel)).toBe(true);
     expect(close(row!.bhpServiceCeilingSeaLevel, WORKBOOK.row24.bhpServiceCeilingSeaLevel)).toBe(true);
+    expect(close(row!.clStallBase, WORKBOOK.row24.clStallBase)).toBe(true);
+    expect(close(row!.clStallPlus5, WORKBOOK.row24.clStallPlus5)).toBe(true);
+    expect(close(row!.clStallMinus5, WORKBOOK.row24.clStallMinus5)).toBe(true);
   });
 
   it("sweeps x = 6..32 step 2 like J44:J57", () => {
