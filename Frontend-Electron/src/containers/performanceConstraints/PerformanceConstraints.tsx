@@ -27,6 +27,7 @@ import {
 } from "./missionCompute";
 import { useMissionSheet } from "./usePerformanceSheet";
 import { usePersistentState } from "../../hooks/usePersistentState";
+import { Hint } from "../../components/sheet/Hint";
 import tokens from "../../design-tokens";
 
 /** All this sheet keeps for itself: which bands are open. */
@@ -45,47 +46,6 @@ const MONO = tokens.fontFamily.mono.join(", ");
 
 const formatNumber = (value: number, digits = 2) =>
   new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
-
-/**
- * Same tooltip as the Sref sheet: CSS-only, so it appears the instant the
- * pointer lands rather than waiting on the browser's native title delay.
- */
-function Hint({ inputId, spec }: { inputId: string; spec: FieldSpec }) {
-  const helpId = `${inputId}-help`;
-  return (
-    <span className="group relative inline-flex align-middle">
-      <button
-        aria-describedby={helpId}
-        aria-label={`Help for ${spec.label}`}
-        className="flex h-4 w-4 items-center justify-center border border-rule bg-transparent font-mono text-tag leading-none text-ink-muted outline-none hover:border-ink focus:border-accent focus:text-accent"
-        data-testid={`help-${inputId}`}
-        onClick={(event) => event.preventDefault()}
-        type="button"
-      >
-        ?
-      </button>
-      <span
-        className="invisible pointer-events-none absolute left-0 top-[calc(100%+6px)] z-50 w-[260px] border border-ink bg-ink px-3 py-2 font-sans text-note normal-case leading-[1.55] tracking-normal text-white opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
-        id={helpId}
-        role="tooltip"
-      >
-        {spec.body}
-        {spec.typical ? (
-          <span className="mt-[6px] block text-white/70">{spec.typical}</span>
-        ) : null}
-        <span className="mt-[8px] block border-t border-white/15 pt-[6px] font-mono text-[10px] leading-[1.5] tracking-band text-white/45">
-          {spec.cell === "—" ? null : (
-            <span className="block">
-              WORKBOOK {spec.origin ? `${spec.origin} · ` : ""}
-              {spec.cell}
-            </span>
-          )}
-          {spec.cite ? <span className="block">{spec.cite}</span> : null}
-        </span>
-      </span>
-    </span>
-  );
-}
 
 interface FieldRowProps {
   spec: FieldSpec;
