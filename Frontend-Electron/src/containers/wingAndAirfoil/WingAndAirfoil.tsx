@@ -271,7 +271,7 @@ export default function WingAndAirfoil() {
             <h2 className="text-sheet">Planform and section</h2>
             {view.sectionName ? (
               <p className="mt-[6px] font-mono text-meta tracking-band text-ink-muted">
-                SECTION · {view.sectionName.toUpperCase()}
+                APPLIED · {view.sectionName.toUpperCase()}
               </p>
             ) : null}
           </div>

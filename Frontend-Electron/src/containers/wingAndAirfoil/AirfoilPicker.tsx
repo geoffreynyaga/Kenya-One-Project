@@ -177,7 +177,7 @@ export default function AirfoilPicker({
   return (
     <section className="border border-rule-mid bg-field">
       <h3 className="flex items-center gap-2 border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
-        <span>SECTION · NACA 4 AND 5 SERIES</span>
+        <span>SECTION GENERATOR</span>
         <Hint
           inputId="airfoil-catalogue"
           spec={{
@@ -270,7 +270,7 @@ export default function AirfoilPicker({
                 <SectionPlot section={section} />
               </div>
 
-              <dl className="mt-2 font-mono text-note">
+              <dl className="mt-2 grid gap-x-7 font-mono text-note sm:grid-cols-2 xl:grid-cols-3">
                 <ValueRow
                   hint={{ body: "Maximum thickness over chord, exact from the designation." }}
                   id="af-tc"
