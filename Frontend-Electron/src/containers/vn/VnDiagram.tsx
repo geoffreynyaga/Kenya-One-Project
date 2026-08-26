@@ -32,7 +32,7 @@ interface EntrySpec {
   label: string;
   unit?: string;
   cell: string;
-  source: "entry" | "carried";
+  source: "entry" | "carried" | "seed";
   origin?: string;
 }
 
@@ -44,7 +44,7 @@ const FIELDS: EntrySpec[] = [
   { field: "wingAreaM2", label: "Wing area", unit: "m²", cell: "H80", source: "carried", origin: "SHEET 02" },
   { field: "clMax", label: "CL max", cell: "B10", source: "carried", origin: "SHEET 02" },
   { field: "stallSpeedKcas", label: "Stall speed", unit: "kt", cell: "B11", source: "carried", origin: "SHEET 02" },
-  { field: "cruiseSpeedKcas", label: "Cruise speed", unit: "kt", cell: "B16", source: "carried", origin: "SEED · TAKE-OFF WB" },
+  { field: "cruiseSpeedKcas", label: "Cruise speed", unit: "kt", cell: "B16", source: "seed", origin: "SEED · TAKE-OFF WB" },
 ];
 
 interface ViewState {
@@ -135,9 +135,14 @@ export default function VnDiagram() {
           </div>
           {FIELDS.map((spec) => (
             <label
-              className="flex items-baseline gap-2 px-[18px] py-[5px]"
+              className={`flex items-baseline gap-2 py-[5px] pr-[18px] ${
+                spec.source === "carried"
+                  ? "shadow-carried pl-[16px]"
+                  : "pl-[18px]"
+              }`}
               htmlFor={`vn-${spec.field}`}
               key={spec.field}
+              title={spec.label}
             >
               <span className="min-w-0 flex-1 truncate text-note text-ink-body">
                 {spec.label}
@@ -153,16 +158,21 @@ export default function VnDiagram() {
                 ) : null}
               </span>
               <input
-                className={`w-[92px] shrink-0 bg-transparent pb-[2px] text-right font-mono text-value outline-none ${
-                  spec.source === "entry"
-                    ? "border-b border-dashed border-rule text-ink focus:border-solid focus:border-accent"
-                    : "text-ink-muted shadow-carried"
+                className={`w-[104px] shrink-0 bg-transparent pb-[2px] text-right font-mono text-value outline-none ${
+                  spec.source === "carried"
+                    ? "text-ink-muted"
+                    : "border-b border-dashed border-rule text-ink focus:border-solid focus:border-accent"
                 }`}
                 id={`vn-${spec.field}`}
                 inputMode="decimal"
                 onChange={(event) =>
                   setField(spec.field, Number(event.target.value))}
-                value={inputs[spec.field]}
+                readOnly={spec.source === "carried"}
+                value={
+                  spec.source === "carried"
+                    ? nf(inputs[spec.field], 4)
+                    : inputs[spec.field]
+                }
               />
             </label>
           ))}
