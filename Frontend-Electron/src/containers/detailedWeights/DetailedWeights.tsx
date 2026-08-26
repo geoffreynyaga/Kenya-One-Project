@@ -119,8 +119,10 @@ function GeometryRow({
       className="flex items-baseline gap-2 px-[18px] py-[5px]"
       htmlFor={`weights-${spec.field}`}
     >
-      <span className="min-w-0 flex-1 truncate text-note text-ink-body"
-        title={spec.label}>
+      <span
+        className="min-w-0 flex-1 truncate text-note text-ink-body"
+        title={spec.label}
+      >
         {spec.label}
         {spec.unit ? (
           <span className="ml-[5px] font-mono text-label text-ink-faint">
