@@ -370,7 +370,7 @@ export default function DragAnalysis() {
           {warnings.length > 0 ? (
             <section className="mt-4 border border-rule-mid bg-field">
               <h3 className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
-                WORKBOOK NOTES
+                NOTES
               </h3>
               <ul className="px-4 py-2">
                 {warnings.map((warning) => (
