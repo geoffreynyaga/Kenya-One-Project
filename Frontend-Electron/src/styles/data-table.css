@@ -1,0 +1,64 @@
+/*
+ * The data tables in the weights, drag, wing and Sref sheets. One stylesheet
+ * for all of them: every colour, font and size resolves through the Tailwind
+ * theme (src/design-tokens.js), so no primitive is written twice.
+ */
+
+#title {
+  text-align: center;
+  font-family: theme(fontFamily.sans);
+  font-size: theme(fontSize.label[0]);
+  letter-spacing: theme(letterSpacing.label);
+  text-transform: uppercase;
+  color: theme(colors.ink.label);
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+#components,
+#students {
+  width: 100%;
+  text-align: center;
+  border-collapse: collapse;
+  background-color: theme(colors.field);
+  border: 1px solid theme(colors.rule.mid);
+  font-family: theme(fontFamily.mono);
+  font-size: theme(fontSize.note[0]);
+  color: theme(colors.ink.body);
+}
+
+#components td,
+#components th,
+#students td,
+#students th {
+  border: 1px solid theme(colors.rule.cell);
+  padding: 2px 6px;
+}
+
+#components th,
+#students th {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  background-color: theme(colors.panel);
+  font-family: theme(fontFamily.sans);
+  font-size: theme(fontSize.label[0]);
+  letter-spacing: theme(letterSpacing.label);
+  text-transform: uppercase;
+  color: theme(colors.ink.label);
+}
+
+#components tr:nth-child(even),
+#students tr:nth-child(even) {
+  background-color: theme(colors.panel);
+}
+
+#components tr:hover,
+#students tr:hover {
+  background-color: theme(colors.accent.wash);
+}
+
+/* The Sref engine table is the roomier of the two. */
+#students td,
+#students th {
+  padding: 8px;
+}

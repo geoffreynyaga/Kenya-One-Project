@@ -14,7 +14,7 @@
  */
 import React from "react";
 import PropTypes from "prop-types";
-import "./componentWeights.css";
+import "../../styles/data-table.css";
 import { Badge, Col, Container, Row } from "../../components/shards";
 import MyInputGroup from "../utils/InputGroup";
 import InputCard from "../utils/InputCard";
