@@ -598,7 +598,7 @@ export default function DetailedWeights() {
           {warnings.length > 0 ? (
             <section className="mt-4 border border-rule-mid bg-field">
               <h3 className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
-                WORKBOOK NOTES
+                NOTES
               </h3>
               <ul className="px-4 py-2">
                 {warnings.map((warning) => (
@@ -617,6 +617,18 @@ export default function DetailedWeights() {
                     </span>
                     <span className="font-mono text-meta leading-[1.6] text-ink-muted">
                       {warning.message}
+                      {warning.cell ? (
+                        <span className="ml-2 inline-flex align-middle">
+                          <Hint
+                            inputId={`warn-${warning.key}`}
+                            spec={{
+                              label: "Where this comes from",
+                              body: warning.message,
+                              cell: warning.cell,
+                            }}
+                          />
+                        </span>
+                      ) : null}
                     </span>
                   </li>
                 ))}

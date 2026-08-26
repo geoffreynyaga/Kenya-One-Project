@@ -777,7 +777,10 @@ export function weightsBreakdown(inputs: WeightsInputs): WeightsResult {
 export interface WeightsWarning {
   key: string;
   severity: "defect" | "check";
+  /** Names the quantity, never a cell — the reader has no workbook open. */
   message: string;
+  /** The workbook cell, for whoever is auditing. Shown only on hover. */
+  cell?: string;
 }
 
 /** What the sheet should say out loud rather than bury in a cell. */
@@ -788,11 +791,12 @@ export function weightsWarnings(result: WeightsResult): WeightsWarning[] {
     warnings.push({
       key: "raymer-wing-lambda",
       severity: "defect",
+      cell: "E6",
       message:
         "Raymer's wing weight takes the taper ratio in its lambda^0.04 term, " +
-        "but the workbook's structured reference resolves to the wing span. " +
-        "Reproduced here for parity; correcting it lightens the estimate by " +
-        "about 13%.",
+        "but the wing span is being fed in there instead. Reproduced as the " +
+        "sheet has always computed it; using the taper ratio lightens the " +
+        "wing estimate by about 13%.",
     });
   }
 
@@ -800,10 +804,12 @@ export function weightsWarnings(result: WeightsResult): WeightsWarning[] {
     warnings.push({
       key: "mtow-case-oil",
       severity: "defect",
+      cell: "L34 · O34",
       message:
         "The MTOW loading case leaves oil out of its weight but keeps the oil " +
-        "moment in its CG. Reproduced here for parity; counting oil in both " +
-        "puts the gross weight at 5724.93 lb and the CG about 9 mm forward.",
+        "moment in its centre of gravity, so the CG is divided by a weight " +
+        "lighter than the moment it was built from. Counting oil in both puts " +
+        "the gross weight at 5724.93 lb and the CG about 9 mm forward.",
     });
   }
 
@@ -827,8 +833,8 @@ export function weightsWarnings(result: WeightsResult): WeightsWarning[] {
       message:
         `The detailed empty weight is ${(result.emptyWeightError * 100).toFixed(
           1
-        )}% off what MTOW & WEIGHTS assumed. ` +
-        "Carry it back to Sheet 01 and re-converge.",
+        )}% off what Sheet 01 assumed. ` +
+        "Carry it back and re-converge.",
     });
   }
 
