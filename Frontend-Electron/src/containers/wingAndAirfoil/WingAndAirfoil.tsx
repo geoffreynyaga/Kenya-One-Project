@@ -303,7 +303,7 @@ export default function WingAndAirfoil() {
             <Panel
               rows={[
                 { label: "MAC at stall", value: millions(result.flow.reynoldsMeanChordStall), hint: { cell: "F6", body: "Read the tunnel table at this Reynolds number when picking the section CL max." } },
-                { label: "MAC at lift-off", value: millions(result.flow.reynoldsMeanChordTakeoff), hint: { cell: "F7", body: "At the lift-off speed seeded from the take-off workbook." } },
+                { label: "MAC at lift-off", value: millions(result.flow.reynoldsMeanChordTakeoff), hint: { cell: "F7", body: "At the lift-off speed, seeded by hand until the take-off sheet is part of the app." } },
                 { label: "MAC at cruise", value: millions(result.flow.reynoldsMeanChordCruise), hint: { cell: "F8", body: "At cruise, and at a different viscosity from the low-speed rows." } },
                 { label: "Root at stall", value: millions(result.flow.reynoldsRootStall), hint: { cell: "F10", body: "The root chord is longer, so it runs at a higher Reynolds number than the mean." } },
                 { label: "Tip at stall", value: millions(result.flow.reynoldsTipStall), hint: { cell: "F12", body: "The tip is the lowest Reynolds number on the wing, and so the first place the section data stops being trustworthy." } },
@@ -316,7 +316,7 @@ export default function WingAndAirfoil() {
                 { label: "CL α · Helmbold", value: `${nf(result.threeD.liftSlopeHelmboldPerRad, 4)} /rad`, hint: { cell: "L13", formula: "2πAR / (2 + √(AR² + 4))", body: "The simpler estimate, on aspect ratio alone. The gap between the two is the sweep and compressibility effect.", cite: "Helmbold" } },
                 { label: "CL at zero incidence", value: nf(result.threeD.liftAtZeroIncidence, 4), hint: { cell: "L14", body: "Lift the wing makes rigged at zero, from the section's zero-lift angle." } },
                 { label: "Cm α", value: nf(result.threeD.momentSlope, 4), hint: { cell: "L15", body: "Wing pitching-moment slope. Negative, so the wing alone is stable in pitch." } },
-                { label: "Wing CL max", value: nf(result.threeD.wingClmax, 4), hint: { cell: "L18", body: "Maximum lift for the whole wing. Carries a known workbook defect — see the notes below the panels." } },
+                { label: "Wing CL max", value: nf(result.threeD.wingClmax, 4), hint: { cell: "L18", body: "Maximum lift for the whole wing. Carries a known defect — see the notes below the panels." } },
                 { label: "Clean stall speed", value: `${nf(result.threeD.cleanStallSpeedKt, 2)} kt`, hint: { cell: "O20", body: "What this CL max implies for the stall. Compare it with the stall speed Sheet 02 assumed." } },
               ]}
               title="THREE-DIMENSIONAL"
