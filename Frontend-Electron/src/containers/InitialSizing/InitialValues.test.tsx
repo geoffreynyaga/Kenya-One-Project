@@ -2,6 +2,8 @@ import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
+import type { Mock } from "vitest";
+
 import InitialValues from "./InitialValues";
 import { SliderValueContext } from "./SliderValueContext";
 
@@ -12,8 +14,8 @@ const successfulResponse = {
 };
 
 const renderForm = () => {
-  const getChildData = jest.fn();
-  const setAxisRange = jest.fn();
+  const getChildData = vi.fn();
+  const setAxisRange = vi.fn();
 
   render(
     <SliderValueContext.Provider value={[[3000, 6000], setAxisRange]}>
@@ -25,14 +27,14 @@ const renderForm = () => {
 };
 
 beforeEach(() => {
-  global.fetch = jest.fn().mockResolvedValue({
+  global.fetch = vi.fn().mockResolvedValue({
     ok: true,
     json: async () => successfulResponse,
   } as Response);
 });
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 test("user can clear, replace, and submit numeric sizing values", async () => {
@@ -62,7 +64,7 @@ test("user can clear, replace, and submit numeric sizing values", async () => {
   await user.click(screen.getByText("SOLVE"));
   await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(2));
 
-  const submittedRequest = (global.fetch as jest.Mock).mock.calls[1][1];
+  const submittedRequest = (global.fetch as Mock).mock.calls[1][1];
   expect(JSON.parse(submittedRequest.body)).toMatchObject({
     aircraft_type: "GA_Single",
     range: 850,
@@ -106,7 +108,7 @@ test("sizing inputs show practical hover guidance", async () => {
 });
 
 test("backend sweep guidance is shown beside the sizing inputs", async () => {
-  global.fetch = jest.fn().mockResolvedValue({
+  global.fetch = vi.fn().mockResolvedValue({
     ok: true,
     json: async () => ({
       ...successfulResponse,
@@ -133,7 +135,7 @@ test("backend sweep guidance is shown beside the sizing inputs", async () => {
 });
 
 test("backend validation errors identify the field and recovery action", async () => {
-  global.fetch = jest.fn().mockResolvedValue({
+  global.fetch = vi.fn().mockResolvedValue({
     ok: false,
     json: async () => ({
       Status: "Error",

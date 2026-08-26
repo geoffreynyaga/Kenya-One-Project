@@ -2,9 +2,8 @@
  * Kenya One design language — token source.
  *
  * This file is the single source for both the Tailwind theme (see
- * tailwind.config.js) and for code that needs the raw values in JavaScript,
- * such as Plotly figure styling. Plain CommonJS so the Tailwind config can
- * require it.
+ * tailwind.config.ts) and for code that needs the raw values in JavaScript,
+ * such as Plotly figure styling.
  */
 
 const colors = {
@@ -93,7 +92,7 @@ const boxShadow = {
   carried: `inset 2px 0 0 ${colors.accent.DEFAULT}`,
 };
 
-module.exports = {
+export default {
   colors,
   fontFamily,
   fontSize,

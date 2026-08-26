@@ -2,6 +2,7 @@ import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Provider, createStore } from "jotai";
+import type { MockedFunction } from "vitest";
 
 import {
   SrefEngineSpec,
@@ -11,14 +12,14 @@ import {
 } from "../../api/srefDesign";
 import SrefDesign from "./SrefDesign";
 
-jest.mock("plotly.js-basic-dist", () => ({}));
-jest.mock("react-plotly.js/factory", () => ({
+vi.mock("plotly.js-basic-dist", () => ({ default: {} }));
+vi.mock("react-plotly.js/factory", () => ({
   __esModule: true,
   default: () => () => null,
 }));
-jest.mock("../../api/srefDesign", () => {
-  const actual = jest.requireActual("../../api/srefDesign");
-  return { ...actual, fetchSrefSizing: jest.fn(), fetchSrefEngines: jest.fn() };
+vi.mock("../../api/srefDesign", async () => {
+  const actual = await vi.importActual("../../api/srefDesign");
+  return { ...actual, fetchSrefSizing: vi.fn(), fetchSrefEngines: vi.fn() };
 });
 
 const result: SrefSizingResult = {
@@ -92,10 +93,10 @@ const engines: SrefEngineSpec[] = [
   },
 ];
 
-const fetchSrefSizingMock = fetchSrefSizing as jest.MockedFunction<
+const fetchSrefSizingMock = fetchSrefSizing as MockedFunction<
   typeof fetchSrefSizing
 >;
-const fetchSrefEnginesMock = fetchSrefEngines as jest.MockedFunction<
+const fetchSrefEnginesMock = fetchSrefEngines as MockedFunction<
   typeof fetchSrefEngines
 >;
 
@@ -105,7 +106,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 /**

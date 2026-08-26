@@ -1,7 +1,6 @@
-const tokens = require("./src/design-tokens");
+import tokens from "./src/design-tokens";
 
-/** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   theme: {
     extend: {

@@ -1,18 +1,19 @@
 import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { MockedFunction } from "vitest";
 
 import { CostAnalysisResult, fetchCostAnalysis } from "../../api/costAnalysis";
 import CostAnalysis from "./CostAnalysis";
 
-jest.mock("plotly.js-basic-dist", () => ({}));
-jest.mock("react-plotly.js/factory", () => ({
+vi.mock("plotly.js-basic-dist", () => ({ default: {} }));
+vi.mock("react-plotly.js/factory", () => ({
   __esModule: true,
   default: () => () => null,
 }));
-jest.mock("../../api/costAnalysis", () => {
-  const actual = jest.requireActual("../../api/costAnalysis");
-  return { ...actual, fetchCostAnalysis: jest.fn() };
+vi.mock("../../api/costAnalysis", async () => {
+  const actual = await vi.importActual("../../api/costAnalysis");
+  return { ...actual, fetchCostAnalysis: vi.fn() };
 });
 
 const result: CostAnalysisResult = {
@@ -72,7 +73,7 @@ const result: CostAnalysisResult = {
   },
 };
 
-const fetchCostAnalysisMock = fetchCostAnalysis as jest.MockedFunction<
+const fetchCostAnalysisMock = fetchCostAnalysis as MockedFunction<
   typeof fetchCostAnalysis
 >;
 
@@ -81,7 +82,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
 });
 
 test("renders backend results and blocks incomplete inputs", async () => {

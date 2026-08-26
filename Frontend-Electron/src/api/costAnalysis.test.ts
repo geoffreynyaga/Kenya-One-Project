@@ -51,12 +51,12 @@ const request: CostAnalysisRequest = {
 };
 
 afterEach(() => {
-  jest.restoreAllMocks();
+  vi.restoreAllMocks();
 });
 
 test("posts cost inputs and returns the calculation payload", async () => {
   const data = { operating: { cost_per_flight_hour: 516.4 } };
-  const fetchMock = jest.spyOn(global, "fetch").mockResolvedValue({
+  const fetchMock = vi.spyOn(global, "fetch").mockResolvedValue({
     ok: true,
     json: async () => ({ status: "success", data }),
   } as Response);
@@ -74,7 +74,7 @@ test("posts cost inputs and returns the calculation payload", async () => {
 });
 
 test("surfaces the backend recovery message", async () => {
-  jest.spyOn(global, "fetch").mockResolvedValue({
+  vi.spyOn(global, "fetch").mockResolvedValue({
     ok: false,
     json: async () => ({ status: "error", message: "Check the cost inputs." }),
   } as Response);

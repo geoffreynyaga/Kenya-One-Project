@@ -33,7 +33,7 @@
  */
 {
     "compilerOptions": {
-      "target": "es5",
+      "target": "ES2020",
       "lib": ["dom", "dom.iterable", "esnext"],
       "allowJs": true,
       "skipLibCheck": true,
@@ -42,12 +42,13 @@
       "strict": true,
       "forceConsistentCasingInFileNames": true,
       "module": "esnext",
-      "moduleResolution": "node",
+      "moduleResolution": "bundler",
       "resolveJsonModule": true,
       "isolatedModules": true,
       "noEmit": true,
-      "jsx": "preserve",
-      "noImplicitAny": false
+      "jsx": "react-jsx",
+      "noImplicitAny": false,
+      "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"]
     },
-    "include": ["src"]
+    "include": ["src", "vite.config.mts", "tailwind.config.ts"]
   }
