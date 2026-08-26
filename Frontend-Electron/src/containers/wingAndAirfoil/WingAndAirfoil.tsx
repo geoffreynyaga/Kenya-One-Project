@@ -6,6 +6,7 @@ import React, { useMemo } from "react";
 
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { Hint, HintSpec } from "../../components/sheet/Hint";
+import { ValueRow } from "../../components/sheet/ValueRow";
 import {
   aerofoil,
   AerofoilInputs,
@@ -110,30 +111,27 @@ function Field({
   );
 }
 
-function Panel({
-  title,
-  rows,
-}: {
-  title: string;
-  rows: Array<[string, string, string]>;
-}) {
+interface PanelRow {
+  label: string;
+  value: string;
+  hint: Omit<HintSpec, "label">;
+}
+
+function Panel({ title, rows }: { title: string; rows: PanelRow[] }) {
   return (
     <section className="border border-rule-mid bg-field">
       <h3 className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
         {title}
       </h3>
       <dl className="px-4 py-2 font-mono text-note">
-        {rows.map(([label, value, cell]) => (
-          <div
-            className="flex items-baseline justify-between gap-3 border-b border-rule-hair py-[6px] last:border-b-0"
-            key={label}
-          >
-            <dt className="min-w-0 truncate text-ink-body">{label}</dt>
-            <dd className="flex shrink-0 items-baseline gap-3">
-              <span className="text-label text-ink-faint">{cell}</span>
-              <span className="text-ink">{value}</span>
-            </dd>
-          </div>
+        {rows.map((row) => (
+          <ValueRow
+            hint={row.hint}
+            id={`aero-${title}-${row.label}`}
+            key={row.label}
+            label={row.label}
+            value={row.value}
+          />
         ))}
       </dl>
     </section>
@@ -252,41 +250,41 @@ export default function WingAndAirfoil() {
           <div className="grid gap-4 lg:grid-cols-2">
             <Panel
               rows={[
-                ["Span", `${nf(result.plan.spanM, 4)} m`, "B6"],
-                ["Mean chord", `${nf(result.plan.meanChordM, 4)} m`, "B7"],
-                ["Root chord", `${nf(result.plan.rootChordM, 4)} m`, "B8"],
-                ["Tip chord", `${nf(result.plan.tipChordM, 4)} m`, "B9"],
-                ["y at MGC", `${nf(result.plan.yMgcM, 4)} m`, "B16"],
+                { label: "Span", value: `${nf(result.plan.spanM, 4)} m`, hint: { cell: "B6", formula: "√(S × AR)", body: "Tip to tip. Falls straight out of the area and aspect ratio Sheet 02 settled." } },
+                { label: "Mean chord", value: `${nf(result.plan.meanChordM, 4)} m`, hint: { cell: "B7", formula: "span / AR", body: "The chord the section data is read at, and the reference length for the wing Reynolds number." } },
+                { label: "Root chord", value: `${nf(result.plan.rootChordM, 4)} m`, hint: { cell: "B8", body: "Chord at the centreline. Sets the structural depth the wing box is built in." } },
+                { label: "Tip chord", value: `${nf(result.plan.tipChordM, 4)} m`, hint: { cell: "B9", formula: "root × taper", body: "Chord at the tip." } },
+                { label: "y at MGC", value: `${nf(result.plan.yMgcM, 4)} m`, hint: { cell: "B16", body: "Spanwise station where the mean chord sits. Sheet 08 takes the bending moment about it." } },
               ]}
               title="PLANFORM"
             />
             <Panel
               rows={[
-                ["Mach at stall", nf(result.flow.machAtStall, 4), "F15"],
-                ["β · Prandtl-Glauert", nf(result.flow.prandtlGlauert, 4), "F16"],
-                ["k · slope ratio", nf(result.flow.sectionSlopeRatio, 4), "F17"],
-                ["r · LE suction", nf(result.flow.leadingEdgeSuction, 4), "F18"],
+                { label: "Mach at stall", value: nf(result.flow.machAtStall, 4), hint: { cell: "F15", body: "Low enough that compressibility barely matters, which is what the next line confirms." } },
+                { label: "β · Prandtl-Glauert", value: nf(result.flow.prandtlGlauert, 4), hint: { cell: "F16", formula: "√(1 − M²)", body: "The compressibility correction. At 0.996 the wing is effectively incompressible." } },
+                { label: "k · slope ratio", value: nf(result.flow.sectionSlopeRatio, 4), hint: { cell: "F17", body: "Section lift slope over 2π. Feeds the Polhamus three-dimensional slope." } },
+                { label: "r · LE suction", value: nf(result.flow.leadingEdgeSuction, 4), hint: { cell: "F18", body: "Leading-edge suction parameter from the leading-edge sweep. Only the Douglas span-efficiency method uses it." } },
               ]}
               title="COMPRESSIBILITY"
             />
             <Panel
               rows={[
-                ["MAC at stall", millions(result.flow.reynoldsMeanChordStall), "F6"],
-                ["MAC at lift-off", millions(result.flow.reynoldsMeanChordTakeoff), "F7"],
-                ["MAC at cruise", millions(result.flow.reynoldsMeanChordCruise), "F8"],
-                ["Root at stall", millions(result.flow.reynoldsRootStall), "F10"],
-                ["Tip at stall", millions(result.flow.reynoldsTipStall), "F12"],
+                { label: "MAC at stall", value: millions(result.flow.reynoldsMeanChordStall), hint: { cell: "F6", body: "Read the tunnel table at this Reynolds number when picking the section CL max." } },
+                { label: "MAC at lift-off", value: millions(result.flow.reynoldsMeanChordTakeoff), hint: { cell: "F7", body: "At the lift-off speed seeded from the take-off workbook." } },
+                { label: "MAC at cruise", value: millions(result.flow.reynoldsMeanChordCruise), hint: { cell: "F8", body: "At cruise, and at a different viscosity from the low-speed rows." } },
+                { label: "Root at stall", value: millions(result.flow.reynoldsRootStall), hint: { cell: "F10", body: "The root chord is longer, so it runs at a higher Reynolds number than the mean." } },
+                { label: "Tip at stall", value: millions(result.flow.reynoldsTipStall), hint: { cell: "F12", body: "The tip is the lowest Reynolds number on the wing, and so the first place the section data stops being trustworthy." } },
               ]}
               title="REYNOLDS NUMBER"
             />
             <Panel
               rows={[
-                ["CL α · Polhamus", `${nf(result.threeD.liftSlopePolhamusPerRad, 4)} /rad`, "L11"],
-                ["CL α · Helmbold", `${nf(result.threeD.liftSlopeHelmboldPerRad, 4)} /rad`, "L13"],
-                ["CL at zero incidence", nf(result.threeD.liftAtZeroIncidence, 4), "L14"],
-                ["Cm α", nf(result.threeD.momentSlope, 4), "L15"],
-                ["Wing CL max", nf(result.threeD.wingClmax, 4), "L18"],
-                ["Clean stall speed", `${nf(result.threeD.cleanStallSpeedKt, 2)} kt`, "O20"],
+                { label: "CL α · Polhamus", value: `${nf(result.threeD.liftSlopePolhamusPerRad, 4)} /rad`, hint: { cell: "L11", body: "Three-dimensional lift-curve slope accounting for sweep and compressibility.", cite: "Polhamus" } },
+                { label: "CL α · Helmbold", value: `${nf(result.threeD.liftSlopeHelmboldPerRad, 4)} /rad`, hint: { cell: "L13", formula: "2πAR / (2 + √(AR² + 4))", body: "The simpler estimate, on aspect ratio alone. The gap between the two is the sweep and compressibility effect.", cite: "Helmbold" } },
+                { label: "CL at zero incidence", value: nf(result.threeD.liftAtZeroIncidence, 4), hint: { cell: "L14", body: "Lift the wing makes rigged at zero, from the section's zero-lift angle." } },
+                { label: "Cm α", value: nf(result.threeD.momentSlope, 4), hint: { cell: "L15", body: "Wing pitching-moment slope. Negative, so the wing alone is stable in pitch." } },
+                { label: "Wing CL max", value: nf(result.threeD.wingClmax, 4), hint: { cell: "L18", body: "Maximum lift for the whole wing. Carries a known workbook defect — see the notes below the panels." } },
+                { label: "Clean stall speed", value: `${nf(result.threeD.cleanStallSpeedKt, 2)} kt`, hint: { cell: "O20", body: "What this CL max implies for the stall. Compare it with the stall speed Sheet 02 assumed." } },
               ]}
               title="THREE-DIMENSIONAL"
             />
@@ -298,35 +296,31 @@ export default function WingAndAirfoil() {
             </h3>
             <dl className="px-4 py-2 font-mono text-note">
               {result.oswald.methods.map((method) => (
-                <div
-                  className="flex items-baseline justify-between gap-3 border-b border-rule-hair py-[6px]"
+                <ValueRow
+                  hint={{
+                    cell: method.cell,
+                    body: method.inAverage
+                      ? `${method.label} estimate of the span efficiency, one of the three M33 averages.`
+                      : `${method.label} estimate. The workbook leaves it out of the M33 average, but Sheet 03 sizes its constraint diagram on this one alone.`,
+                  }}
+                  id={`oswald-${method.key}`}
                   key={method.key}
-                >
-                  <dt className="min-w-0 truncate text-ink-body">
-                    {method.label}
-                    {method.inAverage ? null : (
-                      <span className="ml-2 font-mono text-tag tracking-band text-ink-faint">
-                        NOT IN AVERAGE
-                      </span>
-                    )}
-                  </dt>
-                  <dd className="flex shrink-0 items-baseline gap-3">
-                    <span className="text-label text-ink-faint">{method.cell}</span>
-                    <span className="w-[62px] text-right text-ink">
-                      {nf(method.value, 4)}
-                    </span>
-                  </dd>
-                </div>
+                  label={method.label}
+                  note={method.inAverage ? undefined : "not in average"}
+                  value={nf(method.value, 4)}
+                />
               ))}
-              <div className="flex items-baseline justify-between gap-3 py-[8px]">
-                <dt className="font-medium text-ink">Average</dt>
-                <dd className="flex shrink-0 items-baseline gap-3">
-                  <span className="text-label text-ink-faint">M33</span>
-                  <span className="w-[62px] text-right font-medium text-accent-dark">
-                    {nf(result.oswald.average, 4)}
-                  </span>
-                </dd>
-              </div>
+              <ValueRow
+                emphasis
+                hint={{
+                  cell: "M33",
+                  formula: "mean of the swept, Brandt and Douglas methods",
+                  body: "What the induced drag rests on. The spread between the four methods carries straight through to it.",
+                }}
+                id="oswald-average"
+                label="Average"
+                value={nf(result.oswald.average, 4)}
+              />
             </dl>
           </section>
 
