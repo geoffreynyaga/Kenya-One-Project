@@ -294,12 +294,13 @@ export function structureWarnings(
     severity: "defect",
     cell: "B12 · B13",
     message: CORRECT_B562_TO_TAPER_SQUARED
-      ? "The spar-cap area and second moment are being sized on the corrected " +
-        "taper-squared term, which departs from the workbook by design."
+      ? "The spar-cap area and the second moment of area are being sized on " +
+        "the corrected taper-squared term, so they no longer match what this " +
+        "sheet has always produced."
       : "The spar-cap area and the second moment of area both read a taper " +
         "term that was never filled in, so it counts as zero. Reproduced as " +
-        "the workbook has it; correcting it raises the required cap area " +
-        "17.2% and lowers the second moment 4.3%.",
+        "the sheet has always computed it; supplying the term raises the " +
+        "required cap area 17.2% and lowers the second moment 4.3%.",
   });
 
   const skin = selectSheet(result.requiredSkinThicknessIn);
