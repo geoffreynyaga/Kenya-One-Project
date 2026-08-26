@@ -5,6 +5,7 @@
 import React, { useMemo } from "react";
 
 import { usePersistentState } from "../../hooks/usePersistentState";
+import { Hint, HintSpec } from "../../components/sheet/Hint";
 import {
   aerofoil,
   AerofoilInputs,
@@ -22,42 +23,39 @@ const nf = (value: number, digits = 3) => {
 
 const millions = (value: number) => `${nf(value / 1e6, 2)} × 10⁶`;
 
-interface EntrySpec {
+interface EntrySpec extends HintSpec {
   field: keyof AerofoilInputs;
-  label: string;
   unit?: string;
-  cell: string;
-  origin?: string;
 }
 
 const PLANFORM_FIELDS: EntrySpec[] = [
-  { field: "taperRatio", label: "Taper ratio", cell: "B5" },
-  { field: "dihedralDeg", label: "Dihedral", unit: "deg", cell: "B10" },
-  { field: "twistDeg", label: "Twist", unit: "deg", cell: "B11" },
-  { field: "sweepQuarterDeg", label: "Sweep c/4", unit: "deg", cell: "B12" },
-  { field: "sweepLeadingEdgeDeg", label: "Sweep LE", unit: "deg", cell: "B13" },
-  { field: "sweepHalfDeg", label: "Sweep c/2", unit: "deg", cell: "B14" },
-  { field: "incidenceDeg", label: "Incidence", unit: "deg", cell: "B15" },
+  { field: "taperRatio", label: "Taper ratio", cell: "B5", body: "Tip chord over root chord. Drives the root and tip chords, the mean-chord station, and the span efficiency.", typical: "0.4 to 0.5 is usual for a light twin." },
+  { field: "dihedralDeg", label: "Dihedral", unit: "deg", cell: "B10", body: "Upward angle of the wing from root to tip. Buys lateral stability; not used by the equations on this sheet." },
+  { field: "twistDeg", label: "Twist", unit: "deg", cell: "B11", body: "Washout, negative when the tip is at lower incidence. Keeps the tip flying when the root stalls." },
+  { field: "sweepQuarterDeg", label: "Sweep c/4", unit: "deg", cell: "B12", body: "Sweep of the quarter-chord line. Raymer's wing weight and the Polhamus slope both read it." },
+  { field: "sweepLeadingEdgeDeg", label: "Sweep LE", unit: "deg", cell: "B13", body: "Sweep of the leading edge. Sets the leading-edge suction parameter on F18 and the swept-wing span efficiency." },
+  { field: "sweepHalfDeg", label: "Sweep c/2", unit: "deg", cell: "B14", body: "Sweep of the half-chord line. The Polhamus lift slope and the Brandt span efficiency both use it." },
+  { field: "incidenceDeg", label: "Incidence", unit: "deg", cell: "B15", body: "Angle the wing is rigged at relative to the fuselage datum." },
 ];
 
 const SECTION_FIELDS: EntrySpec[] = [
-  { field: "sectionLiftSlopePerDeg", label: "Cl α", unit: "per deg", cell: "B22" },
-  { field: "zeroLiftAlphaDeg", label: "α zero-lift", unit: "deg", cell: "B24" },
-  { field: "sectionMomentSlope", label: "Cm α", cell: "B28" },
-  { field: "thicknessToChord", label: "t/c", cell: "B32" },
-  { field: "clmaxAtRe3M", label: "cl max @ Re 3M", cell: "I4" },
-  { field: "clmaxAtRe6M", label: "cl max @ Re 6M", cell: "I5" },
+  { field: "sectionLiftSlopePerDeg", label: "Cl α", unit: "per deg", cell: "B22", body: "Two-dimensional lift-curve slope of the section, from the tunnel data. Multiplied by 57.3 to get the per-radian value the 3-D corrections use.", typical: "About 0.1 per degree for a conventional section." },
+  { field: "zeroLiftAlphaDeg", label: "α zero-lift", unit: "deg", cell: "B24", body: "Angle of attack at which the section makes no lift. Sets the wing's lift at zero incidence on L14." },
+  { field: "sectionMomentSlope", label: "Cm α", cell: "B28", body: "Two-dimensional pitching-moment slope. Scaled to the wing on L15 and read by the structural sheet for the torsion." },
+  { field: "thicknessToChord", label: "t/c", cell: "B32", body: "Maximum thickness over chord. Drives Raymer's wing weight, the drag form factor and the structural depth.", typical: "0.12 is a common compromise on a light aircraft." },
+  { field: "clmaxAtRe3M", label: "cl max @ Re 3M", cell: "I4", body: "Section maximum lift at Reynolds 3 million, from the tunnel table. Read at the tip end of the interpolation.", cite: "NACA R-824" },
+  { field: "clmaxAtRe6M", label: "cl max @ Re 6M", cell: "I5", body: "Section maximum lift at Reynolds 6 million. The interpolation on L16 starts here and works out toward the mean-chord station.", cite: "NACA R-824" },
 ];
 
 const CARRIED_FIELDS: EntrySpec[] = [
-  { field: "wingAreaM2", label: "Wing area", unit: "m²", cell: "H80", origin: "SHEET 02" },
-  { field: "aspectRatio", label: "Aspect ratio", cell: "B17", origin: "SHEET 02" },
-  { field: "stallSpeedKcas", label: "Stall speed", unit: "kt", cell: "B11", origin: "SHEET 02" },
-  { field: "cd0", label: "CD0", cell: "B15", origin: "SHEET 02" },
-  { field: "mtowLb", label: "MTOW", unit: "lb", cell: "I32", origin: "SHEET 01" },
-  { field: "fuselageWidthFt", label: "Fuselage width", unit: "ft", cell: "S9", origin: "SHEET 04" },
-  { field: "liftoffSpeedKt", label: "Lift-off speed", unit: "kt", cell: "S26", origin: "SEED · TAKE-OFF WB" },
-  { field: "cruiseSpeedKt", label: "Cruise speed", unit: "kt", cell: "B11", origin: "SEED · CRUISE WB" },
+  { field: "wingAreaM2", label: "Wing area", unit: "m²", cell: "H80", origin: "SHEET 02", body: "Reference area from the matching plot. With aspect ratio it fixes the span and every chord on this sheet." },
+  { field: "aspectRatio", label: "Aspect ratio", cell: "B17", origin: "SHEET 02", body: "Span squared over area. The single strongest lever on induced drag and on the 3-D lift slope." },
+  { field: "stallSpeedKcas", label: "Stall speed", unit: "kt", cell: "B11", origin: "SHEET 02", body: "One-g stall speed. Sets the Reynolds numbers the airfoil data has to be read at." },
+  { field: "cd0", label: "CD0", cell: "B15", origin: "SHEET 02", body: "Parasite drag coefficient from Sheet 07. Only the Douglas span-efficiency method reads it." },
+  { field: "mtowLb", label: "MTOW", unit: "lb", cell: "I32", origin: "SHEET 01", body: "Design gross weight, used for the clean stall speed on O20." },
+  { field: "fuselageWidthFt", label: "Fuselage width", unit: "ft", cell: "S9", origin: "SHEET 04", body: "Fuselage width from Sheet 04. The Douglas method penalises span efficiency for the span the fuselage occupies." },
+  { field: "liftoffSpeedKt", label: "Lift-off speed", unit: "kt", cell: "S26", origin: "SEED · TAKE-OFF WB", body: "Lift-off speed, for the take-off Reynolds number. Seeded until the take-off sheet is ported." },
+  { field: "cruiseSpeedKt", label: "Cruise speed", unit: "kt", cell: "B11", origin: "SEED · CRUISE WB", body: "Cruise speed, for the cruise Reynolds number. Seeded until the cruise sheet is ported." },
 ];
 
 interface ViewState {
@@ -94,12 +92,8 @@ function Field({
             [{spec.unit}]
           </span>
         ) : null}
-        {spec.origin ? (
-          <span className="block font-mono text-label tracking-band text-ink-faint">
-            {spec.origin} · {spec.cell}
-          </span>
-        ) : null}
       </span>
+      <Hint inputId={`aero-${spec.field}`} spec={spec} />
       <input
         className={`w-[104px] shrink-0 bg-transparent pb-[2px] text-right font-mono text-value outline-none ${
           spec.origin
