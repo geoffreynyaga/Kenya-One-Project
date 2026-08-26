@@ -10,6 +10,8 @@ import {
 } from "@tanstack/react-table";
 
 import { usePersistentState } from "../../hooks/usePersistentState";
+import { Hint, HintSpec } from "../../components/sheet/Hint";
+import { ValueRow } from "../../components/sheet/ValueRow";
 import { dragBuildUp, DragInputs, dragWarnings, SurfaceDrag } from "./dragCompute";
 import { WORKBOOK_INPUTS } from "./dragFixture";
 
@@ -24,47 +26,44 @@ const nf = (value: number, digits = 4) => {
 const millions = (value: number) => `${nf(value / 1e6, 2)} × 10⁶`;
 const counts = (value: number) => `${nf(value * 1e4, 1)}`;
 
-interface EntrySpec {
+interface EntrySpec extends HintSpec {
   field: keyof DragInputs;
-  label: string;
   unit?: string;
-  cell: string;
-  origin?: string;
 }
 
 const WETTED_FIELDS: EntrySpec[] = [
-  { field: "wingWettedM2", label: "Wing wetted", unit: "m²", cell: "H4" },
-  { field: "horizontalTailWettedM2", label: "H-tail wetted", unit: "m²", cell: "H5" },
-  { field: "verticalTailWettedM2", label: "V-tail wetted", unit: "m²", cell: "H6" },
-  { field: "cockpitAreaM2", label: "Cockpit frontal", unit: "m²", cell: "H7" },
+  { field: "wingWettedM2", label: "Wing wetted", unit: "m²", cell: "H4", body: "Both wing surfaces the boundary layer sees, roughly twice the plan area. The largest single contributor to parasite drag." },
+  { field: "horizontalTailWettedM2", label: "H-tail wetted", unit: "m²", cell: "H5", body: "Wetted area of the tailplane. Carries a 10% interference allowance the wing does not." },
+  { field: "verticalTailWettedM2", label: "V-tail wetted", unit: "m²", cell: "H6", body: "Wetted area of the fin. Also carries the 10% interference allowance." },
+  { field: "cockpitAreaM2", label: "Cockpit frontal", unit: "m²", cell: "H7", body: "Frontal area of the canopy, charged at a flat-plate coefficient of 0.07." },
 ];
 
 const SHAPE_FIELDS: EntrySpec[] = [
-  { field: "wingMaxThicknessSweepDeg", label: "Wing Λm", unit: "deg", cell: "H11" },
-  { field: "horizontalTailSweepDeg", label: "H-tail Λm", unit: "deg", cell: "H12" },
-  { field: "verticalTailSweepDeg", label: "V-tail Λm", unit: "deg", cell: "H13" },
-  { field: "tailMaxThicknessStation", label: "(x/c)m tail", cell: "L3" },
+  { field: "wingMaxThicknessSweepDeg", label: "Wing Λm", unit: "deg", cell: "H11", body: "Sweep of the wing's maximum-thickness line, which is what the form factor uses rather than the quarter-chord sweep." },
+  { field: "horizontalTailSweepDeg", label: "H-tail Λm", unit: "deg", cell: "H12", body: "The same line on the tailplane." },
+  { field: "verticalTailSweepDeg", label: "V-tail Λm", unit: "deg", cell: "H13", body: "The same line on the fin. Fins are usually swept much harder than the wing." },
+  { field: "tailMaxThicknessStation", label: "(x/c)m tail", cell: "L3", body: "Chordwise station of maximum thickness on both tails, as a fraction of chord." },
 ];
 
 const GEAR_FIELDS: EntrySpec[] = [
-  { field: "tyreWidthIn", label: "Tyre width", unit: "in", cell: "L8" },
-  { field: "tyreDiameterIn", label: "Tyre diameter", unit: "in", cell: "L9" },
-  { field: "strutHeightM", label: "Strut height", unit: "m", cell: "L5" },
-  { field: "strutDiameterIn", label: "Strut diameter", unit: "in", cell: "L6" },
+  { field: "tyreWidthIn", label: "Tyre width", unit: "in", cell: "L8", body: "Tyre width. With the diameter it gives the frontal area the gear drag is built from." },
+  { field: "tyreDiameterIn", label: "Tyre diameter", unit: "in", cell: "L9", body: "Tyre diameter." },
+  { field: "strutHeightM", label: "Strut height", unit: "m", cell: "L5", body: "Exposed strut length in the airflow." },
+  { field: "strutDiameterIn", label: "Strut diameter", unit: "in", cell: "L6", body: "Strut diameter. Struts are charged a higher coefficient than tyres because they are less streamlined." },
 ];
 
 const CARRIED_FIELDS: EntrySpec[] = [
-  { field: "wingAreaM2", label: "Wing area", unit: "m²", cell: "H80", origin: "SHEET 02" },
-  { field: "meanChordM", label: "Mean chord", unit: "m", cell: "B7", origin: "SHEET 06" },
-  { field: "wingThicknessToChord", label: "Wing t/c", cell: "B32", origin: "SHEET 06" },
-  { field: "wingMaxThicknessStation", label: "Wing (x/c)m", cell: "B33", origin: "SHEET 06" },
-  { field: "fuselageWettedM2", label: "Fuselage wetted", unit: "m²", cell: "S4", origin: "SHEET 04" },
-  { field: "cruiseSpeedKt", label: "Cruise speed", unit: "kt", cell: "B16", origin: "SEED · TAKE-OFF WB" },
-  { field: "fuselageLengthM", label: "Fuselage length", unit: "m", cell: "B4", origin: "SEED · ELEVATOR WB" },
-  { field: "fuselageDiameterM", label: "Fuselage diameter", unit: "m", cell: "B3", origin: "SEED · ELEVATOR WB" },
-  { field: "horizontalTailChordM", label: "H-tail chord", unit: "m", cell: "L5", origin: "SEED · AILERON WB" },
-  { field: "verticalTailChordM", label: "V-tail chord", unit: "m", cell: "K6", origin: "SEED · RUDDER WB" },
-  { field: "engineWeightLb", label: "Engine weight", unit: "lb", cell: "C7", origin: "SEED · TAKE-OFF WB" },
+  { field: "wingAreaM2", label: "Wing area", unit: "m²", cell: "H80", origin: "SHEET 02", body: "Reference area every CD0 on this sheet is divided by." },
+  { field: "meanChordM", label: "Mean chord", unit: "m", cell: "B7", origin: "SHEET 06", body: "Reference length for the wing Reynolds number." },
+  { field: "wingThicknessToChord", label: "Wing t/c", cell: "B32", origin: "SHEET 06", body: "Wing thickness ratio, which drives the lifting-surface form factor." },
+  { field: "wingMaxThicknessStation", label: "Wing (x/c)m", cell: "B33", origin: "SHEET 06", body: "Chordwise station of maximum thickness on the wing." },
+  { field: "fuselageWettedM2", label: "Fuselage wetted", unit: "m²", cell: "S4", origin: "SHEET 04", body: "Fuselage wetted area, typed on Sheet 04 and read back here." },
+  { field: "cruiseSpeedKt", label: "Cruise speed", unit: "kt", cell: "B16", origin: "SEED · TAKE-OFF WB", body: "The speed every Reynolds number and the cruise Mach are taken at. Seeded until the take-off sheet is ported." },
+  { field: "fuselageLengthM", label: "Fuselage length", unit: "m", cell: "B4", origin: "SEED · ELEVATOR WB", body: "Reference length for the fuselage Reynolds number and, with the diameter, the fineness ratio." },
+  { field: "fuselageDiameterM", label: "Fuselage diameter", unit: "m", cell: "B3", origin: "SEED · ELEVATOR WB", body: "Maximum fuselage diameter." },
+  { field: "horizontalTailChordM", label: "H-tail chord", unit: "m", cell: "L5", origin: "SEED · AILERON WB", body: "Reference chord for the tailplane Reynolds number." },
+  { field: "verticalTailChordM", label: "V-tail chord", unit: "m", cell: "K6", origin: "SEED · RUDDER WB", body: "Reference chord for the fin Reynolds number." },
+  { field: "engineWeightLb", label: "Engine weight", unit: "lb", cell: "C7", origin: "SEED · TAKE-OFF WB", body: "Installed engine weight. Both the cooling and the miscellaneous allowances scale on it." },
 ];
 
 interface ViewState {
@@ -209,12 +208,8 @@ export default function DragAnalysis() {
             [{spec.unit}]
           </span>
         ) : null}
-        {spec.origin ? (
-          <span className="block font-mono text-label tracking-band text-ink-faint">
-            {spec.origin} · {spec.cell}
-          </span>
-        ) : null}
       </span>
+      <Hint inputId={`drag-${spec.field}`} spec={spec} />
       <input
         className={`w-[104px] shrink-0 bg-transparent pb-[2px] text-right font-mono text-value outline-none ${
           spec.origin
@@ -324,26 +319,19 @@ export default function DragAnalysis() {
                 NON-SURFACE ITEMS · CD0 × 10⁴
               </h3>
               <dl className="px-4 py-2 font-mono text-note">
-                {[
-                  ["Landing gear", result.gearCd0, "E9"],
-                  ["Cockpit", result.cockpitCd0, "E10"],
-                  ["Cooling", result.coolingCd0, "E12"],
-                  ["Miscellaneous", result.miscCd0, "E13"],
-                ].map(([label, value, cell]) => (
-                  <div
-                    className="flex items-baseline justify-between gap-3 border-b border-rule-hair py-[6px] last:border-b-0"
-                    key={label as string}
-                  >
-                    <dt className="text-ink-body">{label as string}</dt>
-                    <dd className="flex shrink-0 items-baseline gap-3">
-                      <span className="text-label text-ink-faint">
-                        {cell as string}
-                      </span>
-                      <span className="w-[54px] text-right text-ink">
-                        {counts(value as number)}
-                      </span>
-                    </dd>
-                  </div>
+                {([
+                  ["Landing gear", result.gearCd0, "E9", "Tyre and strut frontal areas turned into a drag area, then a 1.2 factor."],
+                  ["Cockpit", result.cockpitCd0, "E10", "Frontal area at a flat-plate coefficient of 0.07."],
+                  ["Cooling", result.coolingCd0, "E12", "Scales on engine weight over cruise speed and on ambient temperature. The workbook counts it three times."],
+                  ["Miscellaneous", result.miscCd0, "E13", "A flat allowance of 2e-4 per pound of engine."],
+                ] as Array<[string, number, string, string]>).map(([label, value, cell, body]) => (
+                  <ValueRow
+                    hint={{ cell, body }}
+                    id={`drag-item-${cell}`}
+                    key={label}
+                    label={label}
+                    value={counts(value)}
+                  />
                 ))}
               </dl>
             </section>
@@ -354,36 +342,22 @@ export default function DragAnalysis() {
               </h3>
               <dl className="px-4 py-2 font-mono text-note">
                 {totals.map(([label, value, cell, isTotal]) => (
-                  <div
-                    className={`flex items-baseline justify-between gap-3 py-[6px] ${
-                      isTotal
-                        ? "mt-1 border-t border-rule-mid pt-[10px]"
-                        : "border-b border-rule-hair"
-                    }`}
+                  <ValueRow
+                    emphasis={isTotal as boolean}
+                    hint={{
+                      cell: cell as string,
+                      body:
+                        cell === "E11"
+                          ? "Every surface plus gear and cockpit, times 1.05 for interference."
+                          : cell === "E15"
+                          ? "The CD0 Sheet 02 carries as B15, which Sheet 03's constraint diagram rests on."
+                          : `${label as string} contribution to CD0.`,
+                    }}
+                    id={`drag-total-${cell as string}`}
                     key={label as string}
-                  >
-                    <dt
-                      className={
-                        isTotal ? "font-medium text-ink" : "text-ink-body"
-                      }
-                    >
-                      {label as string}
-                    </dt>
-                    <dd className="flex shrink-0 items-baseline gap-3">
-                      <span className="text-label text-ink-faint">
-                        {cell as string}
-                      </span>
-                      <span
-                        className={`w-[68px] text-right ${
-                          isTotal
-                            ? "font-medium text-accent-dark"
-                            : "text-ink"
-                        }`}
-                      >
-                        {nf(value as number, 5)}
-                      </span>
-                    </dd>
-                  </div>
+                    label={label as string}
+                    value={nf(value as number, 5)}
+                  />
                 ))}
               </dl>
               <p className="border-t border-rule-hair px-4 py-3 font-mono text-meta leading-[1.6] text-ink-muted">
