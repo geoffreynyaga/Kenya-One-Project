@@ -261,7 +261,10 @@ export function dragBuildUp(inputs: DragInputs): DragResult {
 export interface DragWarning {
   key: string;
   severity: "defect" | "check";
+  /** Names the quantity, never a cell — the reader has no workbook open. */
   message: string;
+  /** The workbook cell, for whoever is auditing. Shown only on hover. */
+  cell?: string;
 }
 
 export function dragWarnings(result: DragResult): DragWarning[] {
@@ -272,10 +275,11 @@ export function dragWarnings(result: DragResult): DragWarning[] {
     warnings.push({
       key: "cooling-share",
       severity: "check",
+      cell: "E12",
       message:
-        `Cooling is ${(coolingShare * 100).toFixed(1)}% of CD0. The workbook ` +
-        "counts its drag area three times on E12; confirm that is one count " +
-        "per cylinder bank rather than a stray factor.",
+        `Cooling is ${(coolingShare * 100).toFixed(1)}% of the total parasite ` +
+        "drag. Its drag area is counted three times over; confirm that is one " +
+        "count per cylinder bank rather than a stray factor.",
     });
   }
 
@@ -283,6 +287,7 @@ export function dragWarnings(result: DragResult): DragWarning[] {
     warnings.push({
       key: "fineness",
       severity: "check",
+      cell: "P9",
       message:
         `A fineness ratio of ${result.finenessRatio.toFixed(2)} is outside the ` +
         "4 to 8 band the body form factor is usually fitted over.",
