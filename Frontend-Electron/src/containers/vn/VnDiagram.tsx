@@ -7,6 +7,7 @@ import createPlotlyComponent from "react-plotly.js/factory";
 
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { Hint, HintSpec } from "../../components/sheet/Hint";
+import { ValueRow } from "../../components/sheet/ValueRow";
 import tokens from "../../design-tokens";
 import {
   deriveVn,
@@ -145,21 +146,23 @@ export default function VnDiagram() {
     ["CORNER SPEED", `${nf(derived.cornerSpeedKcas, 1)} kt`],
   ];
 
-  const characteristics: Array<[string, string, string]> = [
-    ["Vs · stall", `${nf(inputs.stallSpeedKcas, 1)} kt`, "B11"],
-    ["Vs1 · inverted stall", `${nf(derived.invertedStallSpeedKcas, 1)} kt`, "F5"],
-    ["Vj · negative corner", `${nf(derived.negativeCornerSpeedKcas, 1)} kt`, "F6"],
-    ["VA · corner", `${nf(derived.cornerSpeedKcas, 1)} kt`, "F3"],
-    ["VC · cruise", `${nf(inputs.cruiseSpeedKcas, 1)} kt`, "B16"],
-    ["VD · dive", `${nf(derived.diveSpeedKcas, 1)} kt`, "C9"],
+  type Row = { label: string; value: string; hint: Omit<HintSpec, "label"> };
+
+  const characteristics: Row[] = [
+    { label: "Vs · stall", value: `${nf(inputs.stallSpeedKcas, 1)} kt`, hint: { cell: "B11", origin: "SHEET 02", body: "One-g stall speed clean. The envelope's first corner." } },
+    { label: "Vs1 · inverted stall", value: `${nf(derived.invertedStallSpeedKcas, 1)} kt`, hint: { cell: "F5", body: "Stall speed inverted, where the negative parabola reaches minus one g." } },
+    { label: "Vj · negative corner", value: `${nf(derived.negativeCornerSpeedKcas, 1)} kt`, hint: { cell: "F6", body: "Where the negative parabola meets the maximum negative load factor." } },
+    { label: "VA · corner", value: `${nf(derived.cornerSpeedKcas, 1)} kt`, hint: { cell: "F3", body: "Manoeuvre speed. Below it the wing stalls before the structure is overloaded, which makes it the fastest speed at which full control deflection is safe.", cite: "FAR 23.335(c)" } },
+    { label: "VC · cruise", value: `${nf(inputs.cruiseSpeedKcas, 1)} kt`, hint: { cell: "B16", origin: "TAKE-OFF WB", body: "Design cruise speed." } },
+    { label: "VD · dive", value: `${nf(derived.diveSpeedKcas, 1)} kt`, hint: { cell: "C9", formula: "1.4 × VC", body: "Design dive speed, the right-hand edge of the envelope." } },
   ];
 
-  const loadFactors: Array<[string, string, string]> = [
-    ["FAR 23 floor", nf(derived.minimumLimitLoadFactor, 3), "C2"],
-    ["Limit", nf(inputs.limitLoadFactor, 2), "C3"],
-    ["Ultimate · 1.5 x limit", nf(derived.ultimateLoadFactor, 2), "C4"],
-    ["Landing · 1.5 x gear", nf(derived.landingLoadFactor, 2), "C5"],
-    ["Maximum negative", nf(derived.maxNegativeLoadFactor, 2), "C7"],
+  const loadFactors: Row[] = [
+    { label: "FAR 23 floor", value: nf(derived.minimumLimitLoadFactor, 3), hint: { cell: "C2", formula: "2.1 + 24000/(W + 10000)", body: "The least limit load factor the rule allows at this weight.", cite: "FAR 23.337" } },
+    { label: "Limit", value: nf(inputs.limitLoadFactor, 2), hint: { cell: "C3", body: "The chosen limit load factor. Must clear the floor above." } },
+    { label: "Ultimate · 1.5 × limit", value: nf(derived.ultimateLoadFactor, 2), hint: { cell: "C4", formula: "1.5 × limit", body: "What Sheet 04 sizes every component against, and what Sheet 08 sizes the spar caps against." } },
+    { label: "Landing · 1.5 × gear", value: nf(derived.landingLoadFactor, 2), hint: { cell: "C5", formula: "1.5 × gear", body: "Sizes the main and nose gear weights on Sheet 04." } },
+    { label: "Maximum negative", value: nf(derived.maxNegativeLoadFactor, 2), hint: { cell: "C7", formula: "−0.4 × limit", body: "The floor of the envelope." } },
   ];
 
   return (
@@ -327,17 +330,14 @@ export default function VnDiagram() {
               CHARACTERISTIC SPEEDS
             </h3>
             <dl className="font-mono text-note">
-              {characteristics.map(([label, value, cell]) => (
-                <div
-                  className="flex items-baseline justify-between gap-2 border-b border-rule-hair py-[6px] last:border-b-0"
-                  key={label}
-                >
-                  <dt className="min-w-0 truncate text-ink-body">{label}</dt>
-                  <dd className="flex shrink-0 items-baseline gap-2">
-                    <span className="text-label text-ink-faint">{cell}</span>
-                    <span className="text-ink">{value}</span>
-                  </dd>
-                </div>
+              {characteristics.map((row) => (
+                <ValueRow
+                  hint={row.hint}
+                  id={`vn-char-${row.label}`}
+                  key={row.label}
+                  label={row.label}
+                  value={row.value}
+                />
               ))}
             </dl>
           </section>
@@ -347,23 +347,15 @@ export default function VnDiagram() {
               LOAD FACTORS
             </h3>
             <dl className="font-mono text-note">
-              {loadFactors.map(([label, value, cell]) => (
-                <div
-                  className="flex items-baseline justify-between gap-2 border-b border-rule-hair py-[6px] last:border-b-0"
-                  key={label}
-                >
-                  <dt className="min-w-0 truncate text-ink-body">{label}</dt>
-                  <dd className="flex shrink-0 items-baseline gap-2">
-                    <span className="text-label text-ink-faint">{cell}</span>
-                    <span
-                      className={
-                        cell === "C4" ? "text-accent-dark" : "text-ink"
-                      }
-                    >
-                      {value}
-                    </span>
-                  </dd>
-                </div>
+              {loadFactors.map((row) => (
+                <ValueRow
+                  emphasis={row.hint.cell === "C4"}
+                  hint={row.hint}
+                  id={`vn-load-${row.label}`}
+                  key={row.label}
+                  label={row.label}
+                  value={row.value}
+                />
               ))}
             </dl>
           </section>
