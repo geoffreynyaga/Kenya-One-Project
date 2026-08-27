@@ -41,6 +41,10 @@ const DEFAULT_VIEW: ViewState = {
   openSections: ["requirements"],
 };
 
+const derivedSpecs = Object.fromEntries(
+  derivedFields.map((spec) => [spec.field, spec])
+) as Record<MissionField, FieldSpec>;
+
 const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
 
@@ -332,6 +336,37 @@ export default function PerformanceConstraints() {
   const powerRequiredHp = useAtomValue(powerRequiredHpAtom);
 
   const derived = useMemo(() => deriveMission(numbers), [numbers]);
+
+  /*
+   * The rail no longer lists these. Labels are symbol-first because this is a
+   * readout, not an entry row; the hint carries the name and the formula.
+   */
+  const derivedReadout: Array<{
+    field: MissionField;
+    label: string;
+    value: string;
+  }> = [
+    {
+      field: "oswaldEfficiency",
+      label: "e · RAYMER 12.49",
+      value: derived.oswaldEfficiency.toFixed(4),
+    },
+    {
+      field: "inducedDragFactor",
+      label: "k",
+      value: derived.inducedDragFactor.toFixed(5),
+    },
+    {
+      field: "sigma",
+      label: "σ AT CRUISE",
+      value: derived.sigma.toFixed(4),
+    },
+    {
+      field: "sigmaServiceCeiling",
+      label: "σ AT CEILING",
+      value: derived.sigmaServiceCeiling.toFixed(4),
+    },
+  ];
   const curves = useMemo(() => missionCurves(numbers, derived), [numbers, derived]);
   const verdict = useMemo(
     () => missionVerdict(curves, numbers.desiredWingLoading, powerRequiredHp),
@@ -447,7 +482,6 @@ export default function PerformanceConstraints() {
 
           {renderSection("requirements", "ENTRY · REQUIREMENTS", requirementFields)}
           {renderSection("carried", "CARRIED · UPSTREAM", carriedFields)}
-          {renderSection("derived", "DERIVED · THIS SHEET", derivedFields)}
 
           <button
             className="mt-4 w-full border border-rule bg-panel px-4 py-3 font-mono text-meta tracking-tab text-ink-faint"
@@ -570,22 +604,15 @@ export default function PerformanceConstraints() {
             DERIVED HERE
           </h2>
           <dl className="space-y-[9px] px-[18px] pb-[14px] font-mono text-note">
-            <div className="flex justify-between gap-3">
-              <dt className="text-ink-label">e · RAYMER 12.49</dt>
-              <dd className="text-ink">{derived.oswaldEfficiency.toFixed(4)}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="text-ink-label">k</dt>
-              <dd className="text-ink">{derived.inducedDragFactor.toFixed(5)}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="text-ink-label">σ AT CRUISE</dt>
-              <dd className="text-ink">{derived.sigma.toFixed(4)}</dd>
-            </div>
-            <div className="flex justify-between gap-3">
-              <dt className="text-ink-label">σ AT CEILING</dt>
-              <dd className="text-ink">{derived.sigmaServiceCeiling.toFixed(4)}</dd>
-            </div>
+            {derivedReadout.map(({ field, label, value }) => (
+              <div className="flex justify-between gap-3" key={field}>
+                <dt className="flex min-w-0 items-center gap-[6px] text-ink-label">
+                  <span className="truncate">{label}</span>
+                  <Hint inputId={`derived-${field}`} spec={derivedSpecs[field]} />
+                </dt>
+                <dd className="shrink-0 text-ink">{value}</dd>
+              </div>
+            ))}
           </dl>
 
           <div className="mt-auto space-y-[9px] border-t border-rule-mid px-[18px] py-[14px] font-mono text-note">
