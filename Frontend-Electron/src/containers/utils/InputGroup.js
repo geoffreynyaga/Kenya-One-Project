@@ -13,7 +13,6 @@
  * Copyright (c) 2020 MFUKO PAYMENTS SERVICES Ltd.
  */
 
-import React from "react";
 import PropTypes from "prop-types";
 import { FormInput, InputGroup, InputGroupAddon, InputGroupText } from "../../components/shards";
 

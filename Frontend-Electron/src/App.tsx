@@ -32,7 +32,6 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { Col, Container, Row } from "./components/shards";
 
@@ -53,7 +52,6 @@ const App = () => {
   const text = () => (
     <AuthScreen />
     );
-  text.displayName = "text";
 
   // {
   //   path: "/",
@@ -110,11 +108,11 @@ const App = () => {
         </Col>
         <Col sm="10" lg="10">
           <Routes>
-            {routes.map((route, index) => (
+            {routes.map((route) => (
               // Render more <Route>s with the same paths as
               // above, but different components this time.
               <Route
-                key={index}
+                key={route.path}
                 path={route.path}
                 element={<route.main />}
               />

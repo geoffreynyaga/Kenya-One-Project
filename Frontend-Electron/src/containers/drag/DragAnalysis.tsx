@@ -1,7 +1,7 @@
 /*
  * Sheet 07 — Drag analysis. The component build-up, from dragCompute.
  */
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import {
   ColumnDef,
   flexRender,
@@ -30,6 +30,12 @@ interface EntrySpec extends HintSpec {
   field: keyof DragInputs;
   unit?: string;
 }
+
+// Two of the total rows say more than "contribution to CD0".
+const TOTAL_HINTS: Record<string, string> = {
+  E11: "Every surface plus gear and cockpit, times 1.05 for interference.",
+  E15: "The CD0 Sheet 02 carries as B15, which Sheet 03's constraint diagram rests on.",
+};
 
 const WETTED_FIELDS: EntrySpec[] = [
   { field: "wingWettedM2", label: "Wing wetted", unit: "m²", cell: "H4", body: "Both wing surfaces the boundary layer sees, roughly twice the plan area. The largest single contributor to parasite drag." },
@@ -347,11 +353,8 @@ export default function DragAnalysis() {
                     hint={{
                       cell: cell as string,
                       body:
-                        cell === "E11"
-                          ? "Every surface plus gear and cockpit, times 1.05 for interference."
-                          : cell === "E15"
-                          ? "The CD0 Sheet 02 carries as B15, which Sheet 03's constraint diagram rests on."
-                          : `${label as string} contribution to CD0.`,
+                        TOTAL_HINTS[cell as string] ??
+                        `${label as string} contribution to CD0.`,
                     }}
                     id={`drag-total-${cell as string}`}
                     key={label as string}

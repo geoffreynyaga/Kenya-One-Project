@@ -32,7 +32,6 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React from "react";
 
 import { useResolvedPath } from "react-router-dom";
 import { Nav, NavItem, NavLink } from "../components/shards";

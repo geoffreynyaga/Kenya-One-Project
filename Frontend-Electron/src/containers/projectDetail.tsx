@@ -32,7 +32,6 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React from "react";
 
 import { Routes, Route } from "react-router-dom";
 import SrefDesign from "./sref/SrefDesign";
@@ -93,11 +92,11 @@ const ProjectDetail = () => {
     <div className="flex min-h-0 flex-1 flex-col">
       <SheetIndex />
       <Routes>
-        {routes.map((route, index) => (
+        {routes.map((route) => (
           // Render more <Route>s with the same paths as
           // above, but different components this time.
           <Route
-            key={index}
+            key={route.path}
             path={route.path}
             element={<route.component />}
           />

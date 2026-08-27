@@ -13,7 +13,6 @@
  * Copyright (c) 2020 MFUKO PAYMENTS SERVICES Ltd.
  */
 
-import React from "react";
 import "../../styles/data-table.css";
 
 import Plotly from "plotly.js-basic-dist";

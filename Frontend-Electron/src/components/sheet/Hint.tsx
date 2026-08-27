@@ -8,7 +8,6 @@
  * CSS-only, so it appears the instant the pointer lands rather than waiting on
  * the browser's native title delay, and it opens on keyboard focus too.
  */
-import React from "react";
 
 export interface HintSpec {
   /** Used for the button's accessible name. */

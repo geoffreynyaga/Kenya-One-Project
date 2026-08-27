@@ -1,4 +1,3 @@
-import React from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { MockedFunction } from "vitest";

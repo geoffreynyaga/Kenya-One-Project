@@ -7,7 +7,6 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React from "react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
 import { SIZING_SHEETS } from "./sheets";

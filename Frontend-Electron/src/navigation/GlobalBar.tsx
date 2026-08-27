@@ -7,7 +7,6 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React from "react";
 import { Link, useLocation } from "react-router-dom";
 
 import { GROUPS } from "./sheets";

@@ -1,7 +1,7 @@
 /*
  * Sheet 08 — Wing Structural. Sizes the wing box from structureCompute.
  */
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { Hint, HintSpec } from "../../components/sheet/Hint";
