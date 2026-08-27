@@ -30,7 +30,7 @@ export interface TunnelSection {
   warnings: string[];
 }
 
-const API_ROOT = process.env.REACT_APP_API_URL ?? "http://localhost:8000";
+const API_ROOT = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 
 interface Envelope<T> {
   status: "success" | "error";

@@ -1,5 +1,4 @@
-import React from "react";
-import { Link, Switch, Route } from "react-router-dom";
+import { Link, Routes, Route } from "react-router-dom";
 
 import ProjectDetail from "../containers/projectDetail";
 
@@ -72,17 +71,11 @@ function LandingPage() {
       {/* <h1>Landing Page</h1> */}
 
       {isAuthenticated ? (
-        <Switch>
-          <Route exact path="/">
-            <MyComp />
-          </Route>
-          <Route exact path="/projects/create">
-            <CreateProject />
-          </Route>
-          <Route path="/projects/:id">
-            <ProjectDetail />
-          </Route>
-        </Switch>
+        <Routes>
+          <Route path="/" element={<MyComp />} />
+          <Route path="/projects/create" element={<CreateProject />} />
+          <Route path="/projects/:id/*" element={<ProjectDetail />} />
+        </Routes>
       ) : (
         ""
       )}

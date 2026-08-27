@@ -269,20 +269,18 @@ function ValueCell({
   const editable = source !== "consequence" || overridden;
   const hasOrigin = Boolean(spec.origin);
 
-  const provenance =
-    source === "consequence"
-      ? (spec.formula ?? `← ${spec.origin}`)
-      : source === "figure"
-        ? "← FIG. 2.1"
-        : null;
+  let provenance: string | null = null;
+  if (source === "consequence") provenance = spec.formula ?? `← ${spec.origin}`;
+  else if (source === "figure") provenance = "← FIG. 2.1";
   // An override here is sheet-local: the owning stage keeps its own number,
   // so say which one it still has.
-  const caption =
-    provenance && overridden
-      ? upstream !== null
+  let caption = provenance;
+  if (provenance && overridden) {
+    caption =
+      upstream !== null
         ? `DIVERGED · ${spec.origin ?? "SOURCE"} ${readable(String(upstream))}`
-        : `OVERRIDDEN · ${provenance}`
-      : provenance;
+        : `OVERRIDDEN · ${provenance}`;
+  }
 
   // CAUTION: quantities in a design loop carry a quiet tag here. It only turns
   // loud when the loop actually fires — see domain/loops.ts.
@@ -313,7 +311,6 @@ function ValueCell({
       } ${editable ? "hover:bg-white/70 focus-within:bg-white" : ""}`}
     >
       {editable ? (
-        // eslint-disable-next-line jsx-a11y/label-has-associated-control
         <label className="contents cursor-text" htmlFor={field}>
           {label}
         </label>
@@ -984,159 +981,48 @@ export default function SrefDesign() {
     ],
   ];
 
-  return (
-    <main className="min-h-0 flex-1 overflow-auto bg-paper font-sans text-ink">
-      <h1 className="sr-only">Sref and power sizing</h1>
-      <div className="grid border-b border-rule-mid bg-rule-cell sm:grid-cols-3 sm:gap-px">
-        {summaryItems.map(([label, value], index) => (
-          <div
-            className={`flex flex-col gap-[7px] bg-paper px-[18px] py-[11px] ${index === 0 ? "shadow-edited" : ""}`}
-            key={label}
-          >
-            <span className="font-mono text-label tracking-tab text-ink-label">{label}</span>
-            <span className="font-mono text-readout font-medium leading-none text-ink">{value}</span>
-          </div>
-        ))}
-      </div>
 
-      <div className="grid min-h-0 xl:grid-cols-[296px_minmax(520px,1fr)_330px]">
-        <form className="bg-panel pb-0 xl:border-r xl:border-rule-mid" onSubmit={submit}>
-          <div className="px-[18px] pb-[11px] pt-[15px]">
-            <div className="font-mono text-label font-medium tracking-label text-ink-label">CONSTRAINT INPUTS</div>
-            <dl className="mt-[9px] space-y-[5px] font-mono text-[10px] tracking-band text-ink-faint">
-              <div className="flex items-center gap-[7px]">
-                <span className="h-[10px] w-[2px] bg-transparent" />
-                <span>ENTRY · TYPED HERE</span>
-              </div>
-              <div className="flex items-center gap-[7px]">
-                <span className="h-[10px] w-[2px] bg-accent" />
-                <span>CARRIED · FROM ANOTHER SHEET</span>
-              </div>
-              <div className="flex items-center gap-[7px]">
-                <span className="h-[10px] w-[2px] bg-transparent" />
-                <span className="bg-field/70 px-[3px]">DERIVED · COMPUTED HERE</span>
-              </div>
-            </dl>
-          </div>
+  function renderCatalog() {
+    if (catalog.isPending) {
+      return (
+        <div className="border border-rule bg-field p-5 font-mono text-note text-ink-muted">
+          Loading the engine catalog…
+        </div>
+      );
+    }
+    if (catalog.isError) {
+      return (
+        <div className="border border-accent bg-accent-wash p-4 text-note text-accent-dark" role="alert">
+          {catalog.error.message}
+        </div>
+      );
+    }
+    return (
+      <EngineCatalog
+        engines={engines}
+        onSelect={selectEngine}
+        recommended={recommendedNumbers}
+        selectedNumber={selectedNumber}
+      />
+    );
+  }
 
-          {renderSection("REQUIREMENTS", "PERFORMANCE REQUIREMENTS", requirementFields)}
-
-          <section className="border-t border-rule-soft">
-            <h2 className="px-[18px] pb-[4px] pt-4 font-mono text-label font-medium tracking-label text-ink-label">
-              REQUIREMENT SENSE
-            </h2>
-            <p className="px-[18px] pb-[10px] font-mono text-[10px] leading-[1.5] tracking-band text-ink-faint">
-              IS THE NUMBER YOU TYPED THE LEAST YOU WILL ACCEPT, OR THE MOST?
-              THIS DECIDES WHICH SIDE OF EACH CURVE IS SHADED OUT.
-            </p>
-
-            {flipped.length > 0 ? (
-              <div className="mx-[18px] mb-[10px] border-l-2 border-accent bg-accent-wash px-[11px] py-[9px]">
-                <div className="font-mono text-[10px] font-medium tracking-band text-accent-dark">
-                  {flipped.length} READ THE UNUSUAL WAY ROUND
-                </div>
-                <ul className="mt-[6px] space-y-[5px] text-note leading-5 text-ink-body">
-                  {flipped.map((sense) => (
-                    <li key={sense.key}>
-                      <span className="font-medium">{sense.label}</span>{" "}
-                      {sense.meaning}.
-                    </li>
-                  ))}
-                </ul>
-                <button
-                  className="mt-[9px] border border-accent px-[9px] py-[4px] font-mono text-[10px] tracking-band text-accent-dark transition-colors hover:bg-accent hover:text-white"
-                  onClick={restoreConventionalSenses}
-                  type="button"
-                >
-                  READ THEM THE USUAL WAY
-                </button>
-              </div>
-            ) : null}
-            {(
-              [
-                ["stall", "Stall speed"],
-                ...CONSTRAINT_KEYS.map(
-                  (key) => [key, CONSTRAINT_LABELS[key]] as const
-                ),
-              ] as Array<[ConstraintKey | "stall", string]>
-            ).map(([key, label]) => {
-              const current =
-                key === "stall" ? senses.stall : senses.constraints[key];
-              const isFlipped = flipped.some((sense) => sense.key === key);
-              return (
-                <div
-                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-[18px] py-[6px] hover:bg-white/70"
-                  key={key}
-                >
-                  <span className="min-w-0 text-body leading-[1.25] text-ink-muted">
-                    {label}
-                    <span className="ml-[6px] font-mono text-micro text-ink-faint">
-                      {SENSE_VALUES[key](values)}
-                    </span>
-                    {isFlipped ? (
-                      <span className="ml-[6px] font-mono text-[9px] tracking-band text-accent-dark">
-                        UNUSUAL
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="flex shrink-0 border border-rule">
-                    {(
-                      [
-                        ["atMost", "AT MOST"],
-                        ["atLeast", "AT LEAST"],
-                      ] as Array<[Sense, string]>
-                    ).map(([sense, word]) => (
-                      <button
-                        aria-label={`${label} at ${sense === "atMost" ? "most" : "least"}`}
-                        aria-pressed={current === sense}
-                        className={`px-[8px] py-[4px] font-mono text-[10px] tracking-band ${
-                          current === sense
-                            ? "bg-ink font-medium text-panel"
-                            : "bg-transparent text-ink-faint hover:text-ink"
-                        }`}
-                        key={sense}
-                        onClick={() => setSense(key, sense)}
-                        type="button"
-                      >
-                        {word}
-                      </button>
-                    ))}
-                  </span>
-                </div>
-              );
-            })}
-          </section>
-          {renderSection("AERODYNAMICS", "AERODYNAMICS", aerodynamicFields)}
-          {renderSection("WEIGHTS", "WEIGHTS & CRUISE", weightFields)}
-          {renderSection("DESIGN POINT", "DESIGN POINT", pointFields)}
-
-          <div className="sticky bottom-0 mt-4 flex border-t border-rule-mid bg-panel">
-            <button
-              className="flex-1 border border-accent bg-accent px-4 py-3 font-mono text-meta font-medium tracking-tab text-white transition-colors hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-wait disabled:border-rule disabled:bg-panel disabled:text-ink-faint"
-              disabled={query.isFetching}
-              type="submit"
-            >
-              {query.isFetching ? "SOLVING…" : "SOLVE CONSTRAINTS"}
-            </button>
-            <button
-              className="border border-l-0 border-rule px-4 py-3 font-mono text-meta tracking-tab text-ink-muted transition-colors hover:border-ink hover:text-ink"
-              onClick={reset}
-              type="button"
-            >
-              RESET
-            </button>
-          </div>
-        </form>
-
-        <div aria-live="polite" className="min-w-0 xl:col-span-2">
-          {query.isPending ? (
+  function renderConstraint() {
+    if (query.isPending) {
+      return (
             <div className="m-5 border border-rule bg-field p-8 font-mono text-note text-ink-muted">Building the matching plot…</div>
-          ) : query.isError ? (
+      );
+    }
+    if (query.isError) {
+      return (
             <div className="m-5 border border-accent bg-accent-wash p-5 text-body text-accent-dark" role="alert">
               <div className="font-medium">Constraint solver unavailable</div>
               <div className="mt-1 text-note">{query.error.message} Check that the Django server is running, then solve again.</div>
             </div>
-          ) : result ? (
+      );
+    }
+    if (result) {
+      return (
             <div className="grid min-w-0 items-start xl:grid-cols-[minmax(0,1fr)_330px]">
               <section className="min-w-0 bg-paper px-[22px] pb-0 pt-[18px]">
                 <div className="mb-[10px]">
@@ -1195,22 +1081,7 @@ export default function SrefDesign() {
                       </div>
                     ) : null}
 
-                    {catalog.isPending ? (
-                      <div className="border border-rule bg-field p-5 font-mono text-note text-ink-muted">
-                        Loading the engine catalog…
-                      </div>
-                    ) : catalog.isError ? (
-                      <div className="border border-accent bg-accent-wash p-4 text-note text-accent-dark" role="alert">
-                        {catalog.error.message}
-                      </div>
-                    ) : (
-                      <EngineCatalog
-                        engines={engines}
-                        onSelect={selectEngine}
-                        recommended={recommendedNumbers}
-                        selectedNumber={selectedNumber}
-                      />
-                    )}
+                    {renderCatalog()}
                   </div>
                 </details>
 
@@ -1380,7 +1251,157 @@ export default function SrefDesign() {
                 </div>
               </aside>
             </div>
-          ) : null}
+      );
+    }
+    return null;
+  }
+
+  return (
+    <main className="min-h-0 flex-1 overflow-auto bg-paper font-sans text-ink">
+      <h1 className="sr-only">Sref and power sizing</h1>
+      <div className="grid border-b border-rule-mid bg-rule-cell sm:grid-cols-3 sm:gap-px">
+        {summaryItems.map(([label, value], index) => (
+          <div
+            className={`flex flex-col gap-[7px] bg-paper px-[18px] py-[11px] ${index === 0 ? "shadow-edited" : ""}`}
+            key={label}
+          >
+            <span className="font-mono text-label tracking-tab text-ink-label">{label}</span>
+            <span className="font-mono text-readout font-medium leading-none text-ink">{value}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid min-h-0 xl:grid-cols-[296px_minmax(520px,1fr)_330px]">
+        <form className="bg-panel pb-0 xl:border-r xl:border-rule-mid" onSubmit={submit}>
+          <div className="px-[18px] pb-[11px] pt-[15px]">
+            <div className="font-mono text-label font-medium tracking-label text-ink-label">CONSTRAINT INPUTS</div>
+            <dl className="mt-[9px] space-y-[5px] font-mono text-[10px] tracking-band text-ink-faint">
+              <div className="flex items-center gap-[7px]">
+                <span className="h-[10px] w-[2px] bg-transparent" />
+                <span>ENTRY · TYPED HERE</span>
+              </div>
+              <div className="flex items-center gap-[7px]">
+                <span className="h-[10px] w-[2px] bg-accent" />
+                <span>CARRIED · FROM ANOTHER SHEET</span>
+              </div>
+              <div className="flex items-center gap-[7px]">
+                <span className="h-[10px] w-[2px] bg-transparent" />
+                <span className="bg-field/70 px-[3px]">DERIVED · COMPUTED HERE</span>
+              </div>
+            </dl>
+          </div>
+
+          {renderSection("REQUIREMENTS", "PERFORMANCE REQUIREMENTS", requirementFields)}
+
+          <section className="border-t border-rule-soft">
+            <h2 className="px-[18px] pb-[4px] pt-4 font-mono text-label font-medium tracking-label text-ink-label">
+              REQUIREMENT SENSE
+            </h2>
+            <p className="px-[18px] pb-[10px] font-mono text-[10px] leading-[1.5] tracking-band text-ink-faint">
+              IS THE NUMBER YOU TYPED THE LEAST YOU WILL ACCEPT, OR THE MOST?
+              THIS DECIDES WHICH SIDE OF EACH CURVE IS SHADED OUT.
+            </p>
+
+            {flipped.length > 0 ? (
+              <div className="mx-[18px] mb-[10px] border-l-2 border-accent bg-accent-wash px-[11px] py-[9px]">
+                <div className="font-mono text-[10px] font-medium tracking-band text-accent-dark">
+                  {flipped.length} READ THE UNUSUAL WAY ROUND
+                </div>
+                <ul className="mt-[6px] space-y-[5px] text-note leading-5 text-ink-body">
+                  {flipped.map((sense) => (
+                    <li key={sense.key}>
+                      <span className="font-medium">{sense.label}</span>{" "}
+                      {sense.meaning}.
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  className="mt-[9px] border border-accent px-[9px] py-[4px] font-mono text-[10px] tracking-band text-accent-dark transition-colors hover:bg-accent hover:text-white"
+                  onClick={restoreConventionalSenses}
+                  type="button"
+                >
+                  READ THEM THE USUAL WAY
+                </button>
+              </div>
+            ) : null}
+            {(
+              [
+                ["stall", "Stall speed"],
+                ...CONSTRAINT_KEYS.map(
+                  (key) => [key, CONSTRAINT_LABELS[key]] as const
+                ),
+              ] as Array<[ConstraintKey | "stall", string]>
+            ).map(([key, label]) => {
+              const current =
+                key === "stall" ? senses.stall : senses.constraints[key];
+              const isFlipped = flipped.some((sense) => sense.key === key);
+              return (
+                <div
+                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-[18px] py-[6px] hover:bg-white/70"
+                  key={key}
+                >
+                  <span className="min-w-0 text-body leading-[1.25] text-ink-muted">
+                    {label}
+                    <span className="ml-[6px] font-mono text-micro text-ink-faint">
+                      {SENSE_VALUES[key](values)}
+                    </span>
+                    {isFlipped ? (
+                      <span className="ml-[6px] font-mono text-[9px] tracking-band text-accent-dark">
+                        UNUSUAL
+                      </span>
+                    ) : null}
+                  </span>
+                  <span className="flex shrink-0 border border-rule">
+                    {(
+                      [
+                        ["atMost", "AT MOST"],
+                        ["atLeast", "AT LEAST"],
+                      ] as Array<[Sense, string]>
+                    ).map(([sense, word]) => (
+                      <button
+                        aria-label={`${label} at ${sense === "atMost" ? "most" : "least"}`}
+                        aria-pressed={current === sense}
+                        className={`px-[8px] py-[4px] font-mono text-[10px] tracking-band ${
+                          current === sense
+                            ? "bg-ink font-medium text-panel"
+                            : "bg-transparent text-ink-faint hover:text-ink"
+                        }`}
+                        key={sense}
+                        onClick={() => setSense(key, sense)}
+                        type="button"
+                      >
+                        {word}
+                      </button>
+                    ))}
+                  </span>
+                </div>
+              );
+            })}
+          </section>
+          {renderSection("AERODYNAMICS", "AERODYNAMICS", aerodynamicFields)}
+          {renderSection("WEIGHTS", "WEIGHTS & CRUISE", weightFields)}
+          {renderSection("DESIGN POINT", "DESIGN POINT", pointFields)}
+
+          <div className="sticky bottom-0 mt-4 flex border-t border-rule-mid bg-panel">
+            <button
+              className="flex-1 border border-accent bg-accent px-4 py-3 font-mono text-meta font-medium tracking-tab text-white transition-colors hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-wait disabled:border-rule disabled:bg-panel disabled:text-ink-faint"
+              disabled={query.isFetching}
+              type="submit"
+            >
+              {query.isFetching ? "SOLVING…" : "SOLVE CONSTRAINTS"}
+            </button>
+            <button
+              className="border border-l-0 border-rule px-4 py-3 font-mono text-meta tracking-tab text-ink-muted transition-colors hover:border-ink hover:text-ink"
+              onClick={reset}
+              type="button"
+            >
+              RESET
+            </button>
+          </div>
+        </form>
+
+        <div aria-live="polite" className="min-w-0 xl:col-span-2">
+          {renderConstraint()}
         </div>
       </div>
     </main>

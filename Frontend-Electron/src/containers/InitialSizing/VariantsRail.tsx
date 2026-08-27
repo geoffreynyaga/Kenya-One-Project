@@ -7,7 +7,6 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React from "react";
 import { useAtom, useSetAtom } from "jotai";
 
 import { committedStagesAtom, mtowLbAtom } from "../../domain/atoms";
@@ -131,7 +130,7 @@ export default function VariantsRail(props: Props) {
           </span>
         </div>
 
-        {raymer === undefined ? null : diverged ? (
+        {raymer !== undefined && diverged ? (
           <>
             <p className="text-note leading-5 text-accent-dark">
               Sheet 02 is sizing against {formatValue(carried)} lbf, not the{" "}
@@ -148,11 +147,12 @@ export default function VariantsRail(props: Props) {
               CARRY {formatValue(raymer)} LBF FORWARD
             </button>
           </>
-        ) : (
+        ) : null}
+        {raymer !== undefined && !diverged ? (
           <p className="font-mono text-micro text-ink-faint">
             SHEET 02 IS SIZING AGAINST THIS WEIGHT
           </p>
-        )}
+        ) : null}
       </div>
     </div>
   );

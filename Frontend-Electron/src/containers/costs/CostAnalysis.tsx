@@ -329,6 +329,17 @@ interface ResultRow {
   digits?: number;
 }
 
+const formatCurrency = (value: number, digits = 0) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(value);
+
+const formatNumber = (value: number, digits = 2) =>
+  new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
+
 function ResultTable({ rows, label }: { rows: ResultRow[]; label: string }) {
   const columns = useMemo<ColumnDef<ResultRow>[]>(
     () => [
@@ -458,17 +469,6 @@ function LabourBasisTable({ rows }: { rows: LabourRow[] }) {
     </div>
   );
 }
-
-const formatCurrency = (value: number, digits = 0) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  }).format(value);
-
-const formatNumber = (value: number, digits = 2) =>
-  new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
 
 function CostResults({
   result,
@@ -780,6 +780,30 @@ export default function CostAnalysis() {
         ["COST / FLIGHT HOUR", "—"],
       ];
 
+  function renderModel() {
+    if (query.isPending) {
+      return (
+        <div className="m-5 border border-rule bg-field p-8 font-mono text-note text-ink-muted">Calculating the workbook model…</div>
+      );
+    }
+    if (query.isError) {
+      return (
+        <div className="m-5 border border-accent bg-accent-wash p-5 text-body text-accent-dark" role="alert">
+          <div className="font-medium">Cost model unavailable</div>
+          <div className="mt-1 text-note">{query.error.message} Check that the Django server is running, then solve again.</div>
+        </div>
+      );
+    }
+    if (query.data) {
+      return (
+        <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_330px]">
+          <CostResults inputs={submitted} result={query.data} />
+        </div>
+      );
+    }
+    return null;
+  }
+
   return (
     <main className="min-h-0 flex-1 overflow-auto bg-paper font-sans text-ink">
       <h1 className="sr-only">Aircraft cost analysis</h1>
@@ -835,18 +859,7 @@ export default function CostAnalysis() {
         </form>
 
         <div aria-live="polite" className="min-w-0 xl:col-span-2">
-          {query.isPending ? (
-            <div className="m-5 border border-rule bg-field p-8 font-mono text-note text-ink-muted">Calculating the workbook model…</div>
-            ) : query.isError ? (
-              <div className="m-5 border border-accent bg-accent-wash p-5 text-body text-accent-dark" role="alert">
-                <div className="font-medium">Cost model unavailable</div>
-                <div className="mt-1 text-note">{query.error.message} Check that the Django server is running, then solve again.</div>
-              </div>
-            ) : query.data ? (
-              <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_330px]">
-                <CostResults inputs={submitted} result={query.data} />
-              </div>
-            ) : null}
+          {renderModel()}
         </div>
       </div>
     </main>

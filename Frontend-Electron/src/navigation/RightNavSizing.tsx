@@ -32,13 +32,12 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React from "react";
 
-import { useRouteMatch } from "react-router-dom";
+import { useResolvedPath } from "react-router-dom";
 import { Nav, NavItem, NavLink } from "../components/shards";
 
 export default function RightNavSizing() {
-  const { url } = useRouteMatch();
+  const { pathname: url } = useResolvedPath("");
   return (
     <div style={{ marginTop: 20, backgroundColor: "#fccde2" }}>
       <Nav pills vertical>

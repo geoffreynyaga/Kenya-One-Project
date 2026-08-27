@@ -6,7 +6,6 @@
  * dihedral were seven numbers with nothing to check them against — a sweep
  * typed as 24 instead of 2.4 looked exactly like a sweep typed correctly.
  */
-import React from "react";
 
 import { Hint } from "../../components/sheet/Hint";
 

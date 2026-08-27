@@ -1,7 +1,7 @@
 /*
  * Sheet 05 — V-n. The manoeuvre envelope, drawn from vnCompute.
  */
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 

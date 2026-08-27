@@ -2,7 +2,7 @@
  * Sheet 06 — Wing & Airfoil. Planform, flow conditions, 3-D corrections and
  * the four span-efficiency estimates, all from aerofoilCompute.
  */
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { Hint, HintSpec } from "../../components/sheet/Hint";

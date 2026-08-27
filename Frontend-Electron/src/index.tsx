@@ -31,12 +31,10 @@
  * -----
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
-import React from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "./index.css";
 import { BrowserRouter as Router } from "react-router-dom";
-import * as serviceWorker from "./serviceWorker";
 
 import AuthScreen from "./authentication/authScreen";
 
@@ -64,8 +62,3 @@ root.render(
     </Router>
   </QueryClientProvider>
 );
-
-// If you want your app to work offline and load faster, you can change
-// unregister() to register() below. Note this comes with some pitfalls.
-// Learn more about service workers: https://bit.ly/CRA-PWA
-serviceWorker.unregister();

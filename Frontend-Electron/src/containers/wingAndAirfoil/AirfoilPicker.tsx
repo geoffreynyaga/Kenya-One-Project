@@ -10,7 +10,7 @@
  * measured coefficients the catalogue names the source, and where it does not
  * the picker says so rather than showing a number nobody measured.
  */
-import React, { useDeferredValue, useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import {

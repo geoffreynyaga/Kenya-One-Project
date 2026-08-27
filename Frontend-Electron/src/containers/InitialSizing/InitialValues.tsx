@@ -32,7 +32,7 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React, { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext } from "react";
 
 import { useAtomValue } from "jotai";
 
@@ -215,6 +215,7 @@ const InitialValues = (props) => {
   };
 
   const fetchMTOWPlot = () => {
+    setIsLoading(true);
     if (!validateInputs()) {
       setIsLoading(false);
       return;
@@ -288,7 +289,6 @@ const InitialValues = (props) => {
   };
 
   useEffect(() => {
-    setIsLoading(true);
     fetchMTOWPlot();
   }, [props.axisRange]);
 
@@ -446,10 +446,7 @@ const InitialValues = (props) => {
           className="flex items-center justify-center bg-accent font-mono text-note font-medium tracking-band text-white disabled:bg-ink-faint"
           disabled={isLoading}
           type="button"
-          onClick={() => {
-            setIsLoading(true);
-            fetchMTOWPlot();
-          }}
+          onClick={() => fetchMTOWPlot()}
         >
           {isLoading ? "SOLVING" : "SOLVE"}
         </button>

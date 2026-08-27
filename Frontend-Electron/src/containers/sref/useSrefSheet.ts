@@ -209,7 +209,7 @@ export function useSrefSheet(): SrefSheet {
       }
       writers[field]?.(value);
     },
-    [setPrivates, shadows, writers]
+    [setPrivates, setShadows, shadows, writers]
   );
 
   const commitField = useCallback((field: FormField) => {
@@ -229,7 +229,7 @@ export function useSrefSheet(): SrefSheet {
       }
       setShadows((current) => ({ ...current, [field]: numbers[field] }));
     },
-    [numbers, setWingLoadingOverride, wingLoading]
+    [numbers, setShadows, setWingLoadingOverride, wingLoading]
   );
 
   const restoreField = useCallback(
@@ -244,7 +244,7 @@ export function useSrefSheet(): SrefSheet {
         return next;
       });
     },
-    [setWingLoadingOverride]
+    [setShadows, setWingLoadingOverride]
   );
 
   const isOverridden = useCallback(

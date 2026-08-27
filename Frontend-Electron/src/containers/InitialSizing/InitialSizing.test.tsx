@@ -1,9 +1,8 @@
-import React from "react";
 import { render, screen } from "@testing-library/react";
 
 import InitialSizing from "./InitialSizing";
 
-jest.mock("react-plotly.js", () => function MockPlot() {
+vi.mock("react-plotly.js", () => function MockPlot() {
   return <div data-testid="mtow-plot" />;
 });
 

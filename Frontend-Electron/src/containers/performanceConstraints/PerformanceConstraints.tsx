@@ -20,7 +20,6 @@ import {
 } from "./missionFields";
 import {
   deriveMission,
-  MISSION_LABELS,
   missionCurves,
   missionVerdict,
   MissionVerdictRow,
@@ -47,6 +46,14 @@ const MONO = tokens.fontFamily.mono.join(", ");
 const formatNumber = (value: number, digits = 2) =>
   new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
 
+/** Where a field's number came from, in the caption under its label. */
+function provenanceFor(spec: FieldSpec): string | null {
+  if (spec.source === "derived") return spec.formula ?? "";
+  if (spec.source === "carried") return `← ${spec.origin}`;
+  if (spec.source === "seed") return `SEED · ${spec.origin}`;
+  return null;
+}
+
 interface FieldRowProps {
   spec: FieldSpec;
   value: string;
@@ -56,14 +63,7 @@ interface FieldRowProps {
 }
 
 function FieldRow({ spec, value, editable, onChange, onBlur }: FieldRowProps) {
-  const provenance =
-    spec.source === "derived"
-      ? (spec.formula ?? "")
-      : spec.source === "carried"
-        ? `← ${spec.origin}`
-        : spec.source === "seed"
-          ? `SEED · ${spec.origin}`
-          : null;
+  const provenance = provenanceFor(spec);
 
   return (
     <div
@@ -84,7 +84,6 @@ function FieldRow({ spec, value, editable, onChange, onBlur }: FieldRowProps) {
       </span>
 
       {editable ? (
-        // eslint-disable-next-line jsx-a11y/label-has-associated-control
         <label className="contents cursor-text" htmlFor={spec.field}>
           <input
             aria-label={spec.label}
@@ -299,7 +298,7 @@ function VerdictTable({ rows }: { rows: MissionVerdictRow[] }) {
       {
         accessorKey: "marginHp",
         header: "Margin · hp",
-        cell: ({ getValue, row }) => (
+        cell: ({ getValue }) => (
           <span
             className={
               getValue<number>() < 0 ? "text-accent-dark" : "text-ink"

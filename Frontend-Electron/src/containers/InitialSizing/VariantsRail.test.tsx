@@ -1,4 +1,3 @@
-import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { within } from "@testing-library/dom";
 import { Provider, createStore } from "jotai";

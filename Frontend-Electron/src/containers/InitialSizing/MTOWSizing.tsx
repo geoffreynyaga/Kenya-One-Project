@@ -32,7 +32,7 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 
 import { SliderValueContext } from "./SliderValueContext";
 import InitialSizing from "./InitialSizing";
@@ -42,16 +42,11 @@ import VariantsRail from "./VariantsRail";
 import { ServerData } from "./types";
 
 export default function MTOWSizing() {
-  const [data, setData] = useState<{} | null>({});
+  const [data, setData] = useState<object | null>({});
   // const [axisRange, setAxisRange] = useState<number[]>([2000, 6000]);
   const [context, setContext] = useState([3000, 6000]);
 
-  useEffect(() => {
-    console.log(data, "MTOWSizing: axis values have changed");
-  }, [data]);
-
   const handleDataInChildren = (childData: ServerData) => {
-    console.log(childData, "step 4");
     setData(childData);
   };
 

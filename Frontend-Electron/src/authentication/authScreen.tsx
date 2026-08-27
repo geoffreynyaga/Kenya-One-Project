@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import LandingPage from "../screens/landingPage";
 import GlobalBar from "../navigation/GlobalBar";
 import Login from "./login";

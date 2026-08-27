@@ -7,8 +7,7 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import React from "react";
-import { Link, useLocation, useRouteMatch } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 
 import { SIZING_SHEETS } from "./sheets";
 
@@ -19,7 +18,9 @@ const TAB = "px-[14px] py-[11px] font-mono text-note border-b-2";
  * route yet are shown but not reachable, so the run of work stays visible.
  */
 export default function SheetIndex() {
-  const { url } = useRouteMatch();
+  // Sheets hang off the project this index is rendered inside.
+  const { id } = useParams();
+  const url = `/projects/${id}`;
   const { pathname } = useLocation();
 
   return (
