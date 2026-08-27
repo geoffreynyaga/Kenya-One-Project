@@ -32,16 +32,9 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import { useState, useEffect, useContext } from "react";
+import { MtowFieldErrors } from "../../api/mtowSizing";
 
-import { useAtomValue } from "jotai";
-
-import { ldMaxAtom } from "../../domain/atoms";
-import { usePersistentValue } from "../../hooks/usePersistentState";
-
-import { SliderValueContext } from "./SliderValueContext";
-
-import { ServerData } from "./types";
+import { MtowValues } from "./useMtowSheet";
 
 const CELL =
   "flex flex-col gap-[6px] bg-paper px-[14px] py-[10px] focus-within:shadow-edited";
@@ -66,17 +59,7 @@ const AIRCRAFT_TYPES = [
   ["Jet_Transport", "Jet transport"],
 ];
 
-type NumericField =
-  | "pax"
-  | "crew"
-  | "range"
-  | "propellerEfficiency"
-  | "altitude"
-  | "aspectRatio";
-
-type FieldErrors = Partial<Record<NumericField, string>>;
-
-interface Notice {
+export interface Notice {
   tone: "warning" | "error";
   message: string;
 }
@@ -120,177 +103,32 @@ const FieldHeader = ({ inputId, label, helpLabel, help }: FieldHeaderProps) => {
   );
 };
 
-const InitialValues = (props) => {
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  // Persisted so a refresh does not throw the sheet back to these defaults.
-  const [aircraft_type, setAircraftType] = usePersistentValue<string>(
-    "kenya-one:mtow:aircraftType",
-    "GA_Twin"
-  );
-  const [altitude, setAltitude] = usePersistentValue<string>(
-    "kenya-one:mtow:altitude",
-    "10000"
-  );
-  const [pax, setPax] = usePersistentValue<string>("kenya-one:mtow:pax", "4");
-  const [propellerEfficiency, setPropellerEfficiency] =
-    usePersistentValue<string>("kenya-one:mtow:propellerEfficiency", "0.78");
-  const [range, setRange] = usePersistentValue<string>(
-    "kenya-one:mtow:range",
-    "1200"
-  );
-  const [aspectRatio, setAspectRatio] = usePersistentValue<string>(
-    "kenya-one:mtow:aspectRatio",
-    "7.8"
-  );
-  const [crew, setCrew] = usePersistentValue<string>("kenya-one:mtow:crew", "2");
-  const [errors, setErrors] = useState<FieldErrors>({});
-  const [notice, setNotice] = useState<Notice | null>(null);
-  const [context] = useContext(SliderValueContext);
+interface InitialValuesProps {
+  values: MtowValues;
+  setField: (field: keyof MtowValues, value: string) => void;
+  errors: MtowFieldErrors;
+  notice: Notice | null;
+  isSolving: boolean;
+  onSolve: () => void;
+}
 
-  // The Sref sheet derives this from the drag polar. Sizing the weight against
-  // a hardcoded 13 while Sheet 02 uses 13.55 is how the two came to disagree.
-  const ldMax = useAtomValue(ldMaxAtom);
-
-  const handleLangChange = (serverData: ServerData) => {
-    props.getChildData(serverData);
-  };
-
-  const validateInputs = () => {
-    const nextErrors: FieldErrors = {};
-    const passengerCount = Number(pax);
-    const crewCount = Number(crew);
-    const designRange = Number(range);
-    const efficiency = Number(propellerEfficiency);
-    const cruiseAltitude = Number(altitude);
-    const ratio = Number(aspectRatio);
-
-    if (
-      pax.trim() === "" ||
-      !Number.isInteger(passengerCount) ||
-      passengerCount < 0
-    ) {
-      nextErrors.pax = "Enter a whole passenger count of 0 or more.";
-    }
-    if (crew.trim() === "" || !Number.isInteger(crewCount) || crewCount < 1) {
-      nextErrors.crew = "Enter at least one crew member.";
-    }
-    if (
-      range.trim() === "" ||
-      !Number.isFinite(designRange) ||
-      designRange <= 0
-    ) {
-      nextErrors.range = "Enter a design range greater than 0 km.";
-    }
-    if (
-      propellerEfficiency.trim() === "" ||
-      !Number.isFinite(efficiency) ||
-      efficiency <= 0 ||
-      efficiency > 1
-    ) {
-      nextErrors.propellerEfficiency =
-        "Enter a propeller efficiency greater than 0 and no more than 1.";
-    }
-    if (
-      altitude.trim() === "" ||
-      !Number.isFinite(cruiseAltitude) ||
-      cruiseAltitude < 0
-    ) {
-      nextErrors.altitude = "Enter an altitude of 0 ft or higher.";
-    }
-    if (aspectRatio.trim() === "" || !Number.isFinite(ratio) || ratio <= 0) {
-      nextErrors.aspectRatio = "Enter an aspect ratio greater than 0.";
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const clearFieldError = (field: NumericField) => {
-    setErrors((current) => {
-      if (!current[field]) return current;
-      const next = { ...current };
-      delete next[field];
-      return next;
-    });
-  };
-
-  const fetchMTOWPlot = () => {
-    setIsLoading(true);
-    if (!validateInputs()) {
-      setIsLoading(false);
-      return;
-    }
-
-    setNotice(null);
-
-    fetch("http://localhost:8000/api/accounts/example/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        yAxisLimits: context,
-        xAxisLimits: context,
-        aircraft_type,
-        altitude: Number(altitude),
-        pax: Number(pax),
-        propellerEfficiency: Number(propellerEfficiency),
-        range: Number(range),
-        aspectRatio: Number(aspectRatio),
-        crew: Number(crew),
-        ldMax,
-      }),
-    })
-      .then(async (response) => {
-        const serverData: ServerData = await response.json();
-
-        if (!response.ok || serverData.Status === "Error") {
-          const backendErrors: FieldErrors = {};
-          Object.entries(serverData.errors ?? {}).forEach(([field, messages]) => {
-            if (
-              [
-                "pax",
-                "crew",
-                "range",
-                "propellerEfficiency",
-                "altitude",
-                "aspectRatio",
-              ].includes(field)
-            ) {
-              backendErrors[field as NumericField] = messages[0];
-            }
-          });
-          setErrors(backendErrors);
-          setNotice({
-            tone: "error",
-            message:
-              serverData.message ??
-              "The sizing service could not solve these inputs. Review them and try again.",
-          });
-          return;
-        }
-
-        const warning = serverData.warnings?.[0];
-        setNotice(
-          warning ? { tone: "warning", message: warning.message } : null
-        );
-        handleLangChange(serverData);
-      })
-      .catch(() => {
-        setNotice({
-          tone: "error",
-          message:
-            "Unable to reach the sizing service. Check the backend connection and try again.",
-        });
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  };
-
-  useEffect(() => {
-    fetchMTOWPlot();
-  }, [props.axisRange]);
+const InitialValues = ({
+  values,
+  setField,
+  errors,
+  notice,
+  isSolving,
+  onSolve,
+}: InitialValuesProps) => {
+  const {
+    aircraft_type,
+    altitude,
+    pax,
+    propellerEfficiency,
+    range,
+    aspectRatio,
+    crew,
+  } = values;
 
   return (
     <div className="flex flex-none flex-col">
@@ -307,10 +145,7 @@ const InitialValues = (props) => {
             className={`${CELL_INPUT} font-sans`}
             id="aircraftType"
             value={aircraft_type}
-            onChange={(e) => {
-              setAircraftType(e.target.value);
-              setIsLoading(false);
-            }}
+            onChange={(e) => setField("aircraft_type", e.target.value)}
           >
             {AIRCRAFT_TYPES.map(([value, label]) => (
               <option key={value} value={value}>
@@ -333,10 +168,7 @@ const InitialValues = (props) => {
             id="pax"
             type="number"
             value={pax}
-            onChange={(e) => {
-              setPax(e.target.value);
-              clearFieldError("pax");
-            }}
+            onChange={(e) => setField("pax", e.target.value)}
           />
         </div>
 
@@ -353,10 +185,7 @@ const InitialValues = (props) => {
             id="crew"
             type="number"
             value={crew}
-            onChange={(e) => {
-              setCrew(e.target.value);
-              clearFieldError("crew");
-            }}
+            onChange={(e) => setField("crew", e.target.value)}
           />
         </div>
 
@@ -373,10 +202,7 @@ const InitialValues = (props) => {
             id="range"
             type="number"
             value={range}
-            onChange={(e) => {
-              setRange(e.target.value);
-              clearFieldError("range");
-            }}
+            onChange={(e) => setField("range", e.target.value)}
           />
         </div>
 
@@ -394,10 +220,7 @@ const InitialValues = (props) => {
             step="0.01"
             type="number"
             value={propellerEfficiency}
-            onChange={(e) => {
-              setPropellerEfficiency(e.target.value);
-              clearFieldError("propellerEfficiency");
-            }}
+            onChange={(e) => setField("propellerEfficiency", e.target.value)}
           />
         </div>
 
@@ -414,10 +237,7 @@ const InitialValues = (props) => {
             id="altitude"
             type="number"
             value={altitude}
-            onChange={(e) => {
-              setAltitude(e.target.value);
-              clearFieldError("altitude");
-            }}
+            onChange={(e) => setField("altitude", e.target.value)}
           />
         </div>
 
@@ -435,20 +255,17 @@ const InitialValues = (props) => {
             step="0.1"
             type="number"
             value={aspectRatio}
-            onChange={(e) => {
-              setAspectRatio(e.target.value);
-              clearFieldError("aspectRatio");
-            }}
+            onChange={(e) => setField("aspectRatio", e.target.value)}
           />
         </div>
 
         <button
           className="flex items-center justify-center bg-accent font-mono text-note font-medium tracking-band text-white disabled:bg-ink-faint"
-          disabled={isLoading}
+          disabled={isSolving}
           type="button"
-          onClick={() => fetchMTOWPlot()}
+          onClick={onSolve}
         >
-          {isLoading ? "SOLVING" : "SOLVE"}
+          {isSolving ? "SOLVING" : "SOLVE"}
         </button>
       </div>
 

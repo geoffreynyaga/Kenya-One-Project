@@ -1,10 +1,10 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import type { Mock } from "vitest";
 
-import InitialValues from "./InitialValues";
-import { SliderValueContext } from "./SliderValueContext";
+import MTOWSizing from "./MTOWSizing";
 
 const successfulResponse = {
   Status: "Success",
@@ -12,17 +12,20 @@ const successfulResponse = {
   warnings: [],
 };
 
+/*
+ * The inputs live on the sheet, which owns the sizing query, so the form is
+ * exercised through it.
+ */
 const renderForm = () => {
-  const getChildData = vi.fn();
-  const setAxisRange = vi.fn();
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
 
   render(
-    <SliderValueContext.Provider value={[[3000, 6000], setAxisRange]}>
-      <InitialValues axisRange={[3000, 6000]} getChildData={getChildData} />
-    </SliderValueContext.Provider>
+    <QueryClientProvider client={client}>
+      <MTOWSizing />
+    </QueryClientProvider>
   );
-
-  return { getChildData, setAxisRange };
 };
 
 beforeEach(() => {
@@ -149,9 +152,12 @@ test("backend validation errors identify the field and recovery action", async (
 
   renderForm();
 
+  // The sheet retries once before it reports a failure.
   expect(
     await screen.findByText(
-      "Propeller efficiency must be greater than 0 and no more than 1."
+      "Propeller efficiency must be greater than 0 and no more than 1.",
+      undefined,
+      { timeout: 5000 }
     )
   ).toBeVisible();
   expect(

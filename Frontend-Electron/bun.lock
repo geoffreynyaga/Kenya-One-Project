@@ -15,7 +15,6 @@
         "@types/react-dom": "^19.0.0",
         "electron-is-dev": "^1.1.0",
         "jotai": "^2.20.3",
-        "plotly.js": "^4",
         "plotly.js-basic-dist": "^4",
         "prop-types": "^15.8.1",
         "react": "^19.0.0",
