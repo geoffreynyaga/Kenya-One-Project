@@ -34,33 +34,67 @@
 
 import { useState } from "react";
 
+import { useQuery } from "@tanstack/react-query";
+
+import { MtowSizingError, fetchMtowSizing } from "../../api/mtowSizing";
+
 import { SliderValueContext } from "./SliderValueContext";
 import InitialSizing from "./InitialSizing";
-import InitialValues from "./InitialValues";
+import InitialValues, { Notice } from "./InitialValues";
 import VariantsRail from "./VariantsRail";
-
-import { ServerData } from "./types";
+import { useMtowSheet } from "./useMtowSheet";
 
 export default function MTOWSizing() {
-  const [data, setData] = useState<object | null>({});
-  // const [axisRange, setAxisRange] = useState<number[]>([2000, 6000]);
+  // Nothing moves this yet; the sweep the sheet solves over is fixed.
   const [context, setContext] = useState([3000, 6000]);
+  const { values, setField, errors, request, solve } = useMtowSheet(context);
 
-  const handleDataInChildren = (childData: ServerData) => {
-    setData(childData);
-  };
+  const query = useQuery({
+    queryKey: ["mtow-sizing", request],
+    queryFn: () => fetchMtowSizing(request),
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+    refetchOnWindowFocus: false,
+  });
+
+  // The service names the inputs it rejected. Inputs this sheet rejected first
+  // win, because they are what the reader was last told to fix.
+  const serverErrors =
+    query.error instanceof MtowSizingError ? query.error.fieldErrors : {};
+  const fieldErrors =
+    Object.keys(errors).length > 0 ? errors : serverErrors;
+
+  let notice: Notice | null = null;
+  if (query.error) {
+    notice = {
+      tone: "error",
+      message:
+        query.error instanceof MtowSizingError
+          ? query.error.message
+          : "Unable to reach the sizing service. Check the backend connection and try again.",
+    };
+  } else {
+    const warning = query.data?.warnings?.[0];
+    if (warning) notice = { tone: "warning", message: warning.message };
+  }
+
+  const data = query.data ?? {};
 
   return (
     <SliderValueContext.Provider value={[context, setContext]}>
       {/* Sheet: input band across the top, one figure, variants rail. */}
       <div className="flex min-h-0 flex-1 flex-col bg-paper bg-draft bg-grid-32 font-sans text-value text-ink">
         <InitialValues
-          axisRange={context}
-          getChildData={handleDataInChildren}
+          errors={fieldErrors}
+          isSolving={query.isFetching}
+          notice={notice}
+          setField={setField}
+          values={values}
+          onSolve={solve}
         />
         <div className="grid min-h-0 flex-1 grid-cols-[1fr_300px]">
-          <InitialSizing data={data || {}} />
-          <VariantsRail data={data || {}} />
+          <InitialSizing data={data} />
+          <VariantsRail data={data} />
         </div>
       </div>
     </SliderValueContext.Provider>
