@@ -5,6 +5,7 @@ import { useMemo } from "react";
 
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { Hint, HintSpec } from "../../components/sheet/Hint";
+import { InputSection } from "../../components/sheet/InputSection";
 import { ValueRow } from "../../components/sheet/ValueRow";
 import {
   AVAILABLE_SHEET_THICKNESSES_IN,
@@ -130,19 +131,14 @@ export default function WingStructural() {
   );
 
   const section = (key: string, title: string, specs: EntrySpec[]) => (
-    <details
-      className="border-t border-rule-soft first:border-t-0"
-      onToggle={(event) => toggle(key, event.currentTarget.open)}
+    <InputSection
+      count={specs.length}
       open={view.openSections.includes(key)}
+      title={title}
+      onToggle={(open) => toggle(key, open)}
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label marker:content-none hover:text-ink">
-        <span className="min-w-0 truncate">{title}</span>
-        <span className="shrink-0 font-normal text-ink-faint">
-          {view.openSections.includes(key) ? "" : `+${specs.length}`}
-        </span>
-      </summary>
       {specs.map(field)}
-    </details>
+    </InputSection>
   );
 
   const gauges: Array<[string, number, number, string]> = [

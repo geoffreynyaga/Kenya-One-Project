@@ -5,7 +5,7 @@
  * an empty weight, then moment-armed into a CG for four loading cases. The
  * arithmetic lives in weightsCompute; this file only renders it.
  */
-import React, { useMemo } from "react";
+import { useMemo } from "react";
 import {
   ColumnDef,
   flexRender,
@@ -14,6 +14,7 @@ import {
 } from "@tanstack/react-table";
 
 import { usePersistentState } from "../../hooks/usePersistentState";
+import { InputSection } from "../../components/sheet/InputSection";
 import { Hint, HintSpec } from "../../components/sheet/Hint";
 import { ValueRow } from "../../components/sheet/ValueRow";
 import {
@@ -191,36 +192,6 @@ const DEFAULT_VIEW: ViewState = {
   geometry: WORKBOOK_INPUTS.geometry,
   openSections: ["geometry"],
 };
-
-function Section({
-  title,
-  count,
-  open,
-  onToggle,
-  children,
-}: {
-  title: string;
-  count: number;
-  open: boolean;
-  onToggle: (open: boolean) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <details
-      className="border-t border-rule-soft first:border-t-0"
-      onToggle={(event) => onToggle(event.currentTarget.open)}
-      open={open}
-    >
-      <summary className="group flex cursor-pointer list-none items-center justify-between gap-2 px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label marker:content-none hover:text-ink">
-        <span className="min-w-0 truncate">{title}</span>
-        <span className="shrink-0 font-normal text-ink-faint">
-          {open ? "" : `+${count}`}
-        </span>
-      </summary>
-      {children}
-    </details>
-  );
-}
 
 function GeometryRow({
   spec,
@@ -482,7 +453,7 @@ export default function DetailedWeights() {
             </dl>
           </div>
 
-          <Section
+          <InputSection
             count={GEOMETRY_FIELDS.length}
             onToggle={(open) => toggleSection("geometry", open)}
             open={view.openSections.includes("geometry")}
@@ -497,7 +468,7 @@ export default function DetailedWeights() {
                 value={geometry[spec.field]}
               />
             ))}
-          </Section>
+          </InputSection>
 
           <button
             className="mt-4 w-full border border-rule bg-panel px-4 py-3 font-mono text-meta tracking-tab text-ink-faint hover:text-ink"

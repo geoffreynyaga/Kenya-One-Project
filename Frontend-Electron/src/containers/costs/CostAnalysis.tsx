@@ -1,4 +1,4 @@
-import React, { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   ColumnDef,
@@ -14,7 +14,17 @@ import {
   CostAnalysisResult,
   fetchCostAnalysis,
 } from "../../api/costAnalysis";
+import { InputSection } from "../../components/sheet/InputSection";
+import { usePersistentState } from "../../hooks/usePersistentState";
 import tokens from "../../design-tokens";
+
+interface ViewState {
+  openSections: string[];
+}
+
+// The inputs run to five bands. Open the first and let the reader pull down
+// the ones they are working in.
+const DEFAULT_VIEW: ViewState = { openSections: ["development"] };
 
 const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
@@ -302,22 +312,6 @@ function InputCell({
         value={values[field]}
       />
     </label>
-  );
-}
-
-interface SectionProps {
-  title: string;
-  children: React.ReactNode;
-}
-
-function InputSection({ title, children }: SectionProps) {
-  return (
-    <section className="border-t border-rule-soft first:border-t-0">
-      <h2 className="px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label">
-        {title}
-      </h2>
-      {children}
-    </section>
   );
 }
 
@@ -720,11 +714,61 @@ const costBasisFields: Array<[FormField, string, string?]> = [
   ["avionicsCost", "Avionics allowance", "$/aircraft"],
 ];
 
+// A band that is shut hides the cell an error belongs to, so a failed solve
+// needs to know which one to pull open.
+const sectionOfField: Partial<Record<FormField, string>> = {
+  ...Object.fromEntries(developmentFields.map(([field]) => [field, "development"])),
+  ...Object.fromEntries(costBasisFields.map(([field]) => [field, "cost-basis"])),
+  sellingPrice1: "selling-price",
+  sellingPrice2: "selling-price",
+  sellingPrice3: "selling-price",
+  ...Object.fromEntries(maintenanceFields.map((field) => [field, "operating"])),
+  ...Object.fromEntries(operatingFields.map(([field]) => [field, "operating"])),
+  loanPrincipal: "financing",
+  loanTerm: "financing",
+  interestRate: "financing",
+};
+
 export default function CostAnalysis() {
   const [values, setValues] = useState<FormValues>(DEFAULT_VALUES);
   const [errors, setErrors] = useState<Partial<Record<FormField, string>>>({});
   const defaultRequest = useMemo(() => toRequest(DEFAULT_VALUES), []);
   const [submitted, setSubmitted] = useState<CostAnalysisRequest>(defaultRequest);
+  const [view, setView] = usePersistentState<ViewState>(
+    "kenya-one:cost:view",
+    DEFAULT_VIEW
+  );
+
+  const toggleSection = (key: string, open: boolean) => {
+    setView((current) => {
+      if (current.openSections.includes(key) === open) return current;
+      return {
+        ...current,
+        openSections: open
+          ? [...current.openSections, key]
+          : current.openSections.filter((entry) => entry !== key),
+      };
+    });
+  };
+
+  /** Opens whichever bands hold the cells a solve just rejected. */
+  const revealSectionsFor = (fields: FormField[]) => {
+    const keys = fields
+      .map((field) => sectionOfField[field])
+      .filter((key): key is string => key !== undefined);
+    setView((current) => {
+      const missing = keys.filter((key) => !current.openSections.includes(key));
+      if (missing.length === 0) return current;
+      return { ...current, openSections: [...current.openSections, ...missing] };
+    });
+  };
+
+  const sectionProps = (key: string, count: number) => ({
+    count,
+    open: view.openSections.includes(key),
+    onToggle: (open: boolean) => toggleSection(key, open),
+  });
+
   const query = useQuery({
     queryKey: ["cost-analysis", submitted],
     queryFn: () => fetchCostAnalysis(submitted),
@@ -747,7 +791,10 @@ export default function CostAnalysis() {
     event.preventDefault();
     const nextErrors = validate(values);
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0) {
+      revealSectionsFor(Object.keys(nextErrors) as FormField[]);
+      return;
+    }
     const request = toRequest(values);
     if (JSON.stringify(request) === JSON.stringify(submitted)) {
       void query.refetch();
@@ -828,26 +875,26 @@ export default function CostAnalysis() {
             </div>
           </div>
 
-          <InputSection title="ENTRY · DEVELOPMENT">
+          <InputSection title="ENTRY · DEVELOPMENT" {...sectionProps("development", developmentFields.length)}>
             {developmentFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
           </InputSection>
 
-          <InputSection title="ENTRY · COST BASIS">
+          <InputSection title="ENTRY · COST BASIS" {...sectionProps("cost-basis", costBasisFields.length)}>
             {costBasisFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
           </InputSection>
 
-          <InputSection title="ENTRY · SELLING PRICE">
+          <InputSection title="ENTRY · SELLING PRICE" {...sectionProps("selling-price", 3)}>
             <InputCell field="sellingPrice1" label="Scenario 1" unit="$" {...inputProps} />
             <InputCell field="sellingPrice2" label="Scenario 2" unit="$" {...inputProps} />
             <InputCell field="sellingPrice3" label="Scenario 3" unit="$" {...inputProps} />
           </InputSection>
 
-          <InputSection title="ENTRY · OPERATING">
+          <InputSection title="ENTRY · OPERATING" {...sectionProps("operating", maintenanceFields.length + operatingFields.length)}>
             {maintenanceFields.map((field, index) => <InputCell field={field} key={field} label={`${maintenanceLabels[index]} · F${index + 1}`} {...inputProps} />)}
             {operatingFields.map(([field, label, unit]) => <InputCell field={field} key={field} label={label} unit={unit} {...inputProps} />)}
           </InputSection>
 
-          <InputSection title="ENTRY · FINANCING">
+          <InputSection title="ENTRY · FINANCING" {...sectionProps("financing", 3)}>
             <InputCell field="loanPrincipal" label="Loan principal — blank uses minimum price" unit="$" {...inputProps} />
             <InputCell field="loanTerm" label="Repayment term" unit="years" {...inputProps} />
             <InputCell field="interestRate" label="Annual interest" unit="%" {...inputProps} />
