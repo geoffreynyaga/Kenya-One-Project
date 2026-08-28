@@ -1,9 +1,9 @@
 /**
  * Bridges the Sref sheet's form to the shared design quantities.
  *
- * Fifteen of this sheet's fields are read by other stages and live in
- * `domain/atoms`. Three are consequences the domain layer derives. The
- * remaining ten belong to this sheet alone and stay in local persisted state.
+ * Seventeen of this sheet's fields are read by other stages and live in
+ * `domain/atoms`. Four are consequences the domain layer derives. The
+ * remaining six belong to this sheet alone and stay in local persisted state.
  *
  * Atoms hold numbers, because that is what every other stage wants. Inputs
  * edit strings, because "1." and "0.0" have to survive being typed. The draft
@@ -29,7 +29,10 @@ import {
   oswaldEfficiencyAtom,
   powerLoadingAtom,
   propEfficiencyCruiseAtom,
+  rollingFrictionAtom,
   stallSpeedKcasAtom,
+  takeoffGearDragAtom,
+  takeoffLiftCoefficientAtom,
   taxiFractionAtom,
   vmaxKnotsAtom,
   wingLoadingAtom,
@@ -46,10 +49,7 @@ export type PrivateField =
   | "ceilingRoc"
   | "propEfficiencyClimb"
   | "propEfficiencyTakeoff"
-  | "clTakeoff"
-  | "takeoffSpeed"
-  | "takeoffGearDrag"
-  | "rollingFriction";
+  | "takeoffSpeed";
 
 const PRIVATE_DEFAULTS: Record<PrivateField, number> = {
   serviceCeiling: 18000,
@@ -58,10 +58,7 @@ const PRIVATE_DEFAULTS: Record<PrivateField, number> = {
   ceilingRoc: 100,
   propEfficiencyClimb: 0.7,
   propEfficiencyTakeoff: 0.583014076612842,
-  clTakeoff: 1.4869053204776603,
   takeoffSpeed: 67.11577841941003,
-  takeoffGearDrag: 0.005,
-  rollingFriction: 0.04,
 };
 
 const PRIVATE_KEY = "kenya-one:sref:private:v1";
@@ -99,6 +96,8 @@ export function useSrefSheet(): SrefSheet {
   const [altitude, setAltitude] = useAtom(cruiseAltitudeFtAtom);
   const [powerLoading, setPowerLoading] = useAtom(powerLoadingAtom);
   const [engineCount, setEngineCount] = useAtom(engineCountAtom);
+  const [gearDrag, setGearDrag] = useAtom(takeoffGearDragAtom);
+  const [rollingFriction, setRollingFriction] = useAtom(rollingFrictionAtom);
   const [wingLoadingOverride, setWingLoadingOverride] = useAtom(
     wingLoadingOverrideAtom
   );
@@ -106,6 +105,7 @@ export function useSrefSheet(): SrefSheet {
   const inducedDragFactor = useAtomValue(inducedDragFactorAtom);
   const ldMax = useAtomValue(ldMaxAtom);
   const wingLoading = useAtomValue(wingLoadingAtom);
+  const clTakeoff = useAtomValue(takeoffLiftCoefficientAtom);
 
   const [privates, setPrivates, resetPrivates] = usePersistentState<
     Record<PrivateField, number>
@@ -140,6 +140,8 @@ export function useSrefSheet(): SrefSheet {
         altitude: setAltitude,
         powerLoading: setPowerLoading,
         engineCount: setEngineCount,
+        takeoffGearDrag: setGearDrag,
+        rollingFriction: setRollingFriction,
         // The design point is a shared decision, not a local shadow: every
         // stage downstream sizes against the wing this picks.
         wingLoading: (v: number) => setWingLoadingOverride(v),
@@ -148,7 +150,7 @@ export function useSrefSheet(): SrefSheet {
       setClMax, setStallSpeed, setVmax, setAspectRatio, setCd0, setOswald,
       setPropCruise, setDesignWeight, setTaxiFraction, setClimbFraction,
       setCruiseRatio, setCruiseSpeed, setAltitude, setPowerLoading,
-      setEngineCount, setWingLoadingOverride,
+      setEngineCount, setWingLoadingOverride, setGearDrag, setRollingFriction,
     ]
   );
 
@@ -169,17 +171,20 @@ export function useSrefSheet(): SrefSheet {
       altitude,
       powerLoading,
       engineCount,
+      takeoffGearDrag: gearDrag,
+      rollingFriction,
       wingLoading,
       inducedDragFactor,
       ldMax,
+      clTakeoff,
       ...privates,
       ...shadows,
     }),
     [
       clMax, stallSpeed, vmax, aspectRatio, cd0, oswald, propCruise,
       designWeight, taxiFraction, climbFraction, cruiseRatio, cruiseSpeed,
-      altitude, powerLoading, engineCount, wingLoading, inducedDragFactor,
-      ldMax, shadows, privates,
+      altitude, powerLoading, engineCount, gearDrag, rollingFriction,
+      wingLoading, inducedDragFactor, ldMax, clTakeoff, shadows, privates,
     ]
   );
 
@@ -269,12 +274,14 @@ export function useSrefSheet(): SrefSheet {
         cruiseSpeed,
         inducedDragFactor,
         ldMax,
+        clTakeoff,
       };
       return shared[field] ?? null;
     },
     [
       shadows, designWeight, cd0, oswald, propCruise, taxiFraction,
       climbFraction, cruiseRatio, cruiseSpeed, inducedDragFactor, ldMax,
+      clTakeoff,
     ]
   );
 

@@ -1,6 +1,6 @@
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import {
   ColumnDef,
   flexRender,
@@ -48,6 +48,7 @@ import {
 import {
   powerPerEngineHpAtom,
   powerRequiredHpAtom,
+  selectedEngineAtom,
   stallLimitWingLoadingAtom,
   wingAreaM2Atom,
 } from "../../domain/atoms";
@@ -790,6 +791,25 @@ export default function SrefDesign() {
 
   const selectEngine = (number: number) =>
     setView((current) => ({ ...current, engineNumber: number }));
+
+  /*
+   * Publish the engine downstream. Every performance stage flies on its rated
+   * power, and none of them has a catalogue to look it up in — the catalogue
+   * is server data, which never crosses a stage boundary.
+   *
+   * The recommended engine counts as selected: it is what this sheet shows as
+   * the choice, and leaving the atom null would have the performance stages
+   * fall back to the bare power requirement while the page says otherwise.
+   */
+  const publishEngine = useSetAtom(selectedEngineAtom);
+  useEffect(() => {
+    if (selectedEngine === null) return;
+    publishEngine({
+      number: selectedEngine.number,
+      name: selectedEngine.name,
+      ratedHp: selectedEngine.hp,
+    });
+  }, [publishEngine, selectedEngine]);
 
   const changeField = (field: FormField, value: string) => {
     setField(field, value);
