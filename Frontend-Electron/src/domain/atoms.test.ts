@@ -63,6 +63,7 @@ describe("the shared quantities reproduce the workbook", () => {
       number: 1,
       name: "Lycoming IO-360-A4M",
       ratedHp: 180,
+      rpm: 2700,
     });
 
     expect(s.get(installedPowerBhpAtom)).toBe(180);

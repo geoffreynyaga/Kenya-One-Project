@@ -22,6 +22,7 @@ import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
 import {
+  densityAt,
   FT2_PER_M2,
   KNOT_TO_FPS,
   LIFT_OFF_SPEED_COEFFICIENT,
@@ -109,12 +110,27 @@ export interface SelectedEngine {
   name: string;
   /** Rated shaft power of one engine, bhp. */
   ratedHp: number;
+  /** Speed at that rating, rpm. Climb needs it for the advance ratio. */
+  rpm: number;
 }
 
 export const selectedEngineAtom = persisted<SelectedEngine | null>(
-  "selectedEngine",
+  "selectedEngine:v2",
   null
 );
+
+/**
+ * Propeller diameter, ft. Take-off sizes the static thrust on the disc it
+ * sweeps; climb needs it for the advance ratio. Workbook take-off!C8.
+ */
+export const propellerDiameterFtAtom = persisted("propellerDiameterFt", 6.25);
+
+/**
+ * Propeller efficiency in the climb. Lower than cruise, because the climb is
+ * flown slower than the propeller is pitched for. Read by Sref and by climb.
+ * Workbook Sref!B21.
+ */
+export const propEfficiencyClimbAtom = persisted("propEfficiencyClimb", 0.7);
 
 /**
  * Brakes-off rolling resistance between tyre and surface. A choice about the
@@ -212,6 +228,11 @@ export const wingAreaFt2Atom = atom(
 
 export const wingAreaM2Atom = atom((get) => get(wingAreaFt2Atom) / FT2_PER_M2);
 
+/** Density at the cruise altitude, slug/ft³. Read by climb and cruise. */
+export const cruiseDensityAtom = atom((get) =>
+  densityAt(get(cruiseAltitudeFtAtom))
+);
+
 /**
  * Workbook Sref!B22: the lift coefficient held through the ground roll.
  *
@@ -259,7 +280,6 @@ export const installedPowerBhpAtom = atom((get) => {
   if (engine === null) return get(powerRequiredHpAtom);
   return engine.ratedHp * get(engineCountAtom);
 });
-
 
 /** Workbook Wing & Airfoil!B6: b = sqrt(S * AR). */
 export const wingspanFtAtom = atom((get) =>

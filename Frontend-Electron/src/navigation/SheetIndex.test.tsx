@@ -35,3 +35,18 @@ test("the performance group shows its own sheets", () => {
   // Sizing sheets are not in this index.
   expect(screen.queryByText("09 COST")).toBeNull();
 });
+
+test("climb is reachable from the performance index", () => {
+  render(
+    <MemoryRouter initialEntries={["/projects/project1/performance/take-off"]}>
+      <Routes>
+        <Route path="/projects/:id/*" element={<SheetIndex />} />
+      </Routes>
+    </MemoryRouter>
+  );
+
+  expect(screen.getByRole("link", { name: "02 CLIMB" })).toHaveAttribute(
+    "href",
+    "/projects/project1/performance/climb"
+  );
+});

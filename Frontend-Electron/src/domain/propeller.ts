@@ -72,7 +72,7 @@ function staticThrust(
 }
 
 /** Thrust from shaft power and propeller efficiency at a speed in knots. */
-function thrustFromPower(
+export function thrustFromPower(
   powerBhp: number,
   propEfficiency: number,
   speedKnots: number
