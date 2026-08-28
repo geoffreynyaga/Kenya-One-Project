@@ -140,7 +140,7 @@ export default function Cruise() {
       cell: "C7",
       origin: "SHEET 02",
       body: sheet.engine
-        ? `${sheet.engine.name} at ${sheet.engine.ratedHp} hp, times the engine count. The cruise is flown at 73% of it.`
+        ? `${sheet.engine.name} at ${sheet.engine.ratedHp} hp, times the engine count. The cruise is flown at ${nf(100 * inputs.cruisePowerFraction, 0)}% of it.`
         : "No engine has been selected on Sheet 02 yet, so the power the sizing curves asked for is standing in for it.",
     },
     {
@@ -327,7 +327,7 @@ export default function Cruise() {
       "Cruise power",
       q(result.cruisePowerBhp, "bhp", 1),
       "B8",
-      "Shaft power held in the cruise — 73% of what is installed.",
+      `Shaft power held in the cruise — ${nf(100 * inputs.cruisePowerFraction, 0)}% of what is installed.`,
     ],
     [
       "Density",

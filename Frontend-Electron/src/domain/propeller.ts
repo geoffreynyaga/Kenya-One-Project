@@ -28,7 +28,7 @@ const SLOPE_CONSTANT = 325.8;
 /** Momentum-theory coefficient for a static propeller, from Gudmundsson. */
 const STATIC_THRUST_COEFFICIENT = 0.85;
 
-interface PropellerGeometry {
+export interface PropellerGeometry {
   /** Propeller diameter, ft. */
   diameterFt: number;
   /** Hub diameter as a fraction of the propeller diameter. */
@@ -51,6 +51,20 @@ function propellerDisc(geometry: PropellerGeometry): PropellerDisc {
     hubDiameterFt,
     spinnerAreaFt2: (PI_FOUR_FIGURE * hubDiameterFt ** 2) / 4,
   };
+}
+
+/**
+ * Thrust with the aeroplane held on the brakes, from the propeller's geometry.
+ *
+ * Landing reads this: the thrust still turning over at idle is quoted as a
+ * fraction of it, and that fraction is what the brakes have to work against.
+ */
+export function staticThrustLbf(
+  geometry: PropellerGeometry,
+  powerBhp: number,
+  densitySlugFt3: number
+): number {
+  return staticThrust(powerBhp, densitySlugFt3, propellerDisc(geometry));
 }
 
 /**

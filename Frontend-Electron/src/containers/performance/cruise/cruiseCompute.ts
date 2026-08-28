@@ -9,6 +9,7 @@
  * small at cruise and large at the ends, which is the point of plotting both.
  */
 
+import { minimumDragSpeedKtas } from "../../../domain/dragPolar";
 import {
   densityAt,
   HP_TO_FT_LB_PER_S,
@@ -16,7 +17,6 @@ import {
   SEA_LEVEL_DENSITY_SLUG_FT3,
 } from "../../../domain/constants";
 import {
-  CRUISE_POWER_FRACTION,
   CruiseInputs,
   CruiseResult,
   CruiseWarning,
@@ -84,7 +84,8 @@ export function cruise(inputs: CruiseInputs): CruiseResult {
     clAtMinimumDrag,
   } = inputs;
 
-  const cruisePowerBhp = CRUISE_POWER_FRACTION * inputs.maxRatedPowerBhp;
+  const cruisePowerBhp =
+    inputs.cruisePowerFraction * inputs.maxRatedPowerBhp;
   const density = densityAt(inputs.cruiseAltitudeFt);
   const densityRatio = density / SEA_LEVEL_DENSITY_SLUG_FT3;
   const cruiseSpeedFps = inputs.cruiseSpeedKtas * KNOT_TO_FPS;
@@ -233,10 +234,13 @@ export function cruise(inputs: CruiseInputs): CruiseResult {
     densityRatio,
     dynamicPressure,
     thrustSettingLbf,
-    // Drag bottoms where the induced and parasite terms are equal.
-    minimumDragSpeedKtas:
-      Math.sqrt(((2 * weight) / (density * area)) * Math.sqrt(k / cdMin)) /
-      KNOT_TO_FPS,
+    minimumDragSpeedKtas: minimumDragSpeedKtas(
+      weight,
+      density,
+      area,
+      k,
+      cdMin
+    ),
 
     polar,
 

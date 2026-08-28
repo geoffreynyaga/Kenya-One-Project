@@ -6,6 +6,7 @@ export const WORKBOOK_INPUTS: CruiseInputs = {
   propEfficiencyCruise: 0.75,
   cruiseSfc: 0.5,
   cruiseSpeedKtas: 140,
+  cruisePowerFraction: 0.73,
   bankAngleDeg: 40,
 
   wingMomentCoefficient: -0.1,

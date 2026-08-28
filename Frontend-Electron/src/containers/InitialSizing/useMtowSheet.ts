@@ -1,9 +1,9 @@
 import { useMemo, useState } from "react";
 
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 
 import { MtowField, MtowFieldErrors, MtowSizingRequest } from "../../api/mtowSizing";
-import { ldMaxAtom } from "../../domain/atoms";
+import { ldMaxAtom, passengerCountAtom } from "../../domain/atoms";
 import { usePersistentValue } from "../../hooks/usePersistentState";
 
 export type MtowValues = {
@@ -141,6 +141,11 @@ export function useMtowSheet(axisRange: number[]) {
   // a hardcoded 13 while Sheet 02 uses 13.55 is how the two came to disagree.
   const ldMax = useAtomValue(ldMaxAtom);
 
+  // Range measures efficiency in passenger-miles per pound of fuel, so the
+  // passenger count has to leave this sheet. It goes on the commit rather than
+  // the keystroke, so a half-typed number never reaches another stage.
+  const setPassengerCount = useSetAtom(passengerCountAtom);
+
   // The sheet solves what it loaded with, so the first request is ready before
   // anything renders and the query needs no effect to start it.
   const [submitted, setSubmitted] = useState<MtowSizingRequest>(() =>
@@ -169,6 +174,7 @@ export function useMtowSheet(axisRange: number[]) {
     const nextErrors = validate(values);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return false;
+    setPassengerCount(Number(values.pax));
     setSubmitted(toRequest(values, axisRange, ldMax));
     return true;
   };

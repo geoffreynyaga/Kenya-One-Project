@@ -4,9 +4,6 @@
  * `cruiseCompute`.
  */
 
-/** Workbook B8 — the fraction of rated power held in the cruise. */
-export const CRUISE_POWER_FRACTION = 0.73;
-
 /**
  * How many speeds the drag polar is walked at, and how many altitudes the
  * stall table is.
@@ -39,6 +36,8 @@ export interface CruiseInputs {
   cruiseSfc: number;
   /** Workbook B11, from Sheet 02 — cruise speed, KTAS. */
   cruiseSpeedKtas: number;
+  /** Workbook B8 — fraction of rated power held in the cruise. */
+  cruisePowerFraction: number;
   /** Workbook B38 — bank angle the turning stall is taken at, degrees. */
   bankAngleDeg: number;
 

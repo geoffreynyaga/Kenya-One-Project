@@ -47,6 +47,8 @@ import CostAnalysis from "./costs/CostAnalysis";
 import TakeOff from "./performance/takeOff/TakeOff";
 import Climb from "./performance/climb/Climb";
 import Cruise from "./performance/cruise/Cruise";
+import Range from "./performance/range/Range";
+import Landing from "./performance/landing/Landing";
 
 const ProjectDetail = () => {
   const routes = [
@@ -100,6 +102,14 @@ const ProjectDetail = () => {
     {
       path: "performance/cruise",
       component: Cruise,
+    },
+    {
+      path: "performance/range",
+      component: Range,
+    },
+    {
+      path: "performance/landing",
+      component: Landing,
     },
   ];
 
