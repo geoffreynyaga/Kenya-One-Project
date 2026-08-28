@@ -325,6 +325,18 @@ export function cruiseWarnings(
   });
 
   warnings.push({
+    key: "mac-conversion",
+    severity: "defect",
+    cell: "E48",
+    message:
+      "The mean aerodynamic chord is worked out by multiplying a length in " +
+      "metres by 3.84, where the conversion to feet is 3.28. It comes out " +
+      "about a sixth too long, and the chord sets both the wing's pitching " +
+      "moment and every centre-of-gravity arm below it. The chord the " +
+      "planform gives is used here instead.",
+  });
+
+  warnings.push({
     key: "density-lapse",
     severity: "check",
     cell: "B9 · F36",

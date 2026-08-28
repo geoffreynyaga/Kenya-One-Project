@@ -49,4 +49,8 @@ test("climb is reachable from the performance index", () => {
     "href",
     "/projects/project1/performance/climb"
   );
+  expect(screen.getByRole("link", { name: "03 CRUISE" })).toHaveAttribute(
+    "href",
+    "/projects/project1/performance/cruise"
+  );
 });

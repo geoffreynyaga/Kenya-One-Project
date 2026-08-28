@@ -140,6 +140,8 @@ test("renders workbook-parity summary and sized outputs", async () => {
 });
 
 test("recommends the closest engine that covers the power per engine", async () => {
+  // Two engines, said out loud — the power per engine is what is under test.
+  window.localStorage.setItem("design:engineCount", "2");
   renderPage();
   await screen.findByRole("table", { name: "Engine catalog" });
 
