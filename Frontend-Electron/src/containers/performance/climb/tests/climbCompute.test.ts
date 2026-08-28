@@ -1,7 +1,11 @@
 import {
+  altitudeStudyAt,
+  bestRateAt,
   climb,
   climbWarnings,
   CORRECT_CLIMB_ANGLE_ITERATES,
+  powerCurveAt,
+  rateSweepAt,
 } from "../climbCompute";
 import { WORKBOOK_INPUTS } from "./fixture";
 
@@ -10,6 +14,15 @@ function close(actual: number, expected: number, tolerance = 1e-9): boolean {
     Math.abs(actual - expected) <= tolerance * Math.max(1, Math.abs(expected))
   );
 }
+
+/**
+ * Anything downstream of an air density. The sheet types the lapse constant as
+ * 6.8753e-6 in some blocks and 6.8756e-6 in others; the app runs one
+ * atmosphere model from `domain/constants` for all of it, so these land within
+ * 3.4e-5 of the cached figures rather than on them exactly. The blocks that
+ * used 6.8756e-6 still match to the last digit.
+ */
+const DENSITY_TOLERANCE = 1e-4;
 
 describe("climbCompute parity with the climb sheet", () => {
   const result = climb(WORKBOOK_INPUTS);
@@ -37,50 +50,54 @@ describe("climbCompute parity with the climb sheet", () => {
   });
 
   it("walks the power curve on A21:F30", () => {
-    expect(result.powerCurve).toHaveLength(10);
-
-    const [first, second] = result.powerCurve;
-    expect(first.speedKtas).toBe(20);
+    // The sweep spans this design's envelope, so the workbook's speeds are
+    // asked for directly — what parity is about is the formula, not the axis.
+    const first = powerCurveAt(WORKBOOK_INPUTS, 20);
     expect(close(first.dynamicPressure, 1.3551480063999999)).toBe(true);
     expect(close(first.cl, 16.74451555616459)).toBe(true);
     expect(close(first.dragLbf, 5299.085790111694)).toBe(true);
     expect(close(first.powerRequired, 178897.1362741708)).toBe(true);
     expect(close(first.powerAvailable, 200200)).toBe(true);
 
+    const second = powerCurveAt(WORKBOOK_INPUTS, 40);
     expect(close(second.dragLbf, 1357.8128645746754)).toBe(true);
     expect(close(second.powerRequired, 91679.52461608208)).toBe(true);
 
-    const last = result.powerCurve[9];
-    expect(last.speedKtas).toBe(200);
+    const last = powerCurveAt(WORKBOOK_INPUTS, 200);
     expect(close(last.dynamicPressure, 135.51480063999998)).toBe(true);
     expect(close(last.cl, 0.1674451555616459)).toBe(true);
     expect(close(last.dragLbf, 934.0072020357029)).toBe(true);
     expect(close(last.powerRequired, 315320.8314072533)).toBe(true);
+
+    expect(result.powerCurve).toHaveLength(10);
   });
 
   it("gives the best rate on B33 and its sensitivity on B37:D42", () => {
     expect(close(result.bestRateFpm, 1403.9783320899182)).toBe(true);
-
     expect(result.bestRateSweepEfficiencies).toEqual([0.6, 0.7, 0.8]);
     expect(result.bestRateSweep).toHaveLength(6);
 
-    const [first] = result.bestRateSweep;
-    expect(first.speedFps).toBe(40);
-    expect(close(first.ratesFpm[0], 1555.4462954228434)).toBe(true);
-    expect(close(first.ratesFpm[1], 1848.7796287561766)).toBe(true);
-    expect(close(first.ratesFpm[2], 2142.1129620895103)).toBe(true);
-
-    const last = result.bestRateSweep[5];
-    expect(last.speedFps).toBe(140);
-    expect(close(last.ratesFpm[0], 1044.0620339799516)).toBe(true);
-    expect(close(last.ratesFpm[2], 1630.7287006466183)).toBe(true);
+    expect(
+      close(bestRateAt(WORKBOOK_INPUTS, 0.6, 40), 1555.4462954228434)
+    ).toBe(true);
+    expect(
+      close(bestRateAt(WORKBOOK_INPUTS, 0.7, 40), 1848.7796287561766)
+    ).toBe(true);
+    expect(
+      close(bestRateAt(WORKBOOK_INPUTS, 0.8, 40), 2142.1129620895103)
+    ).toBe(true);
+    expect(
+      close(bestRateAt(WORKBOOK_INPUTS, 0.6, 140), 1044.0620339799516)
+    ).toBe(true);
+    expect(
+      close(bestRateAt(WORKBOOK_INPUTS, 0.8, 140), 1630.7287006466183)
+    ).toBe(true);
   });
 
   it("sweeps the rate against speed at both altitudes on R4:W14", () => {
     expect(result.rateSweep).toHaveLength(11);
 
-    const [first] = result.rateSweep;
-    expect(first.speedKtas).toBe(10);
+    const first = rateSweepAt(WORKBOOK_INPUTS, 10);
     expect(close(first.thrustLbf, 11860.189573459716)).toBe(true);
     expect(close(first.dynamicPressureSeaLevel, 0.33878700159999997)).toBe(
       true
@@ -89,63 +106,136 @@ describe("climbCompute parity with the climb sheet", () => {
     expect(close(first.dynamicPressureCruise, 0.2501724032)).toBe(true);
     expect(close(first.rateCruiseFpm, 604.7233929118777)).toBe(true);
 
-    const third = result.rateSweep[2];
-    expect(third.speedKtas).toBe(50);
+    const third = rateSweepAt(WORKBOOK_INPUTS, 50);
     expect(close(third.rateSeaLevelFpm, 1791.763865703572)).toBe(true);
     expect(close(third.rateCruiseFpm, 1728.466431745319)).toBe(true);
 
-    const last = result.rateSweep[10];
-    expect(last.speedKtas).toBe(210);
+    const last = rateSweepAt(WORKBOOK_INPUTS, 210);
     expect(close(last.rateSeaLevelFpm, -1529.3708271920975)).toBe(true);
     expect(close(last.rateCruiseFpm, -623.6238166852492)).toBe(true);
   });
 
   it("lapses the power and density for the study on B54:B59", () => {
-    expect(close(result.studyDensity, 0.002049049455252293)).toBe(true);
-    expect(close(result.studyDensityRatio, 0.8616692410648836)).toBe(true);
-    expect(close(result.studyPowerBhp, 438.57298206043305)).toBe(true);
+    expect(
+      close(result.studyDensity, 0.002049049455252293, DENSITY_TOLERANCE)
+    ).toBe(true);
+    expect(
+      close(result.studyDensityRatio, 0.8616692410648836, DENSITY_TOLERANCE)
+    ).toBe(true);
+    expect(
+      close(result.studyPowerBhp, 438.57298206043305, DENSITY_TOLERANCE)
+    ).toBe(true);
   });
 
   it("walks the altitude study on D57:X69", () => {
     expect(result.altitudeStudy).toHaveLength(13);
     expect(result.altitudeStudyEfficiencies).toEqual([0.6, 0.7, 0.75]);
 
-    const [first] = result.altitudeStudy;
-    expect(first.speedKcas).toBe(40);
-    expect(close(first.speedKtas, 43.091309912569336)).toBe(true);
-    expect(close(first.speedFps, 70.36810908722573)).toBe(true);
-    expect(close(first.dynamicPressure, 5.0731091536)).toBe(true);
-    expect(close(first.cl, 4.472858002270253)).toBe(true);
-    expect(close(first.cdInduced, 1.0804881197155258)).toBe(true);
-    expect(close(first.cd, 1.1057080637263317)).toBe(true);
-    expect(close(first.dragLbf, 1446.1429738024167)).toBe(true);
-    expect(close(first.advanceRatio, 0.25019772119902484)).toBe(true);
+    const first = altitudeStudyAt(WORKBOOK_INPUTS, 40);
+    expect(close(first.speedKtas, 43.091309912569336, DENSITY_TOLERANCE)).toBe(
+      true
+    );
+    expect(close(first.speedFps, 70.36810908722573, DENSITY_TOLERANCE)).toBe(
+      true
+    );
+    expect(close(first.dynamicPressure, 5.0731091536, DENSITY_TOLERANCE)).toBe(
+      true
+    );
+    expect(close(first.cl, 4.472858002270253, DENSITY_TOLERANCE)).toBe(true);
+    expect(close(first.cdInduced, 1.0804881197155258, DENSITY_TOLERANCE)).toBe(
+      true
+    );
+    expect(close(first.cd, 1.1057080637263317, DENSITY_TOLERANCE)).toBe(true);
+    expect(close(first.dragLbf, 1446.1429738024167, DENSITY_TOLERANCE)).toBe(
+      true
+    );
+    expect(
+      close(first.advanceRatio, 0.25019772119902484, DENSITY_TOLERANCE)
+    ).toBe(true);
+    expect(
+      close(first.thrustLbf[0], 2056.7425493918277, DENSITY_TOLERANCE)
+    ).toBe(true);
+    expect(
+      close(first.excessPower[0], 42966.73754368942, DENSITY_TOLERANCE)
+    ).toBe(true);
+    expect(close(first.ratesFpm[0], 440.6844876275838, DENSITY_TOLERANCE)).toBe(
+      true
+    );
+    expect(
+      close(first.thrustLbf[1], 2399.532974290466, DENSITY_TOLERANCE)
+    ).toBe(true);
+    expect(close(first.ratesFpm[1], 688.0846313539819, DENSITY_TOLERANCE)).toBe(
+      true
+    );
+    expect(
+      close(first.thrustLbf[2], 2570.928186739785, DENSITY_TOLERANCE)
+    ).toBe(true);
+    expect(close(first.ratesFpm[2], 811.784703217181, DENSITY_TOLERANCE)).toBe(
+      true
+    );
 
-    expect(close(first.thrustLbf[0], 2056.7425493918277)).toBe(true);
-    expect(close(first.excessPower[0], 42966.73754368942)).toBe(true);
-    expect(close(first.ratesFpm[0], 440.6844876275838)).toBe(true);
-
-    expect(close(first.thrustLbf[1], 2399.532974290466)).toBe(true);
-    expect(close(first.ratesFpm[1], 688.0846313539819)).toBe(true);
-
-    expect(close(first.thrustLbf[2], 2570.928186739785)).toBe(true);
-    expect(close(first.excessPower[2], 79149.00856367515)).toBe(true);
-    expect(close(first.ratesFpm[2], 811.784703217181)).toBe(true);
-
-    const second = result.altitudeStudy[1];
-    expect(close(second.speedFps, 87.96013635903216)).toBe(true);
-    expect(close(second.dragLbf, 955.9600525588853)).toBe(true);
-    expect(close(second.ratesFpm[0], 621.9764872110338)).toBe(true);
+    const second = altitudeStudyAt(WORKBOOK_INPUTS, 50);
+    expect(close(second.speedFps, 87.96013635903216, DENSITY_TOLERANCE)).toBe(
+      true
+    );
+    expect(close(second.dragLbf, 955.9600525588853, DENSITY_TOLERANCE)).toBe(
+      true
+    );
+    expect(
+      close(second.ratesFpm[0], 621.9764872110338, DENSITY_TOLERANCE)
+    ).toBe(true);
   });
 
   it("takes the best rate of each study column on P71, T71 and X71", () => {
-    expect(close(result.altitudeStudyBestFpm[0], 783.9977945851103)).toBe(true);
-    expect(close(result.altitudeStudyBestFpm[1], 1031.3979383115084)).toBe(
-      true
+    const workbookSpeeds = [
+      40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160,
+    ];
+    const rows = workbookSpeeds.map((v) => altitudeStudyAt(WORKBOOK_INPUTS, v));
+    const best = (column: number) =>
+      Math.max(...rows.map((row) => row.ratesFpm[column]));
+
+    expect(close(best(0), 783.9977945851103, DENSITY_TOLERANCE)).toBe(true);
+    expect(close(best(1), 1031.3979383115084, DENSITY_TOLERANCE)).toBe(true);
+    expect(close(best(2), 1155.0980101747077, DENSITY_TOLERANCE)).toBe(true);
+  });
+});
+
+describe("a different aeroplane", () => {
+  /** A light single: slower, lighter, and stalling much lower. */
+  const LIGHT = {
+    ...WORKBOOK_INPUTS,
+    cruiseSpeedKtas: 105,
+    stallSpeedKcas: 45,
+    mtowLb: 2400,
+    maxRatedPowerBhp: 180,
+  };
+
+  it("spans each sweep over its own envelope, not the workbook's", () => {
+    const workbook = climb(WORKBOOK_INPUTS);
+    const light = climb(LIGHT);
+
+    const top = (points: { speedKtas: number }[]) =>
+      points[points.length - 1].speedKtas;
+
+    // A slower aeroplane gets slower sweeps; fixed at the workbook's range
+    // most of its curve would have been off the useful part of the chart.
+    expect(top(light.powerCurve)).toBeLessThan(top(workbook.powerCurve));
+    expect(top(light.rateSweep)).toBeLessThan(top(workbook.rateSweep));
+    expect(light.altitudeStudy[0].speedKcas).toBeLessThan(
+      workbook.altitudeStudy[0].speedKcas
     );
-    expect(close(result.altitudeStudyBestFpm[2], 1155.0980101747077)).toBe(
-      true
-    );
+
+    // Each sweep still reaches past the speed the aeroplane cruises at.
+    expect(top(light.powerCurve)).toBeGreaterThan(LIGHT.cruiseSpeedKtas);
+    expect(top(light.rateSweep)).toBeGreaterThan(LIGHT.cruiseSpeedKtas);
+  });
+
+  it("keeps the resolution the workbook chose", () => {
+    const light = climb(LIGHT);
+    expect(light.powerCurve).toHaveLength(10);
+    expect(light.rateSweep).toHaveLength(11);
+    expect(light.bestRateSweep).toHaveLength(6);
+    expect(light.altitudeStudy).toHaveLength(13);
   });
 });
 

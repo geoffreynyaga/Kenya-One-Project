@@ -11,10 +11,10 @@
  */
 
 import {
+  densityAt,
   HP_TO_FT_LB_PER_S,
   KNOT_TO_FPS,
   PI_FOUR_FIGURE,
-  SEA_LEVEL_DENSITY_SLUG_FT3,
 } from "../../../domain/constants";
 import { thrustFromPower } from "../../../domain/propeller";
 
@@ -27,22 +27,31 @@ const SECONDS_PER_MINUTE = 60;
  */
 const BEST_ANGLE_SPEED_FACTOR = 1.1547;
 
-/** The power curve is walked at these speeds, KTAS. */
-const POWER_CURVE_KTAS = [20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
+/**
+ * How many points each sweep is walked at. The bounds are derived from the
+ * design; only the resolution is the workbook's, since that is a choice about
+ * how smooth a curve should look rather than about the aeroplane.
+ */
+const POWER_CURVE_POINTS = 10;
+const RATE_SWEEP_POINTS = 11;
+const BEST_RATE_SWEEP_POINTS = 6;
+const ALTITUDE_SWEEP_POINTS = 13;
 
-/** The rate-of-climb sweep is walked at these speeds, KTAS. */
-const RATE_SWEEP_KTAS = [10, 30, 50, 70, 90, 110, 130, 150, 170, 190, 210];
+/**
+ * How far past the cruise speed each speed sweep is drawn. The curves are
+ * worth seeing past the point they cross zero, which is a little beyond cruise
+ * for an aeroplane whose cruise is anywhere near its ceiling.
+ */
+const SWEEP_SPEED_MARGIN = 1.5;
 
-/** The best-rate sensitivity is walked at these speeds, ft/s. */
-const BEST_RATE_SWEEP_FPS = [40, 60, 80, 100, 120, 140];
+/** Evenly spaced points from start to end, inclusive of both. */
+function span(start: number, end: number, count: number): number[] {
+  const step = (end - start) / (count - 1);
+  return Array.from({ length: count }, (_, i) => start + i * step);
+}
 
 /** …against these propeller efficiencies. */
 const BEST_RATE_SWEEP_EFFICIENCIES = [0.6, 0.7, 0.8];
-
-/** The altitude study is walked at these speeds, KCAS. */
-const ALTITUDE_SWEEP_KCAS = [
-  40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160,
-];
 
 /** …against these propeller efficiencies. */
 const ALTITUDE_SWEEP_EFFICIENCIES = [0.6, 0.7, 0.75];
@@ -55,13 +64,6 @@ const ALTITUDE_SWEEP_EFFICIENCIES = [0.6, 0.7, 0.75];
  * because parity is the contract, and named so it is not mistaken for physics.
  */
 const ALTITUDE_STUDY_KNOT_TO_FPS = 1.633;
-
-/**
- * Workbook B58. The density lapse elsewhere in the project uses 6.8756e-6;
- * this sheet types 6.8753e-6. The difference is in the ninth decimal of the
- * density and matters only to the parity test.
- */
-const ALTITUDE_STUDY_LAPSE = 0.0000068753;
 
 export interface ClimbInputs {
   /** Workbook B5, from Sheet 02 — cruise speed, KTAS. */
@@ -76,6 +78,8 @@ export interface ClimbInputs {
   bestRateSpeedFromPlotKtas: number;
   /** Workbook B57 — altitude the sensitivity study is flown at, ft. */
   studyAltitudeFt: number;
+  /** Sheet 02 — stall speed, KCAS. Sets where the sweeps start. */
+  stallSpeedKcas: number;
   /** Workbook B55, from Sheet 02 — propeller speed, rpm. */
   propellerRpm: number;
   /** Workbook C8 of take-off — propeller diameter, ft. */
@@ -332,9 +336,141 @@ function bestRateSpeed(
   );
 }
 
+/** The induced drag factor and the best lift-to-drag ratio it implies. */
+function dragTerms(inputs: ClimbInputs) {
+  const k = 1 / (PI_FOUR_FIGURE * inputs.aspectRatio * inputs.oswaldEfficiency);
+  return { k, liftToDragMax: 1 / (2 * Math.sqrt(k * inputs.cdMin)) };
+}
+
+/**
+ * One speed on the power-required curve.
+ *
+ * Exported because the sweep below spans this design's own range of speeds,
+ * so the parity test needs a way to ask for the workbook's speeds directly.
+ * The same applies to the two below it.
+ */
+export function powerCurveAt(
+  inputs: ClimbInputs,
+  speedKtas: number
+): PowerCurvePoint {
+  const { k } = dragTerms(inputs);
+  const speedFps = speedKtas * KNOT_TO_FPS;
+  const q = 0.5 * inputs.seaLevelDensity * speedFps ** 2;
+  const cl = inputs.mtowLb / (q * inputs.wingAreaFt2);
+  const dragLbf = q * inputs.wingAreaFt2 * (inputs.cdMin + k * cl ** 2);
+  return {
+    speedKtas,
+    dynamicPressure: q,
+    cl,
+    dragLbf,
+    powerRequired: dragLbf * speedFps,
+    powerAvailable:
+      inputs.propEfficiencyClimb * inputs.maxRatedPowerBhp * HP_TO_FT_LB_PER_S,
+  };
+}
+
+/** One speed on the rate-of-climb sweep, at sea level and at cruise altitude. */
+export function rateSweepAt(
+  inputs: ClimbInputs,
+  speedKtas: number
+): RateSweepPoint {
+  const { k } = dragTerms(inputs);
+  const speedFps = speedKtas * KNOT_TO_FPS;
+  const thrust = thrustFromPower(
+    inputs.maxRatedPowerBhp,
+    inputs.propEfficiencyClimb,
+    speedKtas
+  );
+  const cosSquared = Math.cos(CLIMB_ANGLE_SEED_RAD) ** 2;
+  const rateAt = (density: number) => {
+    const q = 0.5 * density * speedFps ** 2;
+    return {
+      q,
+      fpm:
+        speedFps *
+        SECONDS_PER_MINUTE *
+        climbGradient(inputs, thrust, q, k, cosSquared),
+    };
+  };
+  const seaLevel = rateAt(inputs.seaLevelDensity);
+  const cruise = rateAt(inputs.cruiseDensity);
+  return {
+    speedKtas,
+    thrustLbf: thrust,
+    dynamicPressureSeaLevel: seaLevel.q,
+    rateSeaLevelFpm: seaLevel.fpm,
+    dynamicPressureCruise: cruise.q,
+    rateCruiseFpm: cruise.fpm,
+  };
+}
+
+/** Workbook B33 — the closed form for the best rate, fpm. */
+export function bestRateAt(
+  inputs: ClimbInputs,
+  efficiency: number,
+  speedFps: number
+): number {
+  const { liftToDragMax } = dragTerms(inputs);
+  return (
+    SECONDS_PER_MINUTE *
+    ((efficiency * HP_TO_FT_LB_PER_S * inputs.maxRatedPowerBhp) /
+      inputs.mtowLb -
+      (speedFps * BEST_ANGLE_SPEED_FACTOR) / liftToDragMax)
+  );
+}
+
+/** Shaft power and density at the altitude the study is flown at. */
+export function studyConditions(inputs: ClimbInputs) {
+  const density = densityAt(inputs.studyAltitudeFt);
+  const densityRatio = density / inputs.seaLevelDensity;
+  return {
+    density,
+    densityRatio,
+    powerBhp: inputs.maxRatedPowerBhp * (1.132 * densityRatio - 0.132),
+  };
+}
+
+/** One speed in the altitude study. */
+export function altitudeStudyAt(
+  inputs: ClimbInputs,
+  speedKcas: number
+): AltitudeStudyPoint {
+  const { density, densityRatio, powerBhp } = studyConditions(inputs);
+  const speedKtas = speedKcas / Math.sqrt(densityRatio);
+  const speedFps = speedKtas * ALTITUDE_STUDY_KNOT_TO_FPS;
+  const q = 0.5 * density * speedFps ** 2;
+  const cl = inputs.mtowLb / (inputs.wingAreaFt2 * q);
+  const cdInduced =
+    cl ** 2 / (PI_FOUR_FIGURE * inputs.aspectRatio * inputs.oswaldEfficiency);
+  const cd = inputs.cdMin + cdInduced;
+  const dragLbf = q * cd * inputs.wingAreaFt2;
+
+  const thrustLbf = ALTITUDE_SWEEP_EFFICIENCIES.map(
+    (efficiency) => (efficiency * HP_TO_FT_LB_PER_S * powerBhp) / speedFps
+  );
+  const excessPower = thrustLbf.map((thrust) => (thrust - dragLbf) * speedFps);
+
+  return {
+    speedKcas,
+    speedKtas,
+    speedFps,
+    dynamicPressure: q,
+    cl,
+    cdInduced,
+    cd,
+    dragLbf,
+    advanceRatio:
+      speedFps /
+      ((inputs.propellerRpm / SECONDS_PER_MINUTE) * inputs.propellerDiameterFt),
+    thrustLbf,
+    excessPower,
+    ratesFpm: excessPower.map(
+      (excess) => (SECONDS_PER_MINUTE * excess) / inputs.mtowLb
+    ),
+  };
+}
+
 export function climb(inputs: ClimbInputs): ClimbResult {
-  const weight = inputs.mtowLb;
-  const area = inputs.wingAreaFt2;
   const power = inputs.maxRatedPowerBhp;
 
   const inducedDragFactor =
@@ -362,112 +498,37 @@ export function climb(inputs: ClimbInputs): ClimbResult {
 
   // Power required to hold level flight, against what the propeller delivers.
   const powerAvailable = inputs.propEfficiencyClimb * power * HP_TO_FT_LB_PER_S;
-  const dragAt = (speedFps: number) => {
-    const q = 0.5 * inputs.seaLevelDensity * speedFps ** 2;
-    const cl = weight / (q * area);
-    return {
-      q,
-      cl,
-      dragLbf: q * area * (inputs.cdMin + inducedDragFactor * cl ** 2),
-    };
-  };
-  const powerCurve: PowerCurvePoint[] = POWER_CURVE_KTAS.map((speedKtas) => {
-    const speedFps = speedKtas * KNOT_TO_FPS;
-    const { q, cl, dragLbf } = dragAt(speedFps);
-    return {
-      speedKtas,
-      dynamicPressure: q,
-      cl,
-      dragLbf,
-      powerRequired: dragLbf * speedFps,
-      powerAvailable,
-    };
-  });
+  // Each sweep spans this aeroplane's own range of speeds rather than the one
+  // the workbook was filled in for.
+  const topSpeedKtas = inputs.cruiseSpeedKtas * SWEEP_SPEED_MARGIN;
 
-  /** Workbook B33 — the closed form for the best rate, fpm. */
-  const bestRateAt = (efficiency: number, speedFps: number) =>
-    SECONDS_PER_MINUTE *
-    ((efficiency * HP_TO_FT_LB_PER_S * power) / weight -
-      (speedFps * BEST_ANGLE_SPEED_FACTOR) / liftToDragMax);
+  const powerCurve: PowerCurvePoint[] = span(
+    Math.round(topSpeedKtas / POWER_CURVE_POINTS),
+    Math.round(topSpeedKtas),
+    POWER_CURVE_POINTS
+  ).map((v) => powerCurveAt(inputs, v));
 
-  const rateSweep: RateSweepPoint[] = RATE_SWEEP_KTAS.map((speedKtas) => {
-    const speedFps = speedKtas * KNOT_TO_FPS;
-    const thrust = thrustFromPower(
-      power,
-      inputs.propEfficiencyClimb,
-      speedKtas
-    );
-    const cosSquared = Math.cos(CLIMB_ANGLE_SEED_RAD) ** 2;
-    const rateAt = (density: number) => {
-      const q = 0.5 * density * speedFps ** 2;
-      return {
-        q,
-        fpm:
-          speedFps *
-          SECONDS_PER_MINUTE *
-          climbGradient(inputs, thrust, q, inducedDragFactor, cosSquared),
-      };
-    };
-    const seaLevel = rateAt(inputs.seaLevelDensity);
-    const cruise = rateAt(inputs.cruiseDensity);
-    return {
-      speedKtas,
-      thrustLbf: thrust,
-      dynamicPressureSeaLevel: seaLevel.q,
-      rateSeaLevelFpm: seaLevel.fpm,
-      dynamicPressureCruise: cruise.q,
-      rateCruiseFpm: cruise.fpm,
-    };
-  });
+  const rateStep = topSpeedKtas / RATE_SWEEP_POINTS;
+  const rateSweep: RateSweepPoint[] = span(
+    Math.round(rateStep / 2),
+    Math.round(topSpeedKtas + rateStep / 2),
+    RATE_SWEEP_POINTS
+  ).map((v) => rateSweepAt(inputs, v));
 
-  // The altitude study. Shaft power falls off with density by Gagg and Ferrar.
-  const studyDensity =
-    SEA_LEVEL_DENSITY_SLUG_FT3 *
-    (1 - ALTITUDE_STUDY_LAPSE * inputs.studyAltitudeFt) ** 4.2561;
-  const studyDensityRatio = studyDensity / inputs.seaLevelDensity;
-  const studyPowerBhp = power * (1.132 * studyDensityRatio - 0.132);
+  // Shaft power falls off with density by Gagg and Ferrar.
+  const {
+    density: studyDensity,
+    densityRatio: studyDensityRatio,
+    powerBhp: studyPowerBhp,
+  } = studyConditions(inputs);
 
-  const altitudeStudy: AltitudeStudyPoint[] = ALTITUDE_SWEEP_KCAS.map(
-    (speedKcas) => {
-      const speedKtas = speedKcas / Math.sqrt(studyDensityRatio);
-      const speedFps = speedKtas * ALTITUDE_STUDY_KNOT_TO_FPS;
-      const q = 0.5 * studyDensity * speedFps ** 2;
-      const cl = weight / (area * q);
-      const cdInduced =
-        cl ** 2 /
-        (PI_FOUR_FIGURE * inputs.aspectRatio * inputs.oswaldEfficiency);
-      const cd = inputs.cdMin + cdInduced;
-      const dragLbf = q * cd * area;
-
-      const thrusts = ALTITUDE_SWEEP_EFFICIENCIES.map(
-        (efficiency) =>
-          (efficiency * HP_TO_FT_LB_PER_S * studyPowerBhp) / speedFps
-      );
-      const excessPower = thrusts.map(
-        (thrust) => (thrust - dragLbf) * speedFps
-      );
-
-      return {
-        speedKcas,
-        speedKtas,
-        speedFps,
-        dynamicPressure: q,
-        cl,
-        cdInduced,
-        cd,
-        dragLbf,
-        advanceRatio:
-          speedFps /
-          ((inputs.propellerRpm / SECONDS_PER_MINUTE) *
-            inputs.propellerDiameterFt),
-        thrustLbf: thrusts,
-        excessPower,
-        ratesFpm: excessPower.map(
-          (excess) => (SECONDS_PER_MINUTE * excess) / weight
-        ),
-      };
-    }
-  );
+  // From a little below the stall at this altitude to well past the cruise.
+  const studyStallKcas = inputs.stallSpeedKcas;
+  const altitudeStudy: AltitudeStudyPoint[] = span(
+    Math.round(studyStallKcas * 0.65),
+    Math.round(inputs.cruiseSpeedKtas * 1.15),
+    ALTITUDE_SWEEP_POINTS
+  ).map((v) => altitudeStudyAt(inputs, v));
 
   return {
     inducedDragFactor,
@@ -491,13 +552,23 @@ export function climb(inputs: ClimbInputs): ClimbResult {
 
     powerCurve,
     powerAvailable,
-    powerRequiredAtBestRate:
-      dragAt(bestRateSpeedFps).dragLbf * bestRateSpeedFps,
-    bestRateFpm: bestRateAt(inputs.propEfficiencyClimb, bestRateSpeedFps),
-    bestRateSweep: BEST_RATE_SWEEP_FPS.map((speedFps) => ({
+    powerRequiredAtBestRate: powerCurveAt(
+      inputs,
+      bestRateSpeedFps / KNOT_TO_FPS
+    ).powerRequired,
+    bestRateFpm: bestRateAt(
+      inputs,
+      inputs.propEfficiencyClimb,
+      bestRateSpeedFps
+    ),
+    bestRateSweep: span(
+      Math.round((bestRateSpeedFps * 2) / 6) * 2,
+      Math.round((bestRateSpeedFps * 7) / 6 / 2) * 2,
+      BEST_RATE_SWEEP_POINTS
+    ).map((speedFps) => ({
       speedFps,
       ratesFpm: BEST_RATE_SWEEP_EFFICIENCIES.map((efficiency) =>
-        bestRateAt(efficiency, speedFps)
+        bestRateAt(inputs, efficiency, speedFps)
       ),
     })),
     bestRateSweepEfficiencies: BEST_RATE_SWEEP_EFFICIENCIES,

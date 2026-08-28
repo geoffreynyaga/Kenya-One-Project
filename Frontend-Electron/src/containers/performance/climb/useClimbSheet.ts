@@ -24,6 +24,7 @@ import {
   oswaldEfficiencyAtom,
   propellerDiameterFtAtom,
   propEfficiencyClimbAtom,
+  stallSpeedKcasAtom,
   SelectedEngine,
   selectedEngineAtom,
   wingAreaFt2Atom,
@@ -86,6 +87,7 @@ export function useClimbSheet(): ClimbSheet {
   const oswaldEfficiency = useAtomValue(oswaldEfficiencyAtom);
   const propellerDiameterFt = useAtomValue(propellerDiameterFtAtom);
   const engine = useAtomValue(selectedEngineAtom);
+  const stallSpeedKcas = useAtomValue(stallSpeedKcasAtom);
   const [propEfficiencyClimb, setPropEfficiencyClimb] = useAtom(
     propEfficiencyClimbAtom
   );
@@ -102,6 +104,7 @@ export function useClimbSheet(): ClimbSheet {
       ...entry,
       propEfficiencyClimb,
       cruiseSpeedKtas,
+      stallSpeedKcas,
       seaLevelDensity: SEA_LEVEL_DENSITY_SLUG_FT3,
       cruiseDensity,
       propellerRpm: engine?.rpm ?? RPM_WHEN_NO_ENGINE,
@@ -115,6 +118,7 @@ export function useClimbSheet(): ClimbSheet {
     }),
     [
       entry,
+      stallSpeedKcas,
       propEfficiencyClimb,
       cruiseSpeedKtas,
       cruiseDensity,

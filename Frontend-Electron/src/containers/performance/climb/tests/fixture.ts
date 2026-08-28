@@ -8,6 +8,7 @@ export const WORKBOOK_INPUTS: ClimbInputs = {
   propEfficiencyClimb: 0.7,
   bestRateSpeedFromPlotKtas: 72,
   studyAltitudeFt: 5000,
+  stallSpeedKcas: 61,
   propellerRpm: 2700,
   propellerDiameterFt: 6.25,
 
