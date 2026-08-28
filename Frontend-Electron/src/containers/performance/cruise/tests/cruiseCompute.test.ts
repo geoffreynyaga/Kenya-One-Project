@@ -282,6 +282,33 @@ describe("cruiseWarnings", () => {
     expect(keys).toContain("cg-stall-arm");
   });
 
+  it("says when the two drag models have collapsed into one", () => {
+    // The adjusted polar shifts to the lift coefficient of least drag, and
+    // this section's is 0.0007 — so near zero that the models never part.
+    const worst = Math.max(
+      ...result.polar.map(
+        (point) => Math.abs(point.cd - point.cdAdjusted) / point.cd
+      )
+    );
+    expect(worst).toBeLessThan(0.002);
+    expect(keys).toContain("drag-models-coincide");
+  });
+
+  it("stops saying so once the section makes least drag off zero", () => {
+    // A properly cambered section, where the two models genuinely differ.
+    const inputs = { ...WORKBOOK_INPUTS, clAtMinimumDrag: 0.2 };
+    const cambered = cruise(inputs);
+    const worst = Math.max(
+      ...cambered.polar.map(
+        (point) => Math.abs(point.cd - point.cdAdjusted) / point.cd
+      )
+    );
+    expect(worst).toBeGreaterThan(0.05);
+    expect(
+      cruiseWarnings(inputs, cambered).map((warning) => warning.key)
+    ).not.toContain("drag-models-coincide");
+  });
+
   it("names no cell in what the reader sees", () => {
     for (const warning of warnings) {
       expect(warning.message).not.toMatch(/\b[A-Z]{1,2}\d{1,3}\b/);

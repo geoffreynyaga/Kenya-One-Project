@@ -324,6 +324,26 @@ export function cruiseWarnings(
       "would not stay small if the thrust line moved.",
   });
 
+  const worst = result.polar.reduce(
+    (most, point) =>
+      Math.max(most, Math.abs(point.cd - point.cdAdjusted) / point.cd),
+    0
+  );
+  if (worst < 0.01) {
+    warnings.push({
+      key: "drag-models-coincide",
+      severity: "check",
+      cell: "H25",
+      message:
+        "The two drag models are the same model here. The adjusted one shifts " +
+        "the polar to the lift coefficient the section makes least drag at, " +
+        `and that is ${inputs.clAtMinimumDrag.toFixed(4)} — near enough zero ` +
+        `that the two never differ by more than ${(100 * worst).toFixed(2)}%. ` +
+        "Worth checking against the section data, since a cambered aerofoil " +
+        "usually makes least drag somewhere between 0.1 and 0.3.",
+    });
+  }
+
   warnings.push({
     key: "mac-conversion",
     severity: "defect",

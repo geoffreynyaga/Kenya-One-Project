@@ -491,7 +491,7 @@ export default function Cruise() {
 
           <div className="grid gap-4 xl:grid-cols-2">
             <Figure
-              caption="Parasite drag climbs with the square of speed and induced drag falls with it, so total drag has a floor between them. Left of that floor, going slower needs more power — the back side of the drag curve."
+              caption="Parasite drag climbs with the square of speed and induced drag falls with it, so total drag has a floor between them. Right of the floor the aeroplane is speed-stable — slowing reduces drag. Left of it, slowing raises drag, which is the back side of the curve and why the approach is flown on the front."
               title="DRAG · AGAINST AIRSPEED"
             >
               <Plot
@@ -538,47 +538,77 @@ export default function Cruise() {
                     name: "V CRUISE",
                   },
                 ]}
-                layout={figureLayout("AIRSPEED  [KTAS]", "DRAG  [LBF]")}
+                layout={{
+                  ...figureLayout("AIRSPEED  [KTAS]", "DRAG  [LBF]"),
+                  annotations: [
+                    {
+                      x: polarSpeeds[1],
+                      y: Math.max(...result.polar.map((p) => p.dragLbf)) * 0.86,
+                      text: "induced drag rising<br>speed unstable",
+                      showarrow: false,
+                      xanchor: "left",
+                      align: "left",
+                      font: {
+                        family: MONO,
+                        size: 9,
+                        color: tokens.colors.ink.muted,
+                      },
+                    },
+                    {
+                      x: polarSpeeds[polarSpeeds.length - 2],
+                      y: Math.max(...result.polar.map((p) => p.dragLbf)) * 0.86,
+                      text: "parasite drag rising<br>speed stable",
+                      showarrow: false,
+                      xanchor: "right",
+                      align: "right",
+                      font: {
+                        family: MONO,
+                        size: 9,
+                        color: tokens.colors.ink.muted,
+                      },
+                    },
+                  ],
+                }}
                 style={{ width: "100%" }}
                 useResizeHandler
               />
             </Figure>
 
             <Figure
-              caption="The two models differ only in where minimum drag sits — at zero lift, or at the lift coefficient the section was designed around. They agree through the cruise and part company at the slow end, where the wing is working hardest."
-              title="DRAG COEFFICIENT · BOTH MODELS"
+              caption="Induced drag falls away as speed builds while parasite drag holds flat, so the total is a hyperbola bottoming where the two cross. The adjusted model sits under the same line: this section makes least drag at a lift coefficient of 0.0007, so shifting the polar by it changes nothing visible."
+              title="DRAG COEFFICIENT · BREAKDOWN"
             >
               <Plot
                 config={{ displayModeBar: false, responsive: true }}
                 data={[
                   {
                     x: polarSpeeds,
-                    y: result.polar.map((point) => point.cd),
+                    y: result.polar.map((point) => point.cdAdjusted),
                     mode: "lines",
                     line: { color: tokens.colors.ink.DEFAULT, width: 2 },
-                    name: "CD SIMPLE",
+                    name: "CD",
                   },
                   {
                     x: polarSpeeds,
-                    y: result.polar.map((point) => point.cdAdjusted),
+                    y: result.polar.map((point) => point.cdInducedAdjusted),
                     mode: "lines",
                     line: {
                       color: tokens.colors.accent.DEFAULT,
                       width: 2,
-                      dash: "dot",
+                      dash: "dashdot",
                     },
-                    name: "CD ADJUSTED",
+                    name: "CD i",
                   },
                   {
                     x: polarSpeeds,
                     y: result.polar.map(() => inputs.cdMin),
                     mode: "lines",
                     line: {
-                      color: tokens.colors.series.faint,
+                      color: tokens.colors.series.compare,
                       width: 2,
                       dash: "dash",
                     },
-                    name: "CD MIN",
+                    name: "CD min",
                   },
                 ]}
                 layout={figureLayout("AIRSPEED  [KTAS]", "CD", 70)}
