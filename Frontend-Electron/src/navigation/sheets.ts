@@ -52,8 +52,8 @@ export const SIZING_SHEETS: Sheet[] = [
 /** Sheet index for the performance group, in the order they are flown. */
 export const PERFORMANCE_SHEETS: Sheet[] = [
   { id: "01", label: "01 TAKE-OFF", path: "/performance/take-off" },
-  { id: "02", label: "02 CLIMB", path: null },
-  { id: "03", label: "03 CRUISE", path: null },
+  { id: "02", label: "02 CLIMB", path: "/performance/climb" },
+  { id: "03", label: "03 CRUISE", path: "/performance/cruise" },
   { id: "04", label: "04 RANGE", path: null },
   { id: "05", label: "05 LANDING", path: null },
 ];

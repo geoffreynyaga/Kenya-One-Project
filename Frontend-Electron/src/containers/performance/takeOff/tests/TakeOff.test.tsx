@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 
-import TakeOff from "./TakeOff";
+import TakeOff from "../TakeOff";
 
 vi.mock("plotly.js-basic-dist", () => ({ default: {} }));
 vi.mock("react-plotly.js/factory", () => ({

@@ -808,6 +808,7 @@ export default function SrefDesign() {
       number: selectedEngine.number,
       name: selectedEngine.name,
       ratedHp: selectedEngine.hp,
+      rpm: selectedEngine.rpm,
     });
   }, [publishEngine, selectedEngine]);
 

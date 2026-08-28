@@ -45,6 +45,8 @@ import SheetIndex from "../navigation/SheetIndex";
 import MTOWSizing from "./InitialSizing/MTOWSizing";
 import CostAnalysis from "./costs/CostAnalysis";
 import TakeOff from "./performance/takeOff/TakeOff";
+import Climb from "./performance/climb/Climb";
+import Cruise from "./performance/cruise/Cruise";
 
 const ProjectDetail = () => {
   const routes = [
@@ -90,6 +92,14 @@ const ProjectDetail = () => {
     {
       path: "performance/take-off",
       component: TakeOff,
+    },
+    {
+      path: "performance/climb",
+      component: Climb,
+    },
+    {
+      path: "performance/cruise",
+      component: Cruise,
     },
   ];
 

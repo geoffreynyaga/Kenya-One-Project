@@ -22,6 +22,7 @@ import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
 import {
+  densityAt,
   FT2_PER_M2,
   KNOT_TO_FPS,
   LIFT_OFF_SPEED_COEFFICIENT,
@@ -90,11 +91,26 @@ export const wingLoadingOverrideAtom = persisted<number | null>(
   null
 );
 
-/** Power loading, picked off the matching plot. Workbook Sref!D79. */
+/**
+ * Power loading, picked off the matching plot. Workbook Sref!D79.
+ *
+ * CAUTION: 11.5 is the workbook aeroplane's design point, not a neutral
+ * starting value, and there is no such thing as a neutral one — power loading
+ * is whatever the constraint diagram allows for the aeroplane in hand. Wing
+ * loading beside it does this properly: `wingLoadingOverrideAtom` starts null
+ * and falls back to the computed stall limit, so an untouched design sits on a
+ * constraint rather than on a number. This should do the same, defaulting to
+ * the most restrictive curve, which needs those curves in the domain layer.
+ * See the backlog.
+ */
 export const powerLoadingAtom = persisted("powerLoading", 11.5);
 
-/** Installed engine count. */
-export const engineCountAtom = persisted("engineCount", 2);
+/**
+ * Installed engine count. One unless the design says otherwise — the workbook
+ * this project was ported from is a twin, and its 2 was standing in here as a
+ * default for every aeroplane.
+ */
+export const engineCountAtom = persisted("engineCount", 1);
 
 /**
  * The engine picked out of the catalogue on Sref, or null while none has been.
@@ -109,12 +125,76 @@ export interface SelectedEngine {
   name: string;
   /** Rated shaft power of one engine, bhp. */
   ratedHp: number;
+  /** Speed at that rating, rpm. Climb needs it for the advance ratio. */
+  rpm: number;
 }
 
 export const selectedEngineAtom = persisted<SelectedEngine | null>(
-  "selectedEngine",
+  "selectedEngine:v2",
   null
 );
+
+/**
+ * Propeller diameter, ft. Take-off sizes the static thrust on the disc it
+ * sweeps; climb needs it for the advance ratio. Workbook take-off!C8.
+ */
+export const propellerDiameterFtAtom = persisted("propellerDiameterFt", 6.25);
+
+/**
+ * Specific fuel consumption in the cruise, lb per bhp per hour. Read by cruise
+ * and by range and endurance. Workbook MTOW!B26.
+ */
+export const cruiseSfcAtom = persisted("cruiseSfc", 0.5);
+
+/**
+ * The lift coefficient the section makes least drag at. Zero for a symmetric
+ * aerofoil and slightly positive for a cambered one, which is what shifts the
+ * drag polar off the origin. Read by climb and cruise. Workbook
+ * Wing & Airfoil!H25.
+ */
+export const clAtMinimumDragAtom = persisted("clAtMinimumDrag", 0.0006939);
+
+/**
+ * Section pitching moment coefficient. A property of the aerofoil, so Wing &
+ * Airfoil owns it; seeded from that sheet until it is a live stage. The cruise
+ * sheet types -0.1 for the same quantity, which is where the two disagree.
+ * Workbook Wing & Airfoil!B28.
+ */
+export const sectionMomentCoefficientAtom = persisted(
+  "sectionMomentCoefficient",
+  -0.092
+);
+
+/**
+ * Airframe geometry, all seeded until a layout stage owns them. Read by cruise
+ * to balance the aeroplane at the stall, and by nothing else yet.
+ *
+ * The tail arm is the distance between the wing's aerodynamic centre and the
+ * tailplane's; the thrust arm and offset place the propeller relative to the
+ * centre of gravity.
+ */
+export const tailArmFtAtom = persisted("tailArmFt", 16.728);
+export const thrustArmFtAtom = persisted("thrustArmFt", 1.9);
+export const thrustLineOffsetFtAtom = persisted("thrustLineOffsetFt", 0.5);
+
+/** Where the wing's lift acts, as a fraction of chord. Wing & Airfoil owns it. */
+export const aerodynamicCentreMacAtom = persisted("aerodynamicCentreMac", 0.23);
+
+/** Where the main wheels sit, as a fraction of chord. Landing gear owns it. */
+export const mainGearMacAtom = persisted("mainGearMac", 0.23);
+
+/**
+ * Angle of attack the wing stalls at, degrees. Read by cruise, which needs it
+ * to resolve the thrust line at the stall. Workbook Wing & Airfoil!B25.
+ */
+export const stallAngleDegAtom = persisted("stallAngleDeg", 14);
+
+/**
+ * Propeller efficiency in the climb. Lower than cruise, because the climb is
+ * flown slower than the propeller is pitched for. Read by Sref and by climb.
+ * Workbook Sref!B21.
+ */
+export const propEfficiencyClimbAtom = persisted("propEfficiencyClimb", 0.7);
 
 /**
  * Brakes-off rolling resistance between tyre and surface. A choice about the
@@ -212,6 +292,11 @@ export const wingAreaFt2Atom = atom(
 
 export const wingAreaM2Atom = atom((get) => get(wingAreaFt2Atom) / FT2_PER_M2);
 
+/** Density at the cruise altitude, slug/ft³. Read by climb and cruise. */
+export const cruiseDensityAtom = atom((get) =>
+  densityAt(get(cruiseAltitudeFtAtom))
+);
+
 /**
  * Workbook Sref!B22: the lift coefficient held through the ground roll.
  *
@@ -259,7 +344,6 @@ export const installedPowerBhpAtom = atom((get) => {
   if (engine === null) return get(powerRequiredHpAtom);
   return engine.ratedHp * get(engineCountAtom);
 });
-
 
 /** Workbook Wing & Airfoil!B6: b = sqrt(S * AR). */
 export const wingspanFtAtom = atom((get) =>

@@ -12,7 +12,7 @@
  * checked against and belongs to the tests.
  */
 
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useMemo } from "react";
 
 import {
@@ -25,6 +25,7 @@ import {
   installedPowerBhpAtom,
   mtowLbAtom,
   oswaldEfficiencyAtom,
+  propellerDiameterFtAtom,
   rollingFrictionAtom,
   SelectedEngine,
   selectedEngineAtom,
@@ -47,8 +48,14 @@ export type EntryField =
   | "obstacleHeightFt"
   | "liftOffDistanceFt";
 
-const ENTRY_DEFAULTS: Record<EntryField, number> = {
-  propellerDiameterFt: 6.25,
+/**
+ * Defaults for the fields this sheet stores itself. The propeller diameter is
+ * an entry too, but climb needs it as well, so it lives in `domain/atoms` and
+ * is written straight through — see `setEntry` below.
+ */
+type LocalField = Exclude<EntryField, "propellerDiameterFt">;
+
+const ENTRY_DEFAULTS: Record<LocalField, number> = {
   hubDiameterRatio: 0.2,
   propEfficiencyCruise: 0.75,
   propEfficiencyMax: 0.75,
@@ -98,10 +105,13 @@ export function useTakeoffSheet(): TakeoffSheet {
   const maxSpeedKcas = useAtomValue(vmaxKnotsAtom);
   const groundFrictionCoefficient = useAtomValue(rollingFrictionAtom);
   const cdTakeoff = useAtomValue(cdTakeoffAtom);
+  const [propellerDiameterFt, setPropellerDiameterFt] = useAtom(
+    propellerDiameterFtAtom
+  );
   const engine = useAtomValue(selectedEngineAtom);
 
   const [entry, setEntryState, resetEntry] = usePersistentState<
-    Record<EntryField, number>
+    Record<LocalField, number>
   >(ENTRY_KEY, ENTRY_DEFAULTS);
   const [openSections, setOpenSections, resetSections] = usePersistentState<
     Record<SectionKey, boolean>
@@ -110,6 +120,7 @@ export function useTakeoffSheet(): TakeoffSheet {
   const inputs = useMemo<TakeoffInputs>(
     () => ({
       ...entry,
+      propellerDiameterFt,
       maxRatedPowerBhp,
       cruiseSpeedKcas,
       maxSpeedKcas,
@@ -127,6 +138,7 @@ export function useTakeoffSheet(): TakeoffSheet {
     }),
     [
       entry,
+      propellerDiameterFt,
       maxRatedPowerBhp,
       cruiseSpeedKcas,
       maxSpeedKcas,
@@ -146,8 +158,13 @@ export function useTakeoffSheet(): TakeoffSheet {
   return {
     inputs,
     engine,
-    setEntry: (field, value) =>
-      setEntryState((current) => ({ ...current, [field]: value })),
+    setEntry: (field, value) => {
+      if (field === "propellerDiameterFt") {
+        setPropellerDiameterFt(value);
+        return;
+      }
+      setEntryState((current) => ({ ...current, [field]: value }));
+    },
     openSections,
     toggleSection: (key, open) =>
       setOpenSections((current) =>

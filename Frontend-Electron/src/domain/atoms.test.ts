@@ -46,6 +46,9 @@ describe("the shared quantities reproduce the workbook", () => {
 
   it("sizes the wing and the powerplant from the design point", () => {
     const s = store();
+    // Set the engine count rather than leaning on its default: what is being
+    // asserted is that the power divides, not how many engines are fitted.
+    s.set(engineCountAtom, 2);
     expect(s.get(wingAreaM2Atom)).toBeCloseTo(23.951178858082848, 10);
     expect(s.get(powerRequiredHpAtom)).toBeCloseTo(508.69565217391306, 10);
     expect(s.get(powerPerEngineHpAtom)).toBeCloseTo(254.34782608695653, 10);
@@ -63,6 +66,7 @@ describe("the shared quantities reproduce the workbook", () => {
       number: 1,
       name: "Lycoming IO-360-A4M",
       ratedHp: 180,
+      rpm: 2700,
     });
 
     expect(s.get(installedPowerBhpAtom)).toBe(180);

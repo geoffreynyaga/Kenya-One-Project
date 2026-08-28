@@ -4,8 +4,8 @@ import {
   takeoff,
   takeoffWarnings,
   thrustModel,
-} from "./takeoffCompute";
-import { WORKBOOK_INPUTS } from "./takeoffFixture";
+} from "../takeoffCompute";
+import { WORKBOOK_INPUTS } from "./fixture";
 
 function close(actual: number, expected: number, tolerance = 1e-9): boolean {
   return (
