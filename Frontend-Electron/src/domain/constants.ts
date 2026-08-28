@@ -23,6 +23,20 @@ export const KNOT_TO_FPS = 1.688;
  */
 export const LIFT_OFF_SPEED_COEFFICIENT = 1.556;
 export const FT2_PER_M2 = 10.76391;
+
+/**
+ * Length conversions, each from its own definition rather than from a figure
+ * copied off a sheet: the metre fixes the foot at 0.3048, the nautical mile is
+ * 1852 m by agreement, and the statute mile is 5280 ft.
+ */
+export const FT_PER_KM = 1000 / 0.3048;
+export const FT_PER_NM = 1852 / 0.3048;
+export const FT_PER_STATUTE_MILE = 5280;
+
+export const SECONDS_PER_HOUR = 3600;
+
+/** Density of 100LL avgas, lb per US gallon. */
+export const AVGAS_LB_PER_GAL = 5.87;
 export const GRAVITY_FPS2 = 32.17;
 export const HP_TO_FT_LB_PER_S = 550;
 

@@ -82,6 +82,14 @@ export const landingLoadFactorAtom = persisted("landingLoadFactor", 4.5);
 export const pilotCountAtom = persisted("pilotCount", 2);
 
 /**
+ * How many passengers the aeroplane is being sized to carry. MTOW owns it and
+ * writes through; range reads it, because what a transport aeroplane is
+ * efficient at is carrying people a distance, not covering the distance.
+ * Workbook MTOW!B7.
+ */
+export const passengerCountAtom = persisted("passengerCount", 4);
+
+/**
  * Wing loading, picked off the matching plot. The workbook parks it on the
  * stall limit (D80 = K3) until a human moves it, which `wingLoadingAtom`
  * below reproduces.
@@ -139,6 +147,22 @@ export const selectedEngineAtom = persisted<SelectedEngine | null>(
  * sweeps; climb needs it for the advance ratio. Workbook take-off!C8.
  */
 export const propellerDiameterFtAtom = persisted("propellerDiameterFt", 6.25);
+
+/**
+ * Spinner diameter as a fraction of the propeller's. It blanks off the middle
+ * of the disc, which is why static thrust is short of what the whole disc
+ * would give. Take-off owns it; landing reads it, because the thrust still
+ * turning over at idle is a fraction of that same static thrust.
+ * Workbook take-off!C11.
+ */
+export const hubDiameterRatioAtom = persisted("hubDiameterRatio", 0.2);
+
+/**
+ * Fraction of rated shaft power held in the cruise. A throttle setting, so it
+ * is a choice; cruise flies on it and range works its fuel flow out of it.
+ * Workbook cruise!B8.
+ */
+export const cruisePowerFractionAtom = persisted("cruisePowerFraction", 0.73);
 
 /**
  * Specific fuel consumption in the cruise, lb per bhp per hour. Read by cruise

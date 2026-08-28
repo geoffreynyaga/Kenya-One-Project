@@ -22,6 +22,7 @@ import {
   clMaxAtom,
   cruiseSpeedKnotsAtom,
   engineCountAtom,
+  hubDiameterRatioAtom,
   installedPowerBhpAtom,
   mtowLbAtom,
   oswaldEfficiencyAtom,
@@ -49,14 +50,17 @@ export type EntryField =
   | "liftOffDistanceFt";
 
 /**
- * Defaults for the fields this sheet stores itself. The propeller diameter is
- * an entry too, but climb needs it as well, so it lives in `domain/atoms` and
- * is written straight through — see `setEntry` below.
+ * Defaults for the fields this sheet stores itself. The propeller diameter and
+ * the spinner ratio are entries too, but climb and landing need them as well,
+ * so they live in `domain/atoms` and are written straight through — see
+ * `setEntry` below.
  */
-type LocalField = Exclude<EntryField, "propellerDiameterFt">;
+type LocalField = Exclude<
+  EntryField,
+  "propellerDiameterFt" | "hubDiameterRatio"
+>;
 
 const ENTRY_DEFAULTS: Record<LocalField, number> = {
-  hubDiameterRatio: 0.2,
   propEfficiencyCruise: 0.75,
   propEfficiencyMax: 0.75,
   propEfficiencyTakeoff: 0.45,
@@ -108,6 +112,7 @@ export function useTakeoffSheet(): TakeoffSheet {
   const [propellerDiameterFt, setPropellerDiameterFt] = useAtom(
     propellerDiameterFtAtom
   );
+  const [hubDiameterRatio, setHubDiameterRatio] = useAtom(hubDiameterRatioAtom);
   const engine = useAtomValue(selectedEngineAtom);
 
   const [entry, setEntryState, resetEntry] = usePersistentState<
@@ -121,6 +126,7 @@ export function useTakeoffSheet(): TakeoffSheet {
     () => ({
       ...entry,
       propellerDiameterFt,
+      hubDiameterRatio,
       maxRatedPowerBhp,
       cruiseSpeedKcas,
       maxSpeedKcas,
@@ -139,6 +145,7 @@ export function useTakeoffSheet(): TakeoffSheet {
     [
       entry,
       propellerDiameterFt,
+      hubDiameterRatio,
       maxRatedPowerBhp,
       cruiseSpeedKcas,
       maxSpeedKcas,
@@ -161,6 +168,10 @@ export function useTakeoffSheet(): TakeoffSheet {
     setEntry: (field, value) => {
       if (field === "propellerDiameterFt") {
         setPropellerDiameterFt(value);
+        return;
+      }
+      if (field === "hubDiameterRatio") {
+        setHubDiameterRatio(value);
         return;
       }
       setEntryState((current) => ({ ...current, [field]: value }));

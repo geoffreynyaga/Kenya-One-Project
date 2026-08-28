@@ -15,6 +15,7 @@ import {
   clAtMinimumDragAtom,
   clMaxAtom,
   cruiseAltitudeFtAtom,
+  cruisePowerFractionAtom,
   cruiseSfcAtom,
   cruiseSpeedKnotsAtom,
   inducedDragFactorAtom,
@@ -72,6 +73,7 @@ export function useCruiseSheet(): CruiseSheet {
   const cruiseAltitudeFt = useAtomValue(cruiseAltitudeFtAtom);
   const propEfficiencyCruise = useAtomValue(propEfficiencyCruiseAtom);
   const cruiseSfc = useAtomValue(cruiseSfcAtom);
+  const cruisePowerFraction = useAtomValue(cruisePowerFractionAtom);
   const cruiseSpeedKtas = useAtomValue(cruiseSpeedKnotsAtom);
   const maxRatedPowerBhp = useAtomValue(installedPowerBhpAtom);
   const mtowLb = useAtomValue(mtowLbAtom);
@@ -109,6 +111,7 @@ export function useCruiseSheet(): CruiseSheet {
       mainGearMac,
       propEfficiencyCruise,
       cruiseSfc,
+      cruisePowerFraction,
       cruiseSpeedKtas,
       maxRatedPowerBhp,
       mtowLb,
@@ -131,6 +134,7 @@ export function useCruiseSheet(): CruiseSheet {
       mainGearMac,
       propEfficiencyCruise,
       cruiseSfc,
+      cruisePowerFraction,
       cruiseSpeedKtas,
       maxRatedPowerBhp,
       mtowLb,
