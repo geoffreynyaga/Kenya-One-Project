@@ -2,10 +2,6 @@
  * Performance 02 — Climb. How steeply the aeroplane climbs, how fast it has to
  * fly to climb best, and what altitude and propeller efficiency do to both.
  *
- * Split decision (frontend vs Python): closed form throughout, plus a handful
- * of small sweeps, so it runs in the browser. The one place the sheet wanted
- * iteration it never did it — see {@link CORRECT_CLIMB_ANGLE_ITERATES}.
- *
  * The climb angle sits on both sides of its own equation: the induced drag the
  * wing makes depends on the load it carries, which is the weight resolved
  * through the climb angle, which is what the equation solves for. Shallow

@@ -2,8 +2,8 @@ import {
   climb,
   climbWarnings,
   CORRECT_CLIMB_ANGLE_ITERATES,
-} from "./climbCompute";
-import { WORKBOOK_INPUTS } from "./climbFixture";
+} from "../climbCompute";
+import { WORKBOOK_INPUTS } from "./fixture";
 
 function close(actual: number, expected: number, tolerance = 1e-9): boolean {
   return (

@@ -1,9 +1,6 @@
-import { TakeoffInputs } from "./takeoffCompute";
+import { TakeoffInputs } from "../takeoffCompute";
 
-/**
- * Cached values from the "take-off" sheet of
- * `spreadsheets/2. Performance.xlsx`, plus the cells it reaches across to.
- */
+/** The cached workbook values this sheet's parity test asserts against. */
 export const WORKBOOK_INPUTS: TakeoffInputs = {
   maxRatedPowerBhp: 520,
   propellerDiameterFt: 6.25,

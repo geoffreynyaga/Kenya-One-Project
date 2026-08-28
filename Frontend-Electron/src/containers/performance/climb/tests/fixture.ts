@@ -1,9 +1,6 @@
-import { ClimbInputs } from "./climbCompute";
+import { ClimbInputs } from "../climbCompute";
 
-/**
- * Cached values from the "climb" sheet of `spreadsheets/2. Performance.xlsx`,
- * plus the cells it reaches across to.
- */
+/** The cached workbook values this sheet's parity test asserts against. */
 export const WORKBOOK_INPUTS: ClimbInputs = {
   cruiseSpeedKtas: 140,
   seaLevelDensity: 0.002378,

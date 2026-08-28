@@ -3,10 +3,6 @@
  * three methods that check each other, and how far it travels transitioning to
  * the climb once the wheels leave the ground.
  *
- * Split decision (frontend vs Python): the ground run is a 37-step forward
- * Euler integration and everything else is closed form, so it runs in the
- * browser.
- *
  * The propeller thrust model this leans on is shared with climb, cruise and
  * landing, so it lives in `domain/propeller`.
  *
