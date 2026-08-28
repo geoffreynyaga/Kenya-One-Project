@@ -9,7 +9,7 @@
 
 import { Link, useLocation } from "react-router-dom";
 
-import { GROUPS } from "./sheets";
+import { GROUPS, groupOf } from "./sheets";
 
 /*
  * Placeholder until a project model and an authenticated user are available.
@@ -31,6 +31,8 @@ export default function GlobalBar() {
   const { pathname } = useLocation();
   const inProject =
     pathname.startsWith("/projects/") && pathname !== "/projects/create";
+  const project = pathname.split("/").slice(0, 3).join("/");
+  const current = groupOf(pathname);
 
   return (
     <div className="flex h-[52px] flex-none items-center justify-between bg-ink px-6 font-sans">
@@ -47,18 +49,30 @@ export default function GlobalBar() {
 
         <div className="flex gap-5 font-mono text-note">
           {GROUPS.map((group) => {
-            const active = group.live && inProject;
+            const reachable = group.live && inProject && group.path !== null;
+            const active = reachable && group.id === current;
+            let className = "text-ink-faint";
+            if (active)
+              className = "border-b-2 border-accent pb-[5px] text-panel";
+            else if (reachable)
+              className = "pb-[5px] text-panel/70 hover:text-panel";
+
+            if (!reachable) {
+              return (
+                <span className={className} key={group.id}>
+                  {group.label}
+                </span>
+              );
+            }
+
             return (
-              <span
+              <Link
+                className={`${className} no-underline`}
                 key={group.id}
-                className={
-                  active
-                    ? "border-b-2 border-accent pb-[5px] text-panel"
-                    : "text-ink-faint"
-                }
+                to={`${project}${group.path}`}
               >
                 {group.label}
-              </span>
+              </Link>
             );
           })}
         </div>
