@@ -491,7 +491,7 @@ export default function Cruise() {
 
           <div className="grid gap-4 xl:grid-cols-2">
             <Figure
-              caption="Parasite drag climbs with the square of speed and induced drag falls with it, so total drag has a floor between them. Right of the floor the aeroplane is speed-stable — slowing reduces drag. Left of it, slowing raises drag, which is the back side of the curve and why the approach is flown on the front."
+              caption="Total drag bottoms where the falling induced term meets the rising parasite one, and that speed — not the cruise speed — is what divides the shading. In the grey band slowing down reduces drag and the speed holds itself; in the accent band slowing raises drag and it runs away, which is why an approach is flown on the front side."
               title="DRAG · AGAINST AIRSPEED"
             >
               <Plot
@@ -527,6 +527,19 @@ export default function Cruise() {
                     name: "INDUCED",
                   },
                   {
+                    x: [
+                      result.minimumDragSpeedKtas,
+                      result.minimumDragSpeedKtas,
+                    ],
+                    y: [0, Math.max(...result.polar.map((p) => p.dragLbf))],
+                    mode: "lines",
+                    line: {
+                      color: tokens.colors.ink.muted,
+                      width: 1,
+                    },
+                    name: "V MIN DRAG",
+                  },
+                  {
                     x: [inputs.cruiseSpeedKtas, inputs.cruiseSpeedKtas],
                     y: [0, Math.max(...result.polar.map((p) => p.dragLbf))],
                     mode: "lines",
@@ -540,14 +553,45 @@ export default function Cruise() {
                 ]}
                 layout={{
                   ...figureLayout("AIRSPEED  [KTAS]", "DRAG  [LBF]"),
+                  shapes: [
+                    {
+                      type: "rect",
+                      xref: "x",
+                      yref: "paper",
+                      x0: polarSpeeds[0],
+                      x1: result.minimumDragSpeedKtas,
+                      y0: 0,
+                      y1: 1,
+                      fillcolor: tokens.colors.accent.DEFAULT,
+                      opacity: 0.07,
+                      line: { width: 0 },
+                      layer: "below",
+                    },
+                    {
+                      type: "rect",
+                      xref: "x",
+                      yref: "paper",
+                      x0: result.minimumDragSpeedKtas,
+                      x1: polarSpeeds[polarSpeeds.length - 1],
+                      y0: 0,
+                      y1: 1,
+                      fillcolor: tokens.colors.ink.DEFAULT,
+                      opacity: 0.04,
+                      line: { width: 0 },
+                      layer: "below",
+                    },
+                  ],
                   annotations: [
                     {
-                      x: polarSpeeds[1],
-                      y: Math.max(...result.polar.map((p) => p.dragLbf)) * 0.86,
-                      text: "induced drag rising<br>speed unstable",
+                      x: result.minimumDragSpeedKtas,
+                      xref: "x",
+                      yref: "paper",
+                      y: 0.98,
+                      text: "speed unstable<br>induced drag rising",
                       showarrow: false,
-                      xanchor: "left",
-                      align: "left",
+                      xanchor: "right",
+                      xshift: -6,
+                      align: "right",
                       font: {
                         family: MONO,
                         size: 9,
@@ -555,12 +599,15 @@ export default function Cruise() {
                       },
                     },
                     {
-                      x: polarSpeeds[polarSpeeds.length - 2],
-                      y: Math.max(...result.polar.map((p) => p.dragLbf)) * 0.86,
-                      text: "parasite drag rising<br>speed stable",
+                      x: result.minimumDragSpeedKtas,
+                      xref: "x",
+                      yref: "paper",
+                      y: 0.98,
+                      text: "speed stable<br>parasite drag rising",
                       showarrow: false,
-                      xanchor: "right",
-                      align: "right",
+                      xanchor: "left",
+                      xshift: 6,
+                      align: "left",
                       font: {
                         family: MONO,
                         size: 9,

@@ -282,6 +282,28 @@ describe("cruiseWarnings", () => {
     expect(keys).toContain("cg-stall-arm");
   });
 
+  it("puts the drag minimum where the two drag terms cross", () => {
+    // Minimum power comes at the fourth root of three below minimum drag, so
+    // the endurance speed already computed is an independent check on it.
+    expect(
+      result.minimumDragSpeedKtas / result.maxEnduranceSpeedKtas
+    ).toBeCloseTo(3 ** 0.25, 9);
+
+    // And it is a genuine minimum of the sampled curve.
+    const bottom = result.polar.reduce((best, point) =>
+      point.dragLbf < best.dragLbf ? point : best
+    );
+    const step = result.polar[1].speedKtas - result.polar[0].speedKtas;
+    expect(
+      Math.abs(bottom.speedKtas - result.minimumDragSpeedKtas)
+    ).toBeLessThanOrEqual(step);
+
+    // The shading divides on this, not on the cruise speed.
+    expect(result.minimumDragSpeedKtas).toBeLessThan(
+      WORKBOOK_INPUTS.cruiseSpeedKtas
+    );
+  });
+
   it("says when the two drag models have collapsed into one", () => {
     // The adjusted polar shifts to the lift coefficient of least drag, and
     // this section's is 0.0007 — so near zero that the models never part.

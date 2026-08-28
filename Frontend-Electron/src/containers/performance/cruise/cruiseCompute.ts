@@ -233,6 +233,10 @@ export function cruise(inputs: CruiseInputs): CruiseResult {
     densityRatio,
     dynamicPressure,
     thrustSettingLbf,
+    // Drag bottoms where the induced and parasite terms are equal.
+    minimumDragSpeedKtas:
+      Math.sqrt(((2 * weight) / (density * area)) * Math.sqrt(k / cdMin)) /
+      KNOT_TO_FPS,
 
     polar,
 

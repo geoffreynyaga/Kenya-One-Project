@@ -179,6 +179,16 @@ export interface CruiseResult {
   dynamicPressure: number;
   /** Workbook Y4 — thrust the cruise power setting delivers, lbf. */
   thrustSettingLbf: number;
+  /**
+   * The speed total drag bottoms at, KTAS — where induced drag has fallen to
+   * meet parasite drag. Not a cell: the sheet marks the two sides of it on a
+   * plot by hand, and about the cruise speed rather than about this one.
+   *
+   * It is the divide the aeroplane's handling turns on. Faster than this,
+   * slowing down reduces drag and the speed holds itself; slower, slowing down
+   * raises drag and it runs away, which is the back side of the curve.
+   */
+  minimumDragSpeedKtas: number;
 
   /** Workbook F3:AA12 — the drag polar, both models. */
   polar: PolarPoint[];
