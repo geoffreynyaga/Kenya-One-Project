@@ -46,6 +46,25 @@ describe("Climb", () => {
     expect(after).not.toEqual(before);
   });
 
+  it("shows all four figures without opening anything", () => {
+    const { container } = render(<Climb />);
+
+    const figures = container.querySelectorAll("figure");
+    expect(figures).toHaveLength(4);
+
+    // None of them is behind a disclosure — the tables are, the plots are not.
+    figures.forEach((figure) => expect(figure.closest("details")).toBeNull());
+
+    expect(
+      Array.from(figures).map((f) => f.querySelector("figcaption")?.textContent)
+    ).toEqual([
+      "RATE OF CLIMB · AGAINST SPEED",
+      "POWER · REQUIRED AGAINST AVAILABLE",
+      "BEST RATE · COMPARED PREDICTIONS",
+      "PROPELLER EFFICIENCY · SENSITIVITY AT ALTITUDE",
+    ]);
+  });
+
   it("keeps every cell reference inside a tooltip", () => {
     const { container } = render(<Climb />);
 

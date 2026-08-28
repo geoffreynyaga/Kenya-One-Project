@@ -2,7 +2,7 @@
  * Performance 02 — Climb. The climb angle and rate, the speed that gives the
  * best rate, and what altitude and propeller efficiency do to both.
  */
-import { useMemo } from "react";
+import { ReactNode, useMemo } from "react";
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
@@ -65,6 +65,49 @@ const SERIES_COLOURS = [
   tokens.colors.series.compare,
   tokens.colors.ink.DEFAULT,
 ];
+
+/** The axis styling every figure on this sheet shares. */
+const axis = (text: string) => ({
+  title: { text },
+  gridcolor: tokens.colors.rule.grid,
+  zerolinecolor: tokens.colors.rule.DEFAULT,
+});
+
+const figureLayout = (x: string, y: string, left = 62) => ({
+  autosize: true,
+  height: 290,
+  margin: { l: left, r: 14, t: 10, b: 50 },
+  paper_bgcolor: tokens.colors.field,
+  plot_bgcolor: tokens.colors.field,
+  font: { family: MONO, size: 10, color: tokens.colors.ink.label },
+  showlegend: true,
+  legend: { orientation: "h" as const, y: -0.3 },
+  xaxis: axis(x),
+  yaxis: axis(y),
+});
+
+/** One plot in the figure grid: a title, the plot, and what it is saying. */
+function Figure({
+  title,
+  caption,
+  children,
+}: {
+  title: string;
+  caption: string;
+  children: ReactNode;
+}) {
+  return (
+    <figure className="m-0 border border-rule-mid bg-field">
+      <figcaption className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
+        {title}
+      </figcaption>
+      <div className="p-3">{children}</div>
+      <p className="border-t border-rule-hair px-4 py-3 font-mono text-meta leading-[1.6] text-ink-muted">
+        {caption}
+      </p>
+    </figure>
+  );
+}
 
 interface CarriedSpec extends HintSpec {
   value: number;
@@ -384,142 +427,159 @@ export default function Climb() {
             <h2 className="text-sheet">Rate and angle of climb</h2>
           </div>
 
-          <div className="border border-rule-mid bg-field p-3">
-            <Plot
-              config={{ displayModeBar: false, responsive: true }}
-              data={[
-                {
-                  x: result.rateSweep.map((p) => p.speedKtas),
-                  y: result.rateSweep.map((p) => p.rateSeaLevelFpm),
-                  mode: "lines",
-                  line: { color: tokens.colors.ink.DEFAULT, width: 2 },
-                  name: "SEA LEVEL",
-                },
-                {
-                  x: result.rateSweep.map((p) => p.speedKtas),
-                  y: result.rateSweep.map((p) => p.rateCruiseFpm),
-                  mode: "lines",
-                  line: {
-                    color: tokens.colors.series.compare,
-                    width: 2,
-                    dash: "dot",
-                  },
-                  name: "CRUISE ALTITUDE",
-                },
-                rule(result.bestRateSpeedKtas, sweepRates, "V Y"),
-              ]}
-              layout={{
-                autosize: true,
-                height: 340,
-                margin: { l: 66, r: 16, t: 12, b: 52 },
-                paper_bgcolor: tokens.colors.field,
-                plot_bgcolor: tokens.colors.field,
-                font: {
-                  family: MONO,
-                  size: 10,
-                  color: tokens.colors.ink.label,
-                },
-                showlegend: true,
-                legend: { orientation: "h", y: -0.26 },
-                xaxis: {
-                  title: { text: "AIRSPEED  [KTAS]" },
-                  gridcolor: tokens.colors.rule.grid,
-                  zerolinecolor: tokens.colors.rule.DEFAULT,
-                },
-                yaxis: {
-                  title: { text: "RATE OF CLIMB  [FPM]" },
-                  gridcolor: tokens.colors.rule.grid,
-                  zerolinecolor: tokens.colors.rule.DEFAULT,
-                },
-              }}
-              style={{ width: "100%" }}
-              useResizeHandler
-            />
-            <p className="px-[2px] pt-2 font-mono text-meta leading-[1.6] text-ink-muted">
-              Climb rate peaks where excess power does, then falls away as drag
-              takes it back. Where the curve crosses zero the aeroplane can no
-              longer hold height at full power.
-            </p>
-          </div>
-
-          <div className="mt-4 border border-rule-mid bg-field p-3">
-            <Plot
-              config={{ displayModeBar: false, responsive: true }}
-              data={[
-                {
-                  x: result.powerCurve.map((p) => p.speedKtas),
-                  y: result.powerCurve.map((p) => p.powerRequired),
-                  mode: "lines",
-                  line: { color: tokens.colors.ink.DEFAULT, width: 2 },
-                  name: "REQUIRED",
-                },
-                {
-                  x: result.powerCurve.map((p) => p.speedKtas),
-                  y: result.powerCurve.map((p) => p.powerAvailable),
-                  mode: "lines",
-                  line: { color: tokens.colors.accent.DEFAULT, width: 2 },
-                  name: "AVAILABLE",
-                },
-                {
-                  x: [result.bestRateSpeedKtas, result.bestRateSpeedKtas],
-                  y: [result.powerRequiredAtBestRate, result.powerAvailable],
-                  mode: "lines+markers",
-                  line: { color: tokens.colors.accent.dark, width: 1.5 },
-                  marker: { size: 5, color: tokens.colors.accent.dark },
-                  name: "MAX EXCESS",
-                },
-              ]}
-              layout={{
-                autosize: true,
-                height: 320,
-                margin: { l: 78, r: 16, t: 12, b: 52 },
-                paper_bgcolor: tokens.colors.field,
-                plot_bgcolor: tokens.colors.field,
-                font: {
-                  family: MONO,
-                  size: 10,
-                  color: tokens.colors.ink.label,
-                },
-                showlegend: true,
-                legend: { orientation: "h", y: -0.26 },
-                xaxis: {
-                  title: { text: "AIRSPEED  [KTAS]" },
-                  gridcolor: tokens.colors.rule.grid,
-                  zerolinecolor: tokens.colors.rule.DEFAULT,
-                },
-                yaxis: {
-                  title: { text: "POWER  [FT·LBF/S]" },
-                  gridcolor: tokens.colors.rule.grid,
-                  zerolinecolor: tokens.colors.rule.DEFAULT,
-                },
-                annotations: [
+          <div className="grid gap-4 xl:grid-cols-2">
+            <Figure
+              caption="Climb rate peaks where excess power does, then falls away as drag takes it back. Where a curve crosses zero the aeroplane can no longer hold that altitude at full power."
+              title="RATE OF CLIMB · AGAINST SPEED"
+            >
+              <Plot
+                config={{ displayModeBar: false, responsive: true }}
+                data={[
                   {
-                    x: result.bestRateSpeedKtas,
-                    y:
-                      (result.powerRequiredAtBestRate + result.powerAvailable) /
-                      2,
-                    text: "max excess power<br>= max rate of climb",
-                    showarrow: false,
-                    xanchor: "left",
-                    xshift: 10,
-                    align: "left",
-                    font: {
-                      family: MONO,
-                      size: 10,
-                      color: tokens.colors.ink.muted,
-                    },
+                    x: result.rateSweep.map((point) => point.speedKtas),
+                    y: result.rateSweep.map((point) => point.rateSeaLevelFpm),
+                    mode: "lines",
+                    line: { color: tokens.colors.ink.DEFAULT, width: 2 },
+                    name: "SEA LEVEL",
                   },
-                ],
-              }}
-              style={{ width: "100%" }}
-              useResizeHandler
-            />
-            <p className="px-[2px] pt-2 font-mono text-meta leading-[1.6] text-ink-muted">
-              The gap between the two curves is what there is to climb on. It is
-              widest at the best-rate speed — the power-required curve bottoms
-              there exactly — which is why that speed is so much slower than the
-              aeroplane can fly.
-            </p>
+                  {
+                    x: result.rateSweep.map((point) => point.speedKtas),
+                    y: result.rateSweep.map((point) => point.rateCruiseFpm),
+                    mode: "lines",
+                    line: {
+                      color: tokens.colors.series.compare,
+                      width: 2,
+                      dash: "dot",
+                    },
+                    name: "CRUISE ALTITUDE",
+                  },
+                  rule(result.bestRateSpeedKtas, sweepRates, "V Y"),
+                ]}
+                layout={figureLayout(
+                  "AIRSPEED  [KTAS]",
+                  "RATE OF CLIMB  [FPM]"
+                )}
+                style={{ width: "100%" }}
+                useResizeHandler
+              />
+            </Figure>
+
+            <Figure
+              caption="The gap between the two curves is what there is to climb on. It is widest at the best-rate speed — the power-required curve bottoms there exactly — which is why that speed is so much slower than the aeroplane can fly."
+              title="POWER · REQUIRED AGAINST AVAILABLE"
+            >
+              <Plot
+                config={{ displayModeBar: false, responsive: true }}
+                data={[
+                  {
+                    x: result.powerCurve.map((point) => point.speedKtas),
+                    y: result.powerCurve.map((point) => point.powerRequired),
+                    mode: "lines",
+                    line: { color: tokens.colors.ink.DEFAULT, width: 2 },
+                    name: "REQUIRED",
+                  },
+                  {
+                    x: result.powerCurve.map((point) => point.speedKtas),
+                    y: result.powerCurve.map((point) => point.powerAvailable),
+                    mode: "lines",
+                    line: { color: tokens.colors.accent.DEFAULT, width: 2 },
+                    name: "AVAILABLE",
+                  },
+                  {
+                    x: [result.bestRateSpeedKtas, result.bestRateSpeedKtas],
+                    y: [result.powerRequiredAtBestRate, result.powerAvailable],
+                    mode: "lines+markers",
+                    line: { color: tokens.colors.accent.dark, width: 1.5 },
+                    marker: { size: 5, color: tokens.colors.accent.dark },
+                    name: "MAX EXCESS",
+                  },
+                ]}
+                layout={{
+                  ...figureLayout("AIRSPEED  [KTAS]", "POWER  [FT·LBF/S]", 74),
+                  annotations: [
+                    {
+                      x: result.bestRateSpeedKtas,
+                      y:
+                        (result.powerRequiredAtBestRate +
+                          result.powerAvailable) /
+                        2,
+                      text: "max excess power<br>= max rate of climb",
+                      showarrow: false,
+                      xanchor: "left",
+                      xshift: 10,
+                      align: "left",
+                      font: {
+                        family: MONO,
+                        size: 10,
+                        color: tokens.colors.ink.muted,
+                      },
+                    },
+                  ],
+                }}
+                style={{ width: "100%" }}
+                useResizeHandler
+              />
+            </Figure>
+
+            <Figure
+              caption="The marker is the best-rate speed, and the middle line crosses it at the best rate given below — which is the check that these speeds are feet per second rather than the knots they are labelled with."
+              title="BEST RATE · COMPARED PREDICTIONS"
+            >
+              <Plot
+                config={{ displayModeBar: false, responsive: true }}
+                data={[
+                  ...result.bestRateSweepEfficiencies.map(
+                    (efficiency, index) => ({
+                      x: result.bestRateSweep.map((row) => row.speedFps),
+                      y: result.bestRateSweep.map((row) => row.ratesFpm[index]),
+                      mode: "lines" as const,
+                      line: { color: SERIES_COLOURS[index], width: 2 },
+                      name: `ηp ${efficiency}`,
+                    })
+                  ),
+                  {
+                    x: [result.bestRateSpeedFps, result.bestRateSpeedFps],
+                    y: [0, Math.max(...sweepBestRates)],
+                    mode: "lines" as const,
+                    line: {
+                      color: tokens.colors.accent.DEFAULT,
+                      width: 1,
+                      dash: "dash",
+                    },
+                    name: "V Y",
+                  },
+                ]}
+                layout={figureLayout("SPEED  [FT/S]", "RATE OF CLIMB  [FPM]")}
+                style={{ width: "100%" }}
+                useResizeHandler
+              />
+            </Figure>
+
+            <Figure
+              caption={`Held at a fixed calibrated airspeed at ${nf(inputs.studyAltitudeFt, 0)} ft. Each curve peaks at its own speed, and a better propeller moves the peak right as well as up. Where a curve crosses zero is the fastest the aeroplane can still hold this altitude.`}
+              title="PROPELLER EFFICIENCY · SENSITIVITY AT ALTITUDE"
+            >
+              <Plot
+                config={{ displayModeBar: false, responsive: true }}
+                data={result.altitudeStudyEfficiencies.map(
+                  (efficiency, index) => ({
+                    x: result.altitudeStudy.map((point) => point.speedKcas),
+                    y: result.altitudeStudy.map(
+                      (point) => point.ratesFpm[index]
+                    ),
+                    mode: "lines" as const,
+                    line: { color: SERIES_COLOURS[index], width: 2 },
+                    name: `ηp ${efficiency}`,
+                  })
+                )}
+                layout={figureLayout(
+                  "AIRSPEED  [KCAS]",
+                  "RATE OF CLIMB  [FPM]"
+                )}
+                style={{ width: "100%" }}
+                useResizeHandler
+              />
+            </Figure>
           </div>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -562,68 +622,6 @@ export default function Climb() {
             <h3 className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
               BEST RATE · AGAINST SPEED AND EFFICIENCY
             </h3>
-            <div className="border-b border-rule-hair p-3">
-              <Plot
-                config={{ displayModeBar: false, responsive: true }}
-                data={[
-                  ...result.bestRateSweepEfficiencies.map(
-                    (efficiency, index) => ({
-                      x: result.bestRateSweep.map((row) => row.speedFps),
-                      y: result.bestRateSweep.map((row) => row.ratesFpm[index]),
-                      mode: "lines" as const,
-                      line: {
-                        color: SERIES_COLOURS[index],
-                        width: 2,
-                      },
-                      name: `ηp ${efficiency}`,
-                    })
-                  ),
-                  {
-                    x: [result.bestRateSpeedFps, result.bestRateSpeedFps],
-                    y: [0, Math.max(...sweepBestRates)],
-                    mode: "lines" as const,
-                    line: {
-                      color: tokens.colors.accent.DEFAULT,
-                      width: 1,
-                      dash: "dash",
-                    },
-                    name: "V Y",
-                  },
-                ]}
-                layout={{
-                  autosize: true,
-                  height: 300,
-                  margin: { l: 66, r: 16, t: 12, b: 52 },
-                  paper_bgcolor: tokens.colors.field,
-                  plot_bgcolor: tokens.colors.field,
-                  font: {
-                    family: MONO,
-                    size: 10,
-                    color: tokens.colors.ink.label,
-                  },
-                  showlegend: true,
-                  legend: { orientation: "h", y: -0.28 },
-                  xaxis: {
-                    title: { text: "SPEED  [FT/S]" },
-                    gridcolor: tokens.colors.rule.grid,
-                    zerolinecolor: tokens.colors.rule.DEFAULT,
-                  },
-                  yaxis: {
-                    title: { text: "RATE OF CLIMB  [FPM]" },
-                    gridcolor: tokens.colors.rule.grid,
-                    zerolinecolor: tokens.colors.rule.DEFAULT,
-                  },
-                }}
-                style={{ width: "100%" }}
-                useResizeHandler
-              />
-              <p className="px-[2px] pt-2 font-mono text-meta leading-[1.6] text-ink-muted">
-                The marker is the best-rate speed, and the middle line crosses
-                it at the best rate given above — which is the check that these
-                speeds are feet per second rather than the knots they are
-                labelled with.
-              </p>
-            </div>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-right font-mono text-note">
                 <thead>
@@ -664,15 +662,12 @@ export default function Climb() {
             </p>
           </section>
 
-          <details className="mt-4 border border-rule-mid bg-field">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label marker:content-none hover:text-ink">
-              <span>ALTITUDE STUDY · {nf(inputs.studyAltitudeFt, 0)} FT</span>
-              <span className="font-normal text-ink-faint">
-                {result.altitudeStudy.length} speeds
-              </span>
-            </summary>
+          <section className="mt-4 border border-rule-mid bg-field">
+            <h3 className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
+              ALTITUDE STUDY · {nf(inputs.studyAltitudeFt, 0)} FT
+            </h3>
 
-            <dl className="border-b border-rule-hair px-4 py-2 font-mono text-note">
+            <dl className="px-4 py-2 font-mono text-note">
               {study.map(([label, value, cell, body]) => (
                 <ValueRow
                   hint={{ cell, body }}
@@ -684,130 +679,93 @@ export default function Climb() {
               ))}
             </dl>
 
-            <div className="border-b border-rule-hair p-3">
-              <Plot
-                config={{ displayModeBar: false, responsive: true }}
-                data={result.altitudeStudyEfficiencies.map(
-                  (efficiency, index) => ({
-                    x: result.altitudeStudy.map((point) => point.speedKcas),
-                    y: result.altitudeStudy.map(
-                      (point) => point.ratesFpm[index]
-                    ),
-                    mode: "lines" as const,
-                    line: { color: SERIES_COLOURS[index], width: 2 },
-                    name: `ηp ${efficiency}`,
-                  })
-                )}
-                layout={{
-                  autosize: true,
-                  height: 300,
-                  margin: { l: 66, r: 16, t: 12, b: 52 },
-                  paper_bgcolor: tokens.colors.field,
-                  plot_bgcolor: tokens.colors.field,
-                  font: {
-                    family: MONO,
-                    size: 10,
-                    color: tokens.colors.ink.label,
-                  },
-                  showlegend: true,
-                  legend: { orientation: "h", y: -0.28 },
-                  xaxis: {
-                    title: { text: "AIRSPEED  [KCAS]" },
-                    gridcolor: tokens.colors.rule.grid,
-                    zerolinecolor: tokens.colors.rule.DEFAULT,
-                  },
-                  yaxis: {
-                    title: { text: "RATE OF CLIMB  [FPM]" },
-                    gridcolor: tokens.colors.rule.grid,
-                    zerolinecolor: tokens.colors.rule.DEFAULT,
-                  },
-                }}
-                style={{ width: "100%" }}
-                useResizeHandler
-              />
-              <p className="px-[2px] pt-2 font-mono text-meta leading-[1.6] text-ink-muted">
-                Each curve peaks at its own speed, and a better propeller moves
-                the peak right as well as up. Where a curve crosses zero is the
-                fastest the aeroplane can still hold this altitude.
-              </p>
-            </div>
+            <details className="border-t border-rule-mid">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label marker:content-none hover:text-ink">
+                <span>EVERY SPEED</span>
+                <span className="font-normal text-ink-faint">
+                  {result.altitudeStudy.length} rows
+                </span>
+              </summary>
 
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-right font-mono text-meta">
-                <thead>
-                  <tr className="text-label tracking-label text-ink-label">
-                    <th className="px-3 py-2 font-medium">
-                      V <span className="text-ink-faint">[kt cas]</span>
-                    </th>
-                    <th className="px-3 py-2 font-medium">
-                      V <span className="text-ink-faint">[kt tas]</span>
-                    </th>
-                    <th className="px-3 py-2 font-medium">
-                      q <span className="text-ink-faint">[lbf/ft²]</span>
-                    </th>
-                    <th className="px-3 py-2 font-medium">CL</th>
-                    <th className="px-3 py-2 font-medium">CD</th>
-                    <th className="px-3 py-2 font-medium">
-                      D <span className="text-ink-faint">[lbf]</span>
-                    </th>
-                    <th className="px-3 py-2 font-medium">J</th>
-                    {result.altitudeStudyEfficiencies.map((efficiency) => (
-                      <th className="px-3 py-2 font-medium" key={efficiency}>
-                        ROC{" "}
-                        <span className="text-ink-faint">ηp {efficiency}</span>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-right font-mono text-meta">
+                  <thead>
+                    <tr className="text-label tracking-label text-ink-label">
+                      <th className="px-3 py-2 font-medium">
+                        V <span className="text-ink-faint">[kt cas]</span>
                       </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="text-ink-body">
-                  {result.altitudeStudy.map((point) => (
-                    <tr key={point.speedKcas}>
-                      <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px] text-ink">
-                        {point.speedKcas}
-                      </td>
-                      <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]">
-                        {nf(point.speedKtas, 1)}
-                      </td>
-                      <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]">
-                        {nf(point.dynamicPressure, 2)}
-                      </td>
-                      <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]">
-                        {nf(point.cl, 3)}
-                      </td>
-                      <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]">
-                        {nf(point.cd, 4)}
-                      </td>
-                      <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]">
-                        {nf(point.dragLbf, 0)}
-                      </td>
-                      <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]">
-                        {nf(point.advanceRatio, 3)}
-                      </td>
-                      {point.ratesFpm.map((rate, index) => {
-                        const best =
-                          rate === result.altitudeStudyBestFpm[index];
-                        return (
-                          <td
-                            className={`whitespace-nowrap border-t border-rule-hair px-3 py-[5px] ${
-                              best ? "bg-accent-wash text-accent-dark" : ""
-                            }`}
-                            key={result.altitudeStudyEfficiencies[index]}
-                          >
-                            {nf(rate, 0)}
-                          </td>
-                        );
-                      })}
+                      <th className="px-3 py-2 font-medium">
+                        V <span className="text-ink-faint">[kt tas]</span>
+                      </th>
+                      <th className="px-3 py-2 font-medium">
+                        q <span className="text-ink-faint">[lbf/ft²]</span>
+                      </th>
+                      <th className="px-3 py-2 font-medium">CL</th>
+                      <th className="px-3 py-2 font-medium">CD</th>
+                      <th className="px-3 py-2 font-medium">
+                        D <span className="text-ink-faint">[lbf]</span>
+                      </th>
+                      <th className="px-3 py-2 font-medium">J</th>
+                      {result.altitudeStudyEfficiencies.map((efficiency) => (
+                        <th className="px-3 py-2 font-medium" key={efficiency}>
+                          ROC{" "}
+                          <span className="text-ink-faint">
+                            ηp {efficiency}
+                          </span>
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="border-t border-rule-hair px-4 py-3 font-mono text-meta leading-[1.6] text-ink-muted">
-              Held at a fixed calibrated airspeed, so the true airspeed climbs
-              with altitude. The marked cell in each column is the best rate
-              that efficiency reaches.
-            </p>
-          </details>
+                  </thead>
+                  <tbody className="text-ink-body">
+                    {result.altitudeStudy.map((point) => (
+                      <tr key={point.speedKcas}>
+                        <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px] text-ink">
+                          {point.speedKcas}
+                        </td>
+                        <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]">
+                          {nf(point.speedKtas, 1)}
+                        </td>
+                        <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]">
+                          {nf(point.dynamicPressure, 2)}
+                        </td>
+                        <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]">
+                          {nf(point.cl, 3)}
+                        </td>
+                        <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]">
+                          {nf(point.cd, 4)}
+                        </td>
+                        <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]">
+                          {nf(point.dragLbf, 0)}
+                        </td>
+                        <td className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]">
+                          {nf(point.advanceRatio, 3)}
+                        </td>
+                        {point.ratesFpm.map((rate, index) => {
+                          const best =
+                            rate === result.altitudeStudyBestFpm[index];
+                          return (
+                            <td
+                              className={`whitespace-nowrap border-t border-rule-hair px-3 py-[5px] ${
+                                best ? "bg-accent-wash text-accent-dark" : ""
+                              }`}
+                              key={result.altitudeStudyEfficiencies[index]}
+                            >
+                              {nf(rate, 0)}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="border-t border-rule-hair px-4 py-3 font-mono text-meta leading-[1.6] text-ink-muted">
+                Held at a fixed calibrated airspeed, so the true airspeed climbs
+                with altitude. The marked cell in each column is the best rate
+                that efficiency reaches.
+              </p>
+            </details>
+          </section>
 
           <section className="mt-4 border border-rule-mid bg-field">
             <h3 className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
