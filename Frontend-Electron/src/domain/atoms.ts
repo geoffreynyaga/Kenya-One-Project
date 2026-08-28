@@ -24,6 +24,7 @@ import { atomWithStorage } from "jotai/utils";
 import {
   FT2_PER_M2,
   KNOT_TO_FPS,
+  LIFT_OFF_SPEED_COEFFICIENT,
   SEA_LEVEL_DENSITY_SLUG_FT3,
 } from "./constants";
 import { Stage, STAGES } from "./stages";
@@ -94,6 +95,38 @@ export const powerLoadingAtom = persisted("powerLoading", 11.5);
 
 /** Installed engine count. */
 export const engineCountAtom = persisted("engineCount", 2);
+
+/**
+ * The engine picked out of the catalogue on Sref, or null while none has been.
+ *
+ * Only the identity and the rating live here. The rest of the specification
+ * stays in the catalogue, which is server data and never crosses a stage
+ * boundary; performance needs the rating and the name, nothing else.
+ */
+export interface SelectedEngine {
+  /** Catalogue number, so Sref can restore the row it came from. */
+  number: number;
+  name: string;
+  /** Rated shaft power of one engine, bhp. */
+  ratedHp: number;
+}
+
+export const selectedEngineAtom = persisted<SelectedEngine | null>(
+  "selectedEngine",
+  null
+);
+
+/**
+ * Brakes-off rolling resistance between tyre and surface. A choice about the
+ * surface, read by Sref and by take-off. Workbook Sref!B30.
+ */
+export const rollingFrictionAtom = persisted("rollingFriction", 0.04);
+
+/**
+ * Extra parasite drag with the gear down and take-off flap out, added to CD0
+ * for the ground roll only. Read by Sref and by take-off. Workbook Sref!B24.
+ */
+export const takeoffGearDragAtom = persisted("takeoffGearDrag", 0.005);
 
 /** Workbook MTOW!B19: weight fraction left after taxi and take-off. */
 export const taxiFractionAtom = persisted("taxiFraction", 0.98);
@@ -179,6 +212,29 @@ export const wingAreaFt2Atom = atom(
 
 export const wingAreaM2Atom = atom((get) => get(wingAreaFt2Atom) / FT2_PER_M2);
 
+/**
+ * Workbook Sref!B22: the lift coefficient held through the ground roll.
+ *
+ * It looks like it needs the lift-off speed, but that speed is itself fixed by
+ * CL max, and the two cancel: at V_LOF the aeroplane is flying at CL max scaled
+ * down by the square of the lift-off margin. So it is CL max and nothing else.
+ */
+export const takeoffLiftCoefficientAtom = atom(
+  (get) => (2 * get(clMaxAtom)) / LIFT_OFF_SPEED_COEFFICIENT ** 2
+);
+
+/**
+ * Workbook Sref!B26: the drag coefficient in the ground roll — parasite drag
+ * with the gear and flap penalty, plus the induced drag of the lift the wing is
+ * making at the take-off lift coefficient.
+ */
+export const cdTakeoffAtom = atom(
+  (get) =>
+    get(cd0Atom) +
+    get(takeoffGearDragAtom) +
+    get(inducedDragFactorAtom) * get(takeoffLiftCoefficientAtom) ** 2
+);
+
 /** Workbook Sref!H82. */
 export const powerRequiredHpAtom = atom(
   (get) => get(mtowLbAtom) / get(powerLoadingAtom)
@@ -187,6 +243,23 @@ export const powerRequiredHpAtom = atom(
 export const powerPerEngineHpAtom = atom(
   (get) => get(powerRequiredHpAtom) / get(engineCountAtom)
 );
+
+/**
+ * Total installed shaft power, bhp — a consequence of the engine chosen and
+ * how many of them are fitted, which is what the performance stages fly on.
+ *
+ * It is not the power the sizing curves asked for: a catalogue engine is
+ * always somewhat more powerful than the requirement, and that margin is real
+ * thrust. Until an engine has been picked there is nothing installed, so the
+ * requirement stands in for it, and a sheet reading this says so by asking
+ * `selectedEngineAtom` whether anything has been chosen.
+ */
+export const installedPowerBhpAtom = atom((get) => {
+  const engine = get(selectedEngineAtom);
+  if (engine === null) return get(powerRequiredHpAtom);
+  return engine.ratedHp * get(engineCountAtom);
+});
+
 
 /** Workbook Wing & Airfoil!B6: b = sqrt(S * AR). */
 export const wingspanFtAtom = atom((get) =>

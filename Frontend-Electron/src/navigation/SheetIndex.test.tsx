@@ -16,3 +16,22 @@ test("cost sheet is reachable from the sheet navbar", () => {
   expect(link).toHaveAttribute("href", "/projects/project1/cost-analysis");
   expect(link).toHaveClass("border-accent");
 });
+
+test("the performance group shows its own sheets", () => {
+  render(
+    <MemoryRouter initialEntries={["/projects/project1/performance/take-off"]}>
+      <Routes>
+        <Route path="/projects/:id/*" element={<SheetIndex />} />
+      </Routes>
+    </MemoryRouter>
+  );
+
+  const link = screen.getByRole("link", { name: "01 TAKE-OFF" });
+  expect(link).toHaveAttribute(
+    "href",
+    "/projects/project1/performance/take-off"
+  );
+  expect(link).toHaveClass("border-accent");
+  // Sizing sheets are not in this index.
+  expect(screen.queryByText("09 COST")).toBeNull();
+});

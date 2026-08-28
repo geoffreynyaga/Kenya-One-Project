@@ -11,6 +11,9 @@ import {
   powerLoadingAtom,
   powerPerEngineHpAtom,
   powerRequiredHpAtom,
+  engineCountAtom,
+  installedPowerBhpAtom,
+  selectedEngineAtom,
   stallLimitWingLoadingAtom,
   wingAreaM2Atom,
   wingLoadingAtom,
@@ -31,7 +34,10 @@ describe("the shared quantities reproduce the workbook", () => {
 
   it("parks the wing loading on the stall limit until it is moved", () => {
     const s = store();
-    expect(s.get(stallLimitWingLoadingAtom)).toBeCloseTo(22.691275793164802, 12);
+    expect(s.get(stallLimitWingLoadingAtom)).toBeCloseTo(
+      22.691275793164802,
+      12
+    );
     expect(s.get(wingLoadingAtom)).toBe(s.get(stallLimitWingLoadingAtom));
 
     s.set(wingLoadingOverrideAtom, 20);
@@ -45,6 +51,26 @@ describe("the shared quantities reproduce the workbook", () => {
     expect(s.get(powerPerEngineHpAtom)).toBeCloseTo(254.34782608695653, 10);
   });
 
+  it("installs the power of the engine actually selected", () => {
+    const s = store();
+
+    // Nothing picked yet: the requirement stands in.
+    expect(s.get(selectedEngineAtom)).toBeNull();
+    expect(s.get(installedPowerBhpAtom)).toBe(s.get(powerRequiredHpAtom));
+
+    s.set(engineCountAtom, 1);
+    s.set(selectedEngineAtom, {
+      number: 1,
+      name: "Lycoming IO-360-A4M",
+      ratedHp: 180,
+    });
+
+    expect(s.get(installedPowerBhpAtom)).toBe(180);
+
+    s.set(engineCountAtom, 2);
+    expect(s.get(installedPowerBhpAtom)).toBe(360);
+  });
+
   it("derives the planform from the sized wing", () => {
     const s = store();
     // b = sqrt(S * AR), and the mean chord follows.
@@ -52,9 +78,10 @@ describe("the shared quantities reproduce the workbook", () => {
       s.get(wingAreaM2Atom) * 10.76391 * 7.8,
       6
     );
-    expect(
-      s.get(meanChordFtAtom) * s.get(wingspanFtAtom)
-    ).toBeCloseTo(s.get(wingAreaM2Atom) * 10.76391, 8);
+    expect(s.get(meanChordFtAtom) * s.get(wingspanFtAtom)).toBeCloseTo(
+      s.get(wingAreaM2Atom) * 10.76391,
+      8
+    );
   });
 });
 

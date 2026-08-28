@@ -9,7 +9,7 @@
 
 import { Link, useLocation, useParams } from "react-router-dom";
 
-import { SIZING_SHEETS } from "./sheets";
+import { groupOf, sheetsOf } from "./sheets";
 
 const TAB = "px-[14px] py-[11px] font-mono text-note border-b-2";
 
@@ -22,10 +22,11 @@ export default function SheetIndex() {
   const { id } = useParams();
   const url = `/projects/${id}`;
   const { pathname } = useLocation();
+  const sheets = sheetsOf(groupOf(pathname));
 
   return (
     <div className="flex flex-none border-b border-rule-mid bg-paper px-6">
-      {SIZING_SHEETS.map((sheet) => {
+      {sheets.map((sheet) => {
         if (sheet.path === null) {
           return (
             <span

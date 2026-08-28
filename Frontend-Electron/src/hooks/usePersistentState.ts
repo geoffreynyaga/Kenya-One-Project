@@ -12,8 +12,13 @@ function read<T>(key: string, fallback: T, merge: boolean): T {
     const stored = window.localStorage.getItem(key);
     if (stored === null) return fallback;
     const parsed = JSON.parse(stored) as T;
-    return merge && parsed && typeof parsed === "object"
-      ? { ...(fallback as object), ...(parsed as object) } as T
+    // Arrays are objects, and spreading one produces {0: ..., 1: ...} — an
+    // object that has lost every array method. Merging is for filling in
+    // fields added since the value was saved, which an array has none of.
+    const mergeable =
+      merge && parsed && typeof parsed === "object" && !Array.isArray(parsed);
+    return mergeable
+      ? ({ ...(fallback as object), ...(parsed as object) } as T)
       : parsed;
   } catch {
     return fallback;

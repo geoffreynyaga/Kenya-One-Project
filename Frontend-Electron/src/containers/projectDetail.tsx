@@ -44,6 +44,7 @@ import WingStructural from "./wingAndAirfoil/WingStructural";
 import SheetIndex from "../navigation/SheetIndex";
 import MTOWSizing from "./InitialSizing/MTOWSizing";
 import CostAnalysis from "./costs/CostAnalysis";
+import TakeOff from "./performance/takeOff/TakeOff";
 
 const ProjectDetail = () => {
   const routes = [
@@ -85,6 +86,10 @@ const ProjectDetail = () => {
     {
       path: "cost-analysis",
       component: CostAnalysis,
+    },
+    {
+      path: "performance/take-off",
+      component: TakeOff,
     },
   ];
 

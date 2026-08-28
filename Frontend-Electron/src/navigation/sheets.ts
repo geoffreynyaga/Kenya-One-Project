@@ -19,14 +19,21 @@ export interface Group {
   label: string;
   /** False while the group has no sheets wired up. */
   live: boolean;
+  /** Where the group's tab lands, relative to the project. */
+  path: string | null;
 }
 
-/** Top bar — the discipline groups. Only sizing has sheets so far. */
+/** Top bar — the discipline groups. */
 export const GROUPS: Group[] = [
-  { id: "sizing", label: "SIZING", live: true },
-  { id: "performance", label: "PERFORMANCE", live: false },
-  { id: "control", label: "CONTROL", live: false },
-  { id: "report", label: "REPORT", live: false },
+  { id: "sizing", label: "SIZING", live: true, path: "/mtow" },
+  {
+    id: "performance",
+    label: "PERFORMANCE",
+    live: true,
+    path: "/performance/take-off",
+  },
+  { id: "control", label: "CONTROL", live: false, path: null },
+  { id: "report", label: "REPORT", live: false, path: null },
 ];
 
 /** Sheet index for the sizing group, in the order they are worked through. */
@@ -41,3 +48,24 @@ export const SIZING_SHEETS: Sheet[] = [
   { id: "08", label: "08 STRUCTURE", path: "/wing-structural" },
   { id: "09", label: "09 COST", path: "/cost-analysis" },
 ];
+
+/** Sheet index for the performance group, in the order they are flown. */
+export const PERFORMANCE_SHEETS: Sheet[] = [
+  { id: "01", label: "01 TAKE-OFF", path: "/performance/take-off" },
+  { id: "02", label: "02 CLIMB", path: null },
+  { id: "03", label: "03 CRUISE", path: null },
+  { id: "04", label: "04 RANGE", path: null },
+  { id: "05", label: "05 LANDING", path: null },
+];
+
+/**
+ * Which group a project path sits in. Sizing routes are flat and predate the
+ * groups, so anything not claimed by a group prefix belongs to sizing.
+ */
+export function groupOf(pathname: string): string {
+  return pathname.includes("/performance/") ? "performance" : "sizing";
+}
+
+export function sheetsOf(group: string): Sheet[] {
+  return group === "performance" ? PERFORMANCE_SHEETS : SIZING_SHEETS;
+}
