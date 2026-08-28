@@ -149,6 +149,57 @@ describe("climbCompute parity with the climb sheet", () => {
   });
 });
 
+describe("what the plots assert", () => {
+  const result = climb(WORKBOOK_INPUTS);
+
+  it("bottoms the power-required curve at the best-rate speed", () => {
+    // The marker on the power plot claims the widest gap is here. Minimising
+    // drag times speed gives back the same expression the sheet uses for the
+    // best-rate speed, so the claim is exact rather than eyeballed off the
+    // ten sampled points.
+    const { powerRequiredAtBestRate } = result;
+    for (const point of result.powerCurve) {
+      expect(point.powerRequired).toBeGreaterThanOrEqual(
+        powerRequiredAtBestRate - 1e-6
+      );
+    }
+    expect(result.powerAvailable).toBe(200200);
+    expect(powerRequiredAtBestRate).toBeLessThan(result.powerAvailable);
+  });
+
+  it("crosses the best-rate sweep at the best-rate speed in ft/s", () => {
+    // The sweep is headed in knots and used in ft/s, and this is how that is
+    // known: interpolated at the best-rate speed in ft/s the middle column
+    // lands on the closed form exactly, and at the same speed in knots it is
+    // out by 19%.
+    const middle = result.bestRateSweepEfficiencies.indexOf(
+      WORKBOOK_INPUTS.propEfficiencyClimb
+    );
+    const interpolate = (speed: number) => {
+      const rows = result.bestRateSweep;
+      for (let i = 0; i < rows.length - 1; i += 1) {
+        const [a, b] = [rows[i], rows[i + 1]];
+        if (speed >= a.speedFps && speed <= b.speedFps) {
+          const t = (speed - a.speedFps) / (b.speedFps - a.speedFps);
+          return (
+            a.ratesFpm[middle] + t * (b.ratesFpm[middle] - a.ratesFpm[middle])
+          );
+        }
+      }
+      return NaN;
+    };
+
+    expect(interpolate(result.bestRateSpeedFps)).toBeCloseTo(
+      result.bestRateFpm,
+      6
+    );
+    expect(interpolate(result.bestRateSpeedKtas)).not.toBeCloseTo(
+      result.bestRateFpm,
+      0
+    );
+  });
+});
+
 describe("the climb angle solved against itself", () => {
   it("costs about a fifth of the rate of climb", () => {
     // The switch is a module constant, so this reproduces what flipping it

@@ -225,6 +225,21 @@ export interface ClimbResult {
 
   /** Workbook A20:F30 — power required against power available. */
   powerCurve: PowerCurvePoint[];
+  /**
+   * Workbook F21 — power available, ft·lbf/s. Flat, since a propeller at fixed
+   * efficiency turns the same shaft power into the same thrust power.
+   */
+  powerAvailable: number;
+  /**
+   * Power required at the best-rate speed, ft·lbf/s.
+   *
+   * Not a cell: the sheet marks this on its plot by hand. The curve bottoms
+   * exactly at the best-rate speed rather than near it — minimising drag times
+   * speed gives back the same expression the sheet already uses for that speed
+   * — so the widest gap between the two curves is here, and it is what the
+   * best rate of climb is bought with.
+   */
+  powerRequiredAtBestRate: number;
   /** Workbook B33 — best rate of climb, fpm. */
   bestRateFpm: number;
   /** Workbook A36:D42 — best rate against speed, per efficiency. */
@@ -351,11 +366,18 @@ export function climb(inputs: ClimbInputs): ClimbResult {
 
   // Power required to hold level flight, against what the propeller delivers.
   const powerAvailable = inputs.propEfficiencyClimb * power * HP_TO_FT_LB_PER_S;
-  const powerCurve: PowerCurvePoint[] = POWER_CURVE_KTAS.map((speedKtas) => {
-    const speedFps = speedKtas * KNOT_TO_FPS;
+  const dragAt = (speedFps: number) => {
     const q = 0.5 * inputs.seaLevelDensity * speedFps ** 2;
     const cl = weight / (q * area);
-    const dragLbf = q * area * (inputs.cdMin + inducedDragFactor * cl ** 2);
+    return {
+      q,
+      cl,
+      dragLbf: q * area * (inputs.cdMin + inducedDragFactor * cl ** 2),
+    };
+  };
+  const powerCurve: PowerCurvePoint[] = POWER_CURVE_KTAS.map((speedKtas) => {
+    const speedFps = speedKtas * KNOT_TO_FPS;
+    const { q, cl, dragLbf } = dragAt(speedFps);
     return {
       speedKtas,
       dynamicPressure: q,
@@ -472,6 +494,9 @@ export function climb(inputs: ClimbInputs): ClimbResult {
       KNOT_TO_FPS,
 
     powerCurve,
+    powerAvailable,
+    powerRequiredAtBestRate:
+      dragAt(bestRateSpeedFps).dragLbf * bestRateSpeedFps,
     bestRateFpm: bestRateAt(inputs.propEfficiencyClimb, bestRateSpeedFps),
     bestRateSweep: BEST_RATE_SWEEP_FPS.map((speedFps) => ({
       speedFps,

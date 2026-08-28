@@ -59,6 +59,13 @@ const CLIMB_FIELDS: EntrySpec[] = [
   },
 ];
 
+/** Comparison series rank by weight, not hue — three greys and the accent. */
+const SERIES_COLOURS = [
+  tokens.colors.series.faint,
+  tokens.colors.series.compare,
+  tokens.colors.ink.DEFAULT,
+];
+
 interface CarriedSpec extends HintSpec {
   value: number;
   unit?: string;
@@ -308,6 +315,7 @@ export default function Climb() {
     name,
   });
 
+  const sweepBestRates = result.bestRateSweep.flatMap((row) => row.ratesFpm);
   const sweepRates = result.rateSweep.flatMap((point) => [
     point.rateSeaLevelFpm,
     point.rateCruiseFpm,
@@ -452,6 +460,14 @@ export default function Climb() {
                   line: { color: tokens.colors.accent.DEFAULT, width: 2 },
                   name: "AVAILABLE",
                 },
+                {
+                  x: [result.bestRateSpeedKtas, result.bestRateSpeedKtas],
+                  y: [result.powerRequiredAtBestRate, result.powerAvailable],
+                  mode: "lines+markers",
+                  line: { color: tokens.colors.accent.dark, width: 1.5 },
+                  marker: { size: 5, color: tokens.colors.accent.dark },
+                  name: "MAX EXCESS",
+                },
               ]}
               layout={{
                 autosize: true,
@@ -476,14 +492,33 @@ export default function Climb() {
                   gridcolor: tokens.colors.rule.grid,
                   zerolinecolor: tokens.colors.rule.DEFAULT,
                 },
+                annotations: [
+                  {
+                    x: result.bestRateSpeedKtas,
+                    y:
+                      (result.powerRequiredAtBestRate + result.powerAvailable) /
+                      2,
+                    text: "max excess power<br>= max rate of climb",
+                    showarrow: false,
+                    xanchor: "left",
+                    xshift: 10,
+                    align: "left",
+                    font: {
+                      family: MONO,
+                      size: 10,
+                      color: tokens.colors.ink.muted,
+                    },
+                  },
+                ],
               }}
               style={{ width: "100%" }}
               useResizeHandler
             />
             <p className="px-[2px] pt-2 font-mono text-meta leading-[1.6] text-ink-muted">
               The gap between the two curves is what there is to climb on. It is
-              widest well below cruise speed, which is why the best-rate speed
-              is so much slower than the aeroplane can fly.
+              widest at the best-rate speed — the power-required curve bottoms
+              there exactly — which is why that speed is so much slower than the
+              aeroplane can fly.
             </p>
           </div>
 
@@ -527,6 +562,68 @@ export default function Climb() {
             <h3 className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
               BEST RATE · AGAINST SPEED AND EFFICIENCY
             </h3>
+            <div className="border-b border-rule-hair p-3">
+              <Plot
+                config={{ displayModeBar: false, responsive: true }}
+                data={[
+                  ...result.bestRateSweepEfficiencies.map(
+                    (efficiency, index) => ({
+                      x: result.bestRateSweep.map((row) => row.speedFps),
+                      y: result.bestRateSweep.map((row) => row.ratesFpm[index]),
+                      mode: "lines" as const,
+                      line: {
+                        color: SERIES_COLOURS[index],
+                        width: 2,
+                      },
+                      name: `ηp ${efficiency}`,
+                    })
+                  ),
+                  {
+                    x: [result.bestRateSpeedFps, result.bestRateSpeedFps],
+                    y: [0, Math.max(...sweepBestRates)],
+                    mode: "lines" as const,
+                    line: {
+                      color: tokens.colors.accent.DEFAULT,
+                      width: 1,
+                      dash: "dash",
+                    },
+                    name: "V Y",
+                  },
+                ]}
+                layout={{
+                  autosize: true,
+                  height: 300,
+                  margin: { l: 66, r: 16, t: 12, b: 52 },
+                  paper_bgcolor: tokens.colors.field,
+                  plot_bgcolor: tokens.colors.field,
+                  font: {
+                    family: MONO,
+                    size: 10,
+                    color: tokens.colors.ink.label,
+                  },
+                  showlegend: true,
+                  legend: { orientation: "h", y: -0.28 },
+                  xaxis: {
+                    title: { text: "SPEED  [FT/S]" },
+                    gridcolor: tokens.colors.rule.grid,
+                    zerolinecolor: tokens.colors.rule.DEFAULT,
+                  },
+                  yaxis: {
+                    title: { text: "RATE OF CLIMB  [FPM]" },
+                    gridcolor: tokens.colors.rule.grid,
+                    zerolinecolor: tokens.colors.rule.DEFAULT,
+                  },
+                }}
+                style={{ width: "100%" }}
+                useResizeHandler
+              />
+              <p className="px-[2px] pt-2 font-mono text-meta leading-[1.6] text-ink-muted">
+                The marker is the best-rate speed, and the middle line crosses
+                it at the best rate given above — which is the check that these
+                speeds are feet per second rather than the knots they are
+                labelled with.
+              </p>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-right font-mono text-note">
                 <thead>
@@ -586,6 +683,54 @@ export default function Climb() {
                 />
               ))}
             </dl>
+
+            <div className="border-b border-rule-hair p-3">
+              <Plot
+                config={{ displayModeBar: false, responsive: true }}
+                data={result.altitudeStudyEfficiencies.map(
+                  (efficiency, index) => ({
+                    x: result.altitudeStudy.map((point) => point.speedKcas),
+                    y: result.altitudeStudy.map(
+                      (point) => point.ratesFpm[index]
+                    ),
+                    mode: "lines" as const,
+                    line: { color: SERIES_COLOURS[index], width: 2 },
+                    name: `ηp ${efficiency}`,
+                  })
+                )}
+                layout={{
+                  autosize: true,
+                  height: 300,
+                  margin: { l: 66, r: 16, t: 12, b: 52 },
+                  paper_bgcolor: tokens.colors.field,
+                  plot_bgcolor: tokens.colors.field,
+                  font: {
+                    family: MONO,
+                    size: 10,
+                    color: tokens.colors.ink.label,
+                  },
+                  showlegend: true,
+                  legend: { orientation: "h", y: -0.28 },
+                  xaxis: {
+                    title: { text: "AIRSPEED  [KCAS]" },
+                    gridcolor: tokens.colors.rule.grid,
+                    zerolinecolor: tokens.colors.rule.DEFAULT,
+                  },
+                  yaxis: {
+                    title: { text: "RATE OF CLIMB  [FPM]" },
+                    gridcolor: tokens.colors.rule.grid,
+                    zerolinecolor: tokens.colors.rule.DEFAULT,
+                  },
+                }}
+                style={{ width: "100%" }}
+                useResizeHandler
+              />
+              <p className="px-[2px] pt-2 font-mono text-meta leading-[1.6] text-ink-muted">
+                Each curve peaks at its own speed, and a better propeller moves
+                the peak right as well as up. Where a curve crosses zero is the
+                fastest the aeroplane can still hold this altitude.
+              </p>
+            </div>
 
             <div className="overflow-x-auto">
               <table className="w-full border-collapse text-right font-mono text-meta">
