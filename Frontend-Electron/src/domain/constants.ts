@@ -35,6 +35,19 @@ export const FT_PER_STATUTE_MILE = 5280;
 
 export const SECONDS_PER_HOUR = 3600;
 
+/**
+ * The metric side of the same physics. The control-surface workbook is written
+ * in SI throughout, so these are the units its formulas are in — each from its
+ * own definition rather than from a rounded figure typed into a cell.
+ */
+export const M_PER_FT = 0.3048;
+export const KG_PER_LB = 0.45359237;
+export const KNOT_TO_MPS = 1852 / SECONDS_PER_HOUR;
+/** ISA sea-level density, by definition of the standard atmosphere. */
+export const SEA_LEVEL_DENSITY_KG_M3 = 1.225;
+/** ISA sea-level speed of sound. */
+export const SPEED_OF_SOUND_MPS = 340.29;
+
 /** Density of 100LL avgas, lb per US gallon. */
 export const AVGAS_LB_PER_GAL = 5.87;
 export const GRAVITY_FPS2 = 32.17;
@@ -61,6 +74,9 @@ export const PI_FOUR_FIGURE = 3.142;
  */
 export const GRAVITY_FPS2_PRECISE = 32.1768;
 export const GRAVITY_FPS2_PUBLISHED = 32.174;
+
+/** Standard gravity, which is what 32.174 ft/s² is in metres. */
+export const GRAVITY_MPS2 = GRAVITY_FPS2_PUBLISHED * M_PER_FT;
 
 /** Workbook B5: rho = rho0 * (1 - 6.8756e-6 * h)^4.2561 [slug/ft^3]. */
 export function densityAt(altitudeFt: number): number {

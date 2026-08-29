@@ -16,6 +16,7 @@ import { useAtomValue } from "jotai";
 import { useMemo } from "react";
 
 import {
+  approachSpeedRatioAtom,
   cdTakeoffAtom,
   clMaxAtom,
   cruiseWeightRatioAtom,
@@ -77,6 +78,7 @@ const IDLE_FIELDS: IdleField[] = ["idlePropEfficiency", "idlePowerBhp"];
 
 export function useLandingSheet(): LandingSheet {
   const mtowLb = useAtomValue(mtowLbAtom);
+  const approachSpeedRatio = useAtomValue(approachSpeedRatioAtom);
   const cruiseWeightRatio = useAtomValue(cruiseWeightRatioAtom);
   const wingAreaFt2 = useAtomValue(wingAreaFt2Atom);
   const clMax = useAtomValue(clMaxAtom);
@@ -104,6 +106,7 @@ export function useLandingSheet(): LandingSheet {
       ...idle,
       mtowLb,
       cruiseWeightRatio,
+      approachSpeedRatio,
       stallSpeedLandingKcas: landingStallSpeedKcas(weight, wingAreaFt2, clMax),
       landingLiftCoefficient,
       landingDragCoefficient,
@@ -117,6 +120,7 @@ export function useLandingSheet(): LandingSheet {
     runway,
     idle,
     mtowLb,
+    approachSpeedRatio,
     cruiseWeightRatio,
     wingAreaFt2,
     clMax,

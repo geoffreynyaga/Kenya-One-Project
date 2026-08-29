@@ -25,9 +25,13 @@ import {
   densityAt,
   FT2_PER_M2,
   KNOT_TO_FPS,
+  KNOT_TO_MPS,
   LIFT_OFF_SPEED_COEFFICIENT,
+  M_PER_FT,
   SEA_LEVEL_DENSITY_SLUG_FT3,
+  SPEED_OF_SOUND_MPS,
 } from "./constants";
+import { polhamusLiftSlopePerRad } from "./liftSlope";
 import { Stage, STAGES } from "./stages";
 
 const persisted = <T>(key: string, initial: T) =>
@@ -66,6 +70,16 @@ export const taperRatioAtom = persisted("taperRatio", 0.45);
 /** Workbook Wing & Airfoil!B32. Read by Wing & Airfoil and Detailed Weights. */
 export const thicknessToChordAtom = persisted("thicknessToChord", 0.12);
 
+/**
+ * Section lift-curve slope, per degree. A property of the aerofoil, so
+ * Wing & Airfoil owns it; the wing's own slope below is built from it, and the
+ * control surfaces are sized against that. Workbook Wing & Airfoil!B21.
+ */
+export const sectionLiftSlopePerDegAtom = persisted(
+  "sectionLiftSlopePerDeg",
+  0.106
+);
+
 /** Quarter-chord sweep, degrees. Workbook Wing & Airfoil!B12. */
 export const sweepQuarterChordDegAtom = persisted("sweepQuarterChordDeg", 0);
 
@@ -80,6 +94,49 @@ export const landingLoadFactorAtom = persisted("landingLoadFactor", 4.5);
 
 /** Workbook MTOW!B14. */
 export const pilotCountAtom = persisted("pilotCount", 2);
+
+/**
+ * Tail geometry. An empennage stage would own all of this; until there is one
+ * it is seeded, and the control surfaces are the only things reading it.
+ *
+ * The two areas are what the tails have to be, and every surface hinged off
+ * them — elevator, rudder — is sized as a fraction of one.
+ * Workbook Aileron!B8, Rudder!B2.
+ */
+export const horizontalTailAreaM2Atom = persisted(
+  "horizontalTailAreaM2",
+  6.343
+);
+export const verticalTailAreaM2Atom = persisted("verticalTailAreaM2", 3.9496);
+
+/** Workbook Aileron!B17, Aileron!B20, Aileron!B19. */
+export const horizontalTailAspectRatioAtom = persisted(
+  "horizontalTailAspectRatio",
+  3.8
+);
+export const horizontalTailTaperAtom = persisted("horizontalTailTaper", 0.8);
+export const horizontalTailSweepDegAtom = persisted(
+  "horizontalTailSweepDeg",
+  5
+);
+
+/**
+ * Non-dimensional radius of gyration in roll, from Raymer's table of typical
+ * values. It is what turns a span and a mass into a rolling inertia, and the
+ * aileron has to overcome that inertia inside the time the rules allow.
+ * Workbook Aileron!B16.
+ */
+export const rollRadiusOfGyrationAtom = persisted(
+  "rollRadiusOfGyration",
+  0.34
+);
+
+/**
+ * Approach speed as a multiple of the stall. Landing flies it, and the aileron
+ * is sized at it because that is the slowest the roll has to be made at.
+ * Workbook Aileron!B18.
+ */
+export const approachSpeedRatioAtom = persisted("approachSpeedRatio", 1.3);
 
 /**
  * How many passengers the aeroplane is being sized to carry. MTOW owns it and
@@ -279,6 +336,25 @@ export const oswaldEfficiencyAtom = persisted(
 // Consequences — these follow, and are read by more than one stage
 // ---------------------------------------------------------------------------
 
+/**
+ * The wing's lift-curve slope, per radian.
+ *
+ * A finite wing lifts less per degree than its section does. Polhamus's
+ * expression accounts for aspect ratio, sweep and compressibility; the
+ * derivation lives in `liftSlope.ts` because Wing & Airfoil, the aileron and
+ * the elevator all read it. Workbook Wing & Airfoil!L11.
+ */
+export const wingLiftSlopePerRadAtom = atom((get) => {
+  const mach = (get(stallSpeedKcasAtom) * KNOT_TO_MPS) / SPEED_OF_SOUND_MPS;
+  return polhamusLiftSlopePerRad({
+    aspectRatio: get(aspectRatioAtom),
+    sweepHalfChordDeg: get(sweepHalfChordDegAtom),
+    prandtlGlauert: Math.sqrt(1 - mach ** 2),
+    sectionSlopeRatio:
+      ((get(sectionLiftSlopePerDegAtom) * 180) / Math.PI) / (2 * Math.PI),
+  });
+});
+
 /** Workbook Sref!B16: k = 1/(pi * AR * e). */
 export const inducedDragFactorAtom = atom(
   (get) => 1 / (Math.PI * get(aspectRatioAtom) * get(oswaldEfficiencyAtom))
@@ -378,6 +454,12 @@ export const wingspanFtAtom = atom((get) =>
 export const meanChordFtAtom = atom(
   (get) => get(wingAreaFt2Atom) / get(wingspanFtAtom)
 );
+
+/** Wingspan in metres, which is the unit the control sheets are written in. */
+export const wingspanMAtom = atom((get) => get(wingspanFtAtom) * M_PER_FT);
+
+/** Mean geometric chord in metres. */
+export const meanChordMAtom = atom((get) => get(meanChordFtAtom) * M_PER_FT);
 
 /** Workbook Wing & Airfoil!B8: root chord from mean chord and taper. */
 export const rootChordFtAtom = atom(

@@ -8,9 +8,6 @@
  * chapter 22, and hold for any light aeroplane flown to the same technique.
  */
 
-/** Approach is flown at 1.3 times the landing-configuration stall speed. */
-export const APPROACH_SPEED_MARGIN = 1.3;
-
 /** The wheels touch at 1.1 times it, and braking begins at the same speed. */
 export const TOUCHDOWN_SPEED_MARGIN = 1.1;
 
@@ -63,6 +60,12 @@ export interface LandingInputs {
   /** Workbook B6 — shaft power at idle, bhp, or null if not known. */
   idlePowerBhp: number | null;
 
+  /**
+   * Approach speed as a multiple of the landing-configuration stall. The same
+   * rule the aileron is checked at, so it is one shared quantity.
+   * Workbook G2 = 1.3 × B9.
+   */
+  approachSpeedRatio: number;
   /** Workbook B9 — stall speed in the landing configuration, KCAS. */
   stallSpeedLandingKcas: number;
   /** Workbook B8 — lift coefficient held through the landing roll. */

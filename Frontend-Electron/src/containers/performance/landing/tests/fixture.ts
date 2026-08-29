@@ -12,6 +12,7 @@ export const WORKBOOK_INPUTS: LandingInputs = {
   idlePropEfficiency: 0.4,
   idlePowerBhp: 100,
 
+  approachSpeedRatio: 1.3,
   stallSpeedLandingKcas: 53.96,
   landingLiftCoefficient: 0.9116,
   landingDragCoefficient: 0.04,
