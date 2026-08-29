@@ -7,7 +7,7 @@
  * upstream.
  */
 
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { useMemo } from "react";
 
 import {
@@ -26,6 +26,7 @@ import {
   rollingFrictionAtom,
   stallAngleDegAtom,
   stallSpeedKcasAtom,
+  takeoffThrustNAtom,
   tailIncidenceDegAtom,
   tailSectionLiftSlopePerDegAtom,
   takeoffGearDragAtom,
@@ -63,12 +64,18 @@ export type GeometryField =
 
 export type EntryField = SurfaceField | RotationField | GeometryField;
 
-const ENTRY_DEFAULTS: Record<EntryField, number> = {
+/**
+ * The thrust is an entry too, but the rudder needs it as well — one engine's
+ * worth of it disappearing is the case the fin is sized for — so it lives in
+ * `domain/atoms` and is written straight through. See `setEntry` below.
+ */
+type LocalField = Exclude<EntryField, "thrustN">;
+
+const ENTRY_DEFAULTS: Record<LocalField, number> = {
   maxDeflectionDeg: -21,
   chordFraction: 0.35,
   spanFraction: 1,
 
-  thrustN: 3800,
   pitchAccelerationDegS2: 9,
 
   mainGearXM: 0,
@@ -137,9 +144,10 @@ export function useElevatorSheet(): ElevatorSheet {
   const horizontalTailAreaM2 = useAtomValue(horizontalTailAreaM2Atom);
   const tailIncidenceDeg = useAtomValue(tailIncidenceDegAtom);
   const tailEfficiency = useAtomValue(horizontalTailEfficiencyAtom);
+  const [thrustN, setThrustN] = useAtom(takeoffThrustNAtom);
 
   const [entry, setEntryState, resetEntry] = usePersistentState<
-    Record<EntryField, number>
+    Record<LocalField, number>
   >(ENTRY_KEY, ENTRY_DEFAULTS);
   const [openSections, setOpenSections, resetSections] = usePersistentState<
     Record<SectionKey, boolean>
@@ -148,6 +156,7 @@ export function useElevatorSheet(): ElevatorSheet {
   const inputs = useMemo<ElevatorInputs>(
     () => ({
       ...entry,
+      thrustN,
       mtowLb,
       wingAreaM2,
       wingspanM,
@@ -185,6 +194,7 @@ export function useElevatorSheet(): ElevatorSheet {
     }),
     [
       entry,
+      thrustN,
       mtowLb,
       wingAreaM2,
       wingspanM,
@@ -216,8 +226,13 @@ export function useElevatorSheet(): ElevatorSheet {
 
   return {
     inputs,
-    setEntry: (field, value) =>
-      setEntryState((current) => ({ ...current, [field]: value })),
+    setEntry: (field, value) => {
+      if (field === "thrustN") {
+        setThrustN(value);
+        return;
+      }
+      setEntryState((current) => ({ ...current, [field]: value }));
+    },
     openSections,
     toggleSection: (key, open) =>
       setOpenSections((current) =>
