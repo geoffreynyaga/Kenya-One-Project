@@ -12,10 +12,9 @@ import { join } from "node:path";
  * import them is obvious from where they sit rather than from a convention
  * someone has to remember. And no page imports one.
  *
- * These five sheets predate the rule. The list may shrink; it must not grow.
+ * These sheets predate the rule. The list may shrink; it must not grow.
  */
 const PRE_EXISTING = [
-  "containers/detailedWeights/DetailedWeights.tsx",
   "containers/drag/DragAnalysis.tsx",
   "containers/vn/VnDiagram.tsx",
   "containers/wingAndAirfoil/WingAndAirfoil.tsx",
@@ -24,7 +23,6 @@ const PRE_EXISTING = [
 
 /** The fixtures still sitting beside the code they are the spec for. */
 const PRE_EXISTING_FIXTURES = [
-  "containers/detailedWeights/weightsFixture.ts",
   "containers/drag/dragFixture.ts",
   "containers/vn/vnFixture.ts",
   "containers/wingAndAirfoil/aerofoilFixture.ts",

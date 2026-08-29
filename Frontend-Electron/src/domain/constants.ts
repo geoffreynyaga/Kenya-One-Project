@@ -50,6 +50,16 @@ export const SPEED_OF_SOUND_MPS = 340.29;
 
 /** Density of 100LL avgas, lb per US gallon. */
 export const AVGAS_LB_PER_GAL = 5.87;
+
+/**
+ * What the sizing service assumes a person and their luggage weigh. These
+ * mirror `CORE/engines/prerequisitesEngine.py`, which is what the solved MTOW
+ * was built from — a sheet that disagrees with them is not describing the same
+ * aeroplane the service sized.
+ */
+export const PASSENGER_WEIGHT_LB = 180;
+export const CREW_WEIGHT_LB = 200;
+export const BAGGAGE_PER_PASSENGER_LB = 50;
 export const GRAVITY_FPS2 = 32.17;
 export const HP_TO_FT_LB_PER_S = 550;
 

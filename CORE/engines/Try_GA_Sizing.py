@@ -275,8 +275,28 @@ def MTOW_estimate(
     g = np.array([sadraey_mtow])
     finalMTOW = float(np.mean(mtow_values))
 
+    # The weight each method solves is only part of what it decided. The split
+    # between empty weight and fuel is the rest of it, and the detailed weights
+    # sheet checks its component buildup against exactly that empty weight.
+    # Returning the fractions rather than the pounds keeps them attached to the
+    # method that produced them, whichever one the reader carries forward.
+    empty_weight_fraction = {
+        "raymer": float(a * raymer_mtow**b),
+        "gudmundsson": float(a * gudmundsson_mtow**b),
+        "roskam": float(a * roskam_mtow**b),
+        "sadraey": float(a * sadraey_mtow**b),
+    }
+    fuel_fraction = {
+        "raymer": float(wfWtoRaymer),
+        "gudmundsson": float(wfWtoGud),
+        "roskam": float(wfWtoRoskam),
+        "sadraey": float(wfWtoSadraey),
+    }
+
     return {
         "finalMTOW": finalMTOW,
+        "emptyWeightFraction": empty_weight_fraction,
+        "fuelFraction": fuel_fraction,
         "suggestedAxisLimits": suggested_axis_limits,
         "warnings": _range_warning(xAxisLimits, suggested_axis_limits, mtow_values),
         "wtoGuess": wtoGuess,

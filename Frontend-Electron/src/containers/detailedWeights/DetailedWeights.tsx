@@ -22,13 +22,14 @@ import {
   METHOD_LABELS,
   METHODS,
   MethodKey,
-  completeGeometry,
   weightsBreakdown,
   WeightsGeometry,
   WeightsGeometryEntry,
   weightsWarnings,
 } from "./weightsCompute";
-import { WORKBOOK_INPUTS } from "./weightsFixture";
+import { BAND_SOURCE_LABEL } from "./weightsBands";
+import { useWeightsInputs } from "./useWeightsInputs";
+import { FALLBACK_GEOMETRY } from "./weightsSeeds";
 
 const nf = (value: number, digits = 1) => {
   if (!Number.isFinite(value)) return "—";
@@ -189,7 +190,7 @@ interface ViewState {
 }
 
 const DEFAULT_VIEW: ViewState = {
-  geometry: WORKBOOK_INPUTS.geometry,
+  geometry: FALLBACK_GEOMETRY,
   openSections: ["geometry"],
 };
 
@@ -273,11 +274,15 @@ function EstimationTable({ rows }: { rows: ComponentRow[] }) {
           if (row.original.lowerLimitLb === null) {
             return <span className="text-ink-faint">·</span>;
           }
+          // A band is only as good as where it came from, and this sheet now
+          // draws from two places depending on the aeroplane being sized.
+          const source = row.original.bandSource;
           return (
             <span
               className={
                 row.original.outsideBand ? "text-accent-dark" : "text-ink-muted"
               }
+              title={source ? BAND_SOURCE_LABEL[source] : undefined}
             >
               {nf(row.original.lowerLimitLb, 0)}–
               {nf(row.original.upperLimitLb as number, 0)}
@@ -372,19 +377,10 @@ export default function DetailedWeights() {
     DEFAULT_VIEW
   );
 
-  const geometry = useMemo(
-    () =>
-      completeGeometry(view.geometry, {
-        fuselageOverallLengthM: WORKBOOK_INPUTS.carried.fuselageOverallLengthM,
-        mtowLb: WORKBOOK_INPUTS.carried.mtowLb,
-      }),
-    [view.geometry]
-  );
+  const inputs = useWeightsInputs(view.geometry);
+  const { geometry } = inputs;
 
-  const result = useMemo(
-    () => weightsBreakdown({ ...WORKBOOK_INPUTS, geometry }),
-    [geometry]
-  );
+  const result = weightsBreakdown(inputs);
   const warnings = useMemo(() => weightsWarnings(result), [result]);
 
   const setGeometry = (field: keyof WeightsGeometryEntry, next: number) =>

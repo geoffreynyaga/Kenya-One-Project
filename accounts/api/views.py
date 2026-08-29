@@ -111,6 +111,8 @@ class ExampleSimpleAPIView(APIView):
             {
                 "Status": "Success",
                 "finalMTOW": x["finalMTOW"],
+                "emptyWeightFraction": x["emptyWeightFraction"],
+                "fuelFraction": x["fuelFraction"],
                 "suggestedAxisLimits": x["suggestedAxisLimits"],
                 "warnings": x["warnings"],
                 # "image": x["image"],

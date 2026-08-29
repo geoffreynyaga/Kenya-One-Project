@@ -1,9 +1,14 @@
 import { useMemo, useState } from "react";
 
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 
 import { MtowField, MtowFieldErrors, MtowSizingRequest } from "../../api/mtowSizing";
-import { ldMaxAtom, passengerCountAtom } from "../../domain/atoms";
+import {
+  aircraftTypeAtom,
+  ldMaxAtom,
+  passengerCountAtom,
+  pilotCountAtom,
+} from "../../domain/atoms";
 import { usePersistentValue } from "../../hooks/usePersistentState";
 
 export type MtowValues = {
@@ -94,11 +99,10 @@ function toRequest(values: MtowValues, axisRange: number[], ldMax: number) {
  * the sizing query is keyed on — it only moves when the inputs pass validation.
  */
 export function useMtowSheet(axisRange: number[]) {
-  // Persisted so a refresh does not throw the sheet back to these defaults.
-  const [aircraft_type, setAircraftType] = usePersistentValue<string>(
-    "kenya-one:mtow:aircraftType",
-    "GA_Twin"
-  );
+  // The empty-weight model this sheet sizes against is also the classification
+  // the statistical tables downstream are keyed on, so it is a shared quantity
+  // rather than one of this sheet's private inputs.
+  const [aircraft_type, setAircraftType] = useAtom(aircraftTypeAtom);
   const [altitude, setAltitude] = usePersistentValue<string>(
     "kenya-one:mtow:altitude",
     "10000"
@@ -146,9 +150,12 @@ export function useMtowSheet(axisRange: number[]) {
   const ldMax = useAtomValue(ldMaxAtom);
 
   // Range measures efficiency in passenger-miles per pound of fuel, so the
-  // passenger count has to leave this sheet. It goes on the commit rather than
-  // the keystroke, so a half-typed number never reaches another stage.
+  // passenger count has to leave this sheet. The crew count leaves for the
+  // same reason: Sheet 04 weighs the people on board and the furnishings they
+  // sit in. Both go on the commit rather than the keystroke, so a half-typed
+  // number never reaches another stage.
   const setPassengerCount = useSetAtom(passengerCountAtom);
+  const setPilotCount = useSetAtom(pilotCountAtom);
 
   // The sheet solves what it loaded with, so the first request is ready before
   // anything renders and the query needs no effect to start it.
@@ -180,6 +187,7 @@ export function useMtowSheet(axisRange: number[]) {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return false;
     setPassengerCount(Number(values.pax));
+    setPilotCount(Number(values.crew));
     setSubmitted(toRequest(values, axisRange, ldMax));
     setIsStale(false);
     return true;
