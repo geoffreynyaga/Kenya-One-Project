@@ -137,6 +137,52 @@ export const pitchRadiusOfGyrationAtom = persisted(
   0.29
 );
 
+/**
+ * Vertical tail geometry and the section it is built from. Workbook
+ * Rudder!K3, K8, K4, K5, N3, B5.
+ */
+export const verticalTailAspectRatioAtom = persisted(
+  "verticalTailAspectRatio",
+  1.4
+);
+export const verticalTailTaperAtom = persisted("verticalTailTaper", 0.85);
+export const verticalTailSweepDegAtom = persisted("verticalTailSweepDeg", 20);
+export const verticalTailThicknessRatioAtom = persisted(
+  "verticalTailThicknessRatio",
+  0.09
+);
+export const finSectionLiftSlopePerDegAtom = persisted(
+  "finSectionLiftSlopePerDeg",
+  0.101
+);
+export const verticalTailEfficiencyAtom = persisted(
+  "verticalTailEfficiency",
+  0.97
+);
+
+/**
+ * Fuselage side area, m² — what a crosswind pushes on. Seeded until a layout
+ * stage owns it. Workbook Rudder!B9.
+ */
+export const fuselageSideAreaM2Atom = persisted("fuselageSideAreaM2", 9.717);
+
+/**
+ * Distance between the engines, m. With one of them out it is the lever the
+ * live one yaws the aeroplane on, and the rudder has to hold that.
+ * Workbook Rudder!H3.
+ */
+export const engineLateralOffsetMAtom = persisted(
+  "engineLateralOffsetM",
+  4.122522
+);
+
+/**
+ * Total thrust from all engines at take-off, N. The elevator needs it because
+ * it takes a lever about the wheels; the rudder needs it because half of it
+ * disappearing is the case the fin is sized for. Workbook Elevator!B13.
+ */
+export const takeoffThrustNAtom = persisted("takeoffThrustN", 3800);
+
 /** Workbook Aileron!B19 — horizontal tail efficiency. */
 export const horizontalTailEfficiencyAtom = persisted(
   "horizontalTailEfficiency",

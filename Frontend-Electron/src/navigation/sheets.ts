@@ -71,7 +71,7 @@ export const PERFORMANCE_SHEETS: Sheet[] = [
 export const CONTROL_SHEETS: Sheet[] = [
   { id: "01", label: "01 AILERON", path: "/control/aileron" },
   { id: "02", label: "02 ELEVATOR", path: "/control/elevator" },
-  { id: "03", label: "03 RUDDER", path: null },
+  { id: "03", label: "03 RUDDER", path: "/control/rudder" },
 ];
 
 /**
