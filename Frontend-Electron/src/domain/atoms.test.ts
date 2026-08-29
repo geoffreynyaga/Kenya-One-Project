@@ -11,6 +11,8 @@ import {
   powerLoadingAtom,
   powerPerEngineHpAtom,
   powerRequiredHpAtom,
+  quantityStatusesAtom,
+  sharedNumericQuantity,
   engineCountAtom,
   installedPowerBhpAtom,
   selectedEngineAtom,
@@ -57,7 +59,6 @@ describe("the shared quantities reproduce the workbook", () => {
   it("installs the power of the engine actually selected", () => {
     const s = store();
 
-    // Nothing picked yet: the requirement stands in.
     expect(s.get(selectedEngineAtom)).toBeNull();
     expect(s.get(installedPowerBhpAtom)).toBe(s.get(powerRequiredHpAtom));
 
@@ -73,6 +74,31 @@ describe("the shared quantities reproduce the workbook", () => {
 
     s.set(engineCountAtom, 2);
     expect(s.get(installedPowerBhpAtom)).toBe(360);
+  });
+
+  it("keeps seeds provisional until a user writes them", () => {
+    const s = store();
+
+    expect(s.get(quantityStatusesAtom).clMax).toBeUndefined();
+    s.set(clMaxAtom, 2);
+    expect(s.get(quantityStatusesAtom).clMax).toBe("confirmed");
+  });
+
+  it("represents an unresolved shared quantity without a numeric value", () => {
+    const initial = sharedNumericQuantity(
+      { propellerDiameterFt: "unresolved" },
+      "propellerDiameterFt",
+      6.25
+    );
+
+    expect(initial).toEqual({ status: "unresolved", value: null });
+  });
+
+  it("migrates saved values without a status as provisional", () => {
+    expect(sharedNumericQuantity({}, "legacyQuantity", 12)).toEqual({
+      status: "provisional",
+      value: 12,
+    });
   });
 
   it("derives the planform from the sized wing", () => {
