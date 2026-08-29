@@ -93,6 +93,29 @@ test("empty numeric values are explained and do not submit", async () => {
   expect(global.fetch).toHaveBeenCalledTimes(1);
 });
 
+test("SOLVE goes quiet once the figure matches the inputs", async () => {
+  const user = userEvent.setup();
+  renderForm();
+
+  await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+
+  const solve = () => screen.getByRole("button", { name: /^SOLV/ });
+
+  // The sheet opens unsolved, so the first press is live.
+  await waitFor(() => expect(solve()).toBeEnabled());
+  expect(solve()).toHaveTextContent("SOLVE");
+
+  await user.click(solve());
+  await waitFor(() => expect(solve()).toHaveTextContent("SOLVED"));
+  expect(solve()).toBeDisabled();
+
+  const designRange = document.querySelector("#range") as HTMLInputElement;
+  await user.type(designRange, "0");
+
+  expect(solve()).toHaveTextContent("SOLVE");
+  expect(solve()).toBeEnabled();
+});
+
 test("sizing inputs show practical hover guidance", async () => {
   const user = userEvent.setup();
   renderForm();

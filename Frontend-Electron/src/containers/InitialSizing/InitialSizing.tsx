@@ -32,12 +32,12 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
 import tokens from "../../design-tokens";
 import { formatValue, toNumber } from "./format";
+import { METHODS, MethodName } from "./methods";
 
 const Plot = createPlotlyComponent(Plotly);
 
@@ -76,28 +76,16 @@ interface Props {
     roskam_idx?: number[];
     sadraey_idx?: number[];
   };
+  primary: MethodName;
   isLoading?: boolean;
 }
 
 export default function InitialSizing(props: Props) {
-  const { wtoGuess } = props.data;
-  const { wtoYaxisRaymer } = props.data;
-  const { wtoYaxisGud } = props.data;
-  const { wtoYaxisRoskam } = props.data;
-  const { wtoYaxisSadraey } = props.data;
-
-  const { raymerIntersect } = props.data;
-  const { gudmundssonIntersect } = props.data;
-  const { roskamIntersect } = props.data;
-  const { sadraeyIntersect } = props.data;
-
-  const { raymer_idx } = props.data;
-  const { gudmundsson_idx } = props.data;
-  const { roskam_idx } = props.data;
-  const { sadraey_idx } = props.data;
+  const { data, primary } = props;
+  const { wtoGuess } = data;
 
   const [sweepMin = SWEEP_MIN, sweepMax = SWEEP_MAX] =
-    props.data.suggestedAxisLimits ?? [];
+    data.suggestedAxisLimits ?? [];
 
   // Position of a sweep bound on the bar, clamped to the domain.
   const asPercent = (value: number) => {
@@ -105,8 +93,17 @@ export default function InitialSizing(props: Props) {
     return Math.min(100, Math.max(0, fraction * 100));
   };
 
-  const raymer = toNumber(raymerIntersect);
-  const solved = raymer !== undefined;
+  // The promoted method is drawn last so it sits over the comparisons.
+  const ordered = [
+    ...METHODS.filter((method) => method.name !== primary),
+    ...METHODS.filter((method) => method.name === primary),
+  ];
+
+  const primarySpec = METHODS.find((method) => method.name === primary);
+  const primaryValue = primarySpec
+    ? toNumber(data[primarySpec.intersect])
+    : undefined;
+  const solved = primaryValue !== undefined;
 
   return (
     <div className="flex min-w-0 flex-col px-6 pt-5">
@@ -140,91 +137,38 @@ export default function InitialSizing(props: Props) {
               },
               name: "Wto guess",
             },
-            {
+            // One curve per method; the primary one is the only accent series.
+            ...ordered.map((method) => ({
               x: wtoGuess,
-              y: wtoYaxisGud,
-              type: "scatter",
-              mode: "lines",
-              line: { color: tokens.colors.series.compare, width: 1.6 },
-              name: "Gudmundsson",
-            },
-            {
-              x: wtoGuess,
-              y: wtoYaxisRoskam,
-              type: "scatter",
-              mode: "lines",
-              line: {
-                color: tokens.colors.series.compare,
-                width: 1.6,
-                dash: "dash",
-              },
-              name: "Roskam",
-            },
-            {
-              x: wtoGuess,
-              y: wtoYaxisSadraey,
-              type: "scatter",
-              mode: "lines",
-              line: { color: tokens.colors.series.faint, width: 1.6 },
-              name: "Sadraey",
-            },
-            // Primary method, carried forward — the only accent series.
-            {
-              x: wtoGuess,
-              y: wtoYaxisRaymer,
-              type: "scatter",
-              mode: "lines",
-              line: { color: tokens.colors.accent.DEFAULT, width: 2.2 },
-              name: "Raymer",
-            },
-            {
-              x: gudmundsson_idx,
-              y: gudmundssonIntersect,
-              type: "scatter",
-              mode: "markers",
-              marker: {
-                color: tokens.colors.field,
-                size: 8,
-                line: { color: tokens.colors.series.compare, width: 1.5 },
-              },
-              name: "Gudmundsson MTOW",
+              y: data[method.curve],
+              type: "scatter" as const,
+              mode: "lines" as const,
+              line:
+                method.name === primary
+                  ? { color: tokens.colors.accent.DEFAULT, width: 2.2 }
+                  : {
+                      color: method.compare.color,
+                      width: 1.6,
+                      dash: method.compare.dash,
+                    },
+              name: method.name,
+            })),
+            ...ordered.map((method) => ({
+              x: data[method.index],
+              y: data[method.intersect],
+              type: "scatter" as const,
+              mode: "markers" as const,
+              marker:
+                method.name === primary
+                  ? { color: tokens.colors.accent.DEFAULT, size: 10 }
+                  : {
+                      color: tokens.colors.field,
+                      size: 8,
+                      line: { color: method.compare.color, width: 1.5 },
+                    },
+              name: `${method.name} MTOW`,
               showlegend: false,
-            },
-            {
-              x: roskam_idx,
-              y: roskamIntersect,
-              type: "scatter",
-              mode: "markers",
-              marker: {
-                color: tokens.colors.field,
-                size: 8,
-                line: { color: tokens.colors.series.compare, width: 1.5 },
-              },
-              name: "Roskam MTOW",
-              showlegend: false,
-            },
-            {
-              x: sadraey_idx,
-              y: sadraeyIntersect,
-              type: "scatter",
-              mode: "markers",
-              marker: {
-                color: tokens.colors.field,
-                size: 8,
-                line: { color: tokens.colors.series.faint, width: 1.5 },
-              },
-              name: "Sadraey MTOW",
-              showlegend: false,
-            },
-            {
-              x: raymer_idx,
-              y: raymerIntersect,
-              type: "scatter",
-              mode: "markers",
-              marker: { color: tokens.colors.accent.DEFAULT, size: 10 },
-              name: "Raymer MTOW",
-              showlegend: false,
-            },
+            })),
           ]}
           layout={{
             autosize: true,
@@ -253,25 +197,28 @@ export default function InitialSizing(props: Props) {
               x: 0,
               font: { family: MONO, size: 10 },
             },
-            annotations: solved
-              ? [
-                  {
-                    x: toNumber(raymer_idx),
-                    y: raymer,
-                    text: `RAYMER · ${formatValue(raymer)} lbf`,
-                    showarrow: false,
-                    xanchor: "right",
-                    yanchor: "bottom",
-                    xshift: -10,
-                    yshift: 8,
-                    font: {
-                      family: MONO,
-                      size: 11,
-                      color: tokens.colors.accent.DEFAULT,
+            annotations:
+              solved && primarySpec
+                ? [
+                    {
+                      x: toNumber(data[primarySpec.index]),
+                      y: primaryValue,
+                      text: `${primary.toUpperCase()} · ${formatValue(
+                        primaryValue
+                      )} lbf`,
+                      showarrow: false,
+                      xanchor: "right",
+                      yanchor: "bottom",
+                      xshift: -10,
+                      yshift: 8,
+                      font: {
+                        family: MONO,
+                        size: 11,
+                        color: tokens.colors.accent.DEFAULT,
+                      },
                     },
-                  },
-                ]
-              : [],
+                  ]
+                : [],
           }}
         />
       </div>

@@ -37,11 +37,13 @@ import { MtowFieldErrors } from "../../api/mtowSizing";
 import { MtowValues } from "./useMtowSheet";
 
 const CELL =
-  "flex flex-col gap-[6px] bg-paper px-[14px] py-[10px] focus-within:shadow-edited";
+  "flex flex-col gap-[6px] bg-paper px-[14px] py-[10px]";
 const CELL_LABEL =
   "font-mono text-label tracking-band text-ink-label";
+// The dashed rule under an editable value is how every other sheet says
+// "you can type here"; this band used to be the one place it was missing.
 const CELL_INPUT =
-  "w-full border-0 bg-transparent p-0 font-mono text-value text-ink outline-none";
+  "w-full border-0 border-b border-dashed border-ink-faint bg-transparent px-[1px] pb-[3px] font-mono text-value text-ink outline-none hover:border-accent focus:border-accent";
 
 const AIRCRAFT_TYPES = [
   ["SailPlane_Unpowered", "Sailplane (unpowered)"],
@@ -109,6 +111,8 @@ interface InitialValuesProps {
   errors: MtowFieldErrors;
   notice: Notice | null;
   isSolving: boolean;
+  /** The inputs have moved since the figure was solved. */
+  isStale: boolean;
   onSolve: () => void;
 }
 
@@ -118,6 +122,7 @@ const InitialValues = ({
   errors,
   notice,
   isSolving,
+  isStale,
   onSolve,
 }: InitialValuesProps) => {
   const {
@@ -129,6 +134,10 @@ const InitialValues = ({
     aspectRatio,
     crew,
   } = values;
+
+  let solveLabel = "SOLVE";
+  if (isSolving) solveLabel = "SOLVING";
+  else if (!isStale) solveLabel = "SOLVED";
 
   return (
     <div className="flex flex-none flex-col">
@@ -259,13 +268,19 @@ const InitialValues = ({
           />
         </div>
 
+        {/* Accent while there is something to solve; spent once the figure
+            matches the inputs, and live again on the next keystroke. */}
         <button
-          className="flex items-center justify-center bg-accent font-mono text-note font-medium tracking-band text-white disabled:bg-ink-faint"
-          disabled={isSolving}
+          className={`flex items-center justify-center font-mono text-note font-medium tracking-band transition-colors ${
+            isStale
+              ? "bg-accent text-white hover:bg-accent-dark"
+              : "bg-panel text-ink-faint"
+          } disabled:bg-panel disabled:text-ink-faint`}
+          disabled={isSolving || !isStale}
           type="button"
           onClick={onSolve}
         >
-          {isSolving ? "SOLVING" : "SOLVE"}
+          {solveLabel}
         </button>
       </div>
 

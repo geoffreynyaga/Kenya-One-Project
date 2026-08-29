@@ -37,7 +37,9 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { MtowSizingError, fetchMtowSizing } from "../../api/mtowSizing";
+import { usePersistentValue } from "../../hooks/usePersistentState";
 
+import { DEFAULT_METHOD, MethodName, isMethodName } from "./methods";
 import { SliderValueContext } from "./SliderValueContext";
 import InitialSizing from "./InitialSizing";
 import InitialValues, { Notice } from "./InitialValues";
@@ -47,7 +49,17 @@ import { useMtowSheet } from "./useMtowSheet";
 export default function MTOWSizing() {
   // Nothing moves this yet; the sweep the sheet solves over is fixed.
   const [context, setContext] = useState([3000, 6000]);
-  const { values, setField, errors, request, solve } = useMtowSheet(context);
+  const { values, setField, errors, isStale, request, solve } =
+    useMtowSheet(context);
+
+  // Which of the four methods the sheet promotes — the figure's accent series
+  // and the weight that carries to Sheet 02. Persisted with the rest of the
+  // sheet so a refresh does not silently hand the decision back to Raymer.
+  const [storedPrimary, setPrimary] = usePersistentValue<MethodName>(
+    "kenya-one:mtow:primaryMethod",
+    DEFAULT_METHOD
+  );
+  const primary = isMethodName(storedPrimary) ? storedPrimary : DEFAULT_METHOD;
 
   const query = useQuery({
     queryKey: ["mtow-sizing", request],
@@ -87,14 +99,19 @@ export default function MTOWSizing() {
         <InitialValues
           errors={fieldErrors}
           isSolving={query.isFetching}
+          isStale={isStale}
           notice={notice}
           setField={setField}
           values={values}
           onSolve={solve}
         />
         <div className="grid min-h-0 flex-1 grid-cols-[1fr_300px]">
-          <InitialSizing data={data} />
-          <VariantsRail data={data} />
+          <InitialSizing data={data} primary={primary} />
+          <VariantsRail
+            data={data}
+            primary={primary}
+            onSelectPrimary={setPrimary}
+          />
         </div>
       </div>
     </SliderValueContext.Provider>
