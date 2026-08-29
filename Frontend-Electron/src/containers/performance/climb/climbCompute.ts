@@ -1,15 +1,3 @@
-/**
- * Performance 02 — Climb. How steeply the aeroplane climbs, how fast it has to
- * fly to climb best, and what altitude and propeller efficiency do to both.
- *
- * The climb angle sits on both sides of its own equation: the induced drag the
- * wing makes depends on the load it carries, which is the weight resolved
- * through the climb angle, which is what the equation solves for. Shallow
- * climbs make that term almost invisible; steep ones do not.
- *
- * Provenance is the "climb" sheet of `spreadsheets/2. Performance.xlsx`.
- */
-
 import {
   densityAt,
   HP_TO_FT_LB_PER_S,
@@ -17,350 +5,276 @@ import {
   PI_FOUR_FIGURE,
 } from "../../../domain/constants";
 import { thrustFromPower } from "../../../domain/propeller";
+import { ClimbInputs, climbInputsSchema } from "./climbSchema";
 
-/** Seconds in a minute — rate of climb is quoted per minute, worked per second. */
+export type { ClimbInputs } from "./climbSchema";
+
 const SECONDS_PER_MINUTE = 60;
-
-/**
- * The speed for the best *angle* of climb is the best-rate speed over the
- * fourth root of three, and the sheet folds that into 1.1547 = 2/sqrt(3).
- */
 const BEST_ANGLE_SPEED_FACTOR = 1.1547;
-
-/**
- * How many points each sweep is walked at. The bounds are derived from the
- * design; only the resolution is the workbook's, since that is a choice about
- * how smooth a curve should look rather than about the aeroplane.
- */
 const POWER_CURVE_POINTS = 10;
 const RATE_SWEEP_POINTS = 11;
 const BEST_RATE_SWEEP_POINTS = 6;
 const ALTITUDE_SWEEP_POINTS = 13;
+const WORKBOOK_ALTITUDE_KNOT_TO_FPS = 1.633;
+const CLIMB_ANGLE_SEED_RAD = 1;
+const WORKBOOK_BEST_RATE_EFFICIENCIES = [0.6, 0.7, 0.8];
+const WORKBOOK_ALTITUDE_EFFICIENCIES = [0.6, 0.7, 0.75];
 
-/**
- * How far past the cruise speed each speed sweep is drawn. The curves are
- * worth seeing past the point they cross zero, which is a little beyond cruise
- * for an aeroplane whose cruise is anywhere near its ceiling.
- */
-const SWEEP_SPEED_MARGIN = 1.5;
+export type ClimbMode = "engineering" | "workbook";
+export interface ClimbOptions {
+  mode?: ClimbMode;
+  bestRateSweepEfficiencies?: number[];
+  altitudeStudyEfficiencies?: number[];
+}
 
-/** Evenly spaced points from start to end, inclusive of both. */
 function span(start: number, end: number, count: number): number[] {
   const step = (end - start) / (count - 1);
-  return Array.from({ length: count }, (_, i) => start + i * step);
+  return Array.from({ length: count }, (_, index) => start + index * step);
 }
 
-/** …against these propeller efficiencies. */
-const BEST_RATE_SWEEP_EFFICIENCIES = [0.6, 0.7, 0.8];
-
-/** …against these propeller efficiencies. */
-const ALTITUDE_SWEEP_EFFICIENCIES = [0.6, 0.7, 0.75];
-
-/**
- * Workbook F57. Knots to ft/s is 1.688, and the altitude study uses 1.633.
- *
- * There is no reading on which 1.633 is a conversion factor; it is 3% low and
- * every speed, dynamic pressure and drag in that study is off by it. Kept
- * because parity is the contract, and named so it is not mistaken for physics.
- */
-const ALTITUDE_STUDY_KNOT_TO_FPS = 1.633;
-
-export interface ClimbInputs {
-  /** Workbook B5, from Sheet 02 — cruise speed, KTAS. */
-  cruiseSpeedKtas: number;
-  /** Workbook B7 — sea-level density, slug/ft³. */
-  seaLevelDensity: number;
-  /** Workbook B8 — density at the cruise altitude, slug/ft³. */
-  cruiseDensity: number;
-  /** Workbook B9 — propeller efficiency in the climb. */
-  propEfficiencyClimb: number;
-  /** Workbook E19 — best-rate speed read off the plot, KTAS. */
-  bestRateSpeedFromPlotKtas: number;
-  /** Workbook B57 — altitude the sensitivity study is flown at, ft. */
-  studyAltitudeFt: number;
-  /** Sheet 02 — stall speed, KCAS. Sets where the sweeps start. */
-  stallSpeedKcas: number;
-  /** Workbook B55, from Sheet 02 — propeller speed, rpm. */
-  propellerRpm: number;
-  /** Workbook C8 of take-off — propeller diameter, ft. */
-  propellerDiameterFt: number;
-
-  /** Take-off C7, from Sheet 02 — installed shaft power, bhp. */
-  maxRatedPowerBhp: number;
-  /** Take-off P9, from Sheet 01 — maximum take-off weight, lb. */
-  mtowLb: number;
-  /** Take-off R10, from Sheet 02 — reference area, ft². */
-  wingAreaFt2: number;
-  /** Take-off P6, from Sheet 07 — minimum drag coefficient. */
-  cdMin: number;
-  /** Take-off P8, from Sheet 02 — aspect ratio. */
-  aspectRatio: number;
-  /** Take-off P5, from Sheet 06 — Oswald span efficiency. */
-  oswaldEfficiency: number;
+function sensitivityEfficiencies(selected: number): number[] {
+  return Array.from(
+    new Set(
+      [-0.1, 0, 0.1].map((offset) =>
+        Number(Math.min(1, Math.max(0.01, selected + offset)).toFixed(4))
+      )
+    )
+  ).sort((a, b) => a - b);
 }
 
-/**
- * The climb angle appears inside its own equation, in the cosine that resolves
- * the weight onto the lift the wing has to make. Workbook B13 holds the angle
- * that cosine is taken at, and holds it at 1 radian — 57 degrees — which is a
- * seed someone meant to paste the answer back into and never did.
- *
- * The aeroplane climbs at 3.8 degrees, where the cosine squared is 0.996. At
- * the seed it is 0.292, so the induced drag term comes out at less than a
- * third of what it should be and the climb looks better than it is:
- *
- *   climb angle    3.76 deg as written  ->  3.02 deg converged
- *   rate of climb   930 fpm as written  ->   746 fpm converged   (-20%)
- *
- * Parity comes first, so the seed is what runs. Flip this to true to solve the
- * angle properly — it converges in a handful of passes, because the term it
- * feeds is small — and {@link climbWarnings} says which is in force.
- */
-export const CORRECT_CLIMB_ANGLE_ITERATES = false;
+function anchoredSpan(
+  start: number,
+  end: number,
+  count: number,
+  anchors: number[]
+): number[] {
+  const values = span(start, end, count);
+  anchors.forEach((anchor) => {
+    if (!(anchor > start && anchor < end)) return;
+    let nearest = 1;
+    for (let index = 2; index < values.length - 1; index += 1) {
+      if (Math.abs(values[index] - anchor) < Math.abs(values[nearest] - anchor)) {
+        nearest = index;
+      }
+    }
+    values[nearest] = anchor;
+  });
+  return values.sort((a, b) => a - b);
+}
 
-/** Workbook B13 — the angle the cosine is taken at, radians. */
-const CLIMB_ANGLE_SEED_RAD = 1;
+function physicalOrParitySpeeds({
+  anchors,
+  count,
+  mode,
+  parity,
+  root,
+  start,
+}: {
+  anchors: number[];
+  count: number;
+  mode: ClimbMode;
+  parity: number[];
+  root: number | null;
+  start: number;
+}) {
+  if (mode === "workbook") return parity;
+  if (root === null) return [];
+  return anchoredSpan(start, root, count, anchors);
+}
 
-/** How hard the fixed point is chased when the correction is switched on. */
-const ITERATION_PASSES = 40;
-const ITERATION_TOLERANCE = 1e-12;
-
-/** One speed on the power-required curve. Workbook A20:F30. */
 export interface PowerCurvePoint {
-  /** Workbook A — airspeed, KTAS. */
   speedKtas: number;
-  /** Workbook B — dynamic pressure, lbf/ft². */
   dynamicPressure: number;
-  /** Workbook C — lift coefficient needed to hold level flight. */
   cl: number;
-  /** Workbook D — drag, lbf. */
   dragLbf: number;
-  /** Workbook E — power required, ft·lbf/s. */
   powerRequired: number;
-  /** Workbook F — power available, ft·lbf/s. */
   powerAvailable: number;
 }
 
-/** One speed on the rate-of-climb sweep. Workbook R3:W14. */
 export interface RateSweepPoint {
-  /** Workbook R — airspeed, KTAS. */
   speedKtas: number;
-  /** Workbook S — thrust, lbf. */
   thrustLbf: number;
-  /** Workbook T — dynamic pressure at sea level, lbf/ft². */
   dynamicPressureSeaLevel: number;
-  /** Workbook U — rate of climb at sea level, fpm. */
   rateSeaLevelFpm: number;
-  /** Workbook V — dynamic pressure at the cruise altitude, lbf/ft². */
   dynamicPressureCruise: number;
-  /** Workbook W — rate of climb at the cruise altitude, fpm. */
   rateCruiseFpm: number;
 }
 
-/** Best rate against the speed it is flown at. Workbook A36:D42. */
 export interface BestRateSweepRow {
-  /** Workbook A — the speed the term is evaluated at, ft/s. */
   speedFps: number;
-  /** Workbook B:D — best rate at each propeller efficiency, fpm. */
   ratesFpm: number[];
 }
 
-/** One speed in the altitude study. Workbook D55:X69. */
 export interface AltitudeStudyPoint {
-  /** Workbook D — airspeed, KCAS. */
   speedKcas: number;
-  /** Workbook E — the same, KTAS. */
   speedKtas: number;
-  /** Workbook F — the same, ft/s. */
   speedFps: number;
-  /** Workbook G — dynamic pressure, lbf/ft². */
   dynamicPressure: number;
-  /** Workbook H — lift coefficient. */
   cl: number;
-  /** Workbook I — induced drag coefficient. */
   cdInduced: number;
-  /** Workbook J — total drag coefficient. */
   cd: number;
-  /** Workbook K — drag, lbf. */
   dragLbf: number;
-  /** Workbook L — propeller advance ratio. */
   advanceRatio: number;
-  /** Workbook N, R, V — thrust at each efficiency, lbf. */
   thrustLbf: number[];
-  /** Workbook O, S, W — excess power at each efficiency, ft·lbf/s. */
   excessPower: number[];
-  /** Workbook P, T, X — rate of climb at each efficiency, fpm. */
   ratesFpm: number[];
+}
+
+export interface AltitudeStudySeries {
+  efficiency: number;
+  points: AltitudeStudyPoint[];
+  bestFpm: number;
 }
 
 export interface ClimbResult {
-  /** Workbook P7 of take-off — induced drag factor. */
+  mode: ClimbMode;
+  hasClimbSolution: boolean;
+  noSolutionReason: string | null;
   inducedDragFactor: number;
-  /** Workbook E5 — best lift-to-drag ratio. */
   liftToDragMax: number;
-  /** Workbook B6 — cruise speed, ft/s. */
   cruiseSpeedFps: number;
-  /** Workbook B10 — dynamic pressure at the cruise speed, lbf/ft². */
   dynamicPressure: number;
-  /** Workbook B12 — thrust at the cruise speed, lbf. */
   thrustLbf: number;
-
-  /** Workbook E12 — sine of the climb angle. */
   sinClimbAngle: number;
-  /** Workbook E13 — climb angle, rad. */
   climbAngleRad: number;
-  /** Workbook E14 — the same, degrees. */
   climbAngleDeg: number;
-  /** Workbook B14 — rate of climb, ft/s. */
   rateOfClimbFps: number;
-  /** Workbook B15 — rate of climb, fpm. */
   rateOfClimbFpm: number;
-
-  /** Workbook B18 — best-rate speed at sea level, ft/s. */
   bestRateSpeedFps: number;
-  /** Workbook B19 — the same, KTAS. */
   bestRateSpeedKtas: number;
-  /** Workbook E18 — best-rate speed at the cruise altitude, KTAS. */
   bestRateSpeedCruiseKtas: number;
-
-  /** Workbook A20:F30 — power required against power available. */
+  bestRateSpeedFromCurveKtas: number;
   powerCurve: PowerCurvePoint[];
-  /**
-   * Workbook F21 — power available, ft·lbf/s. Flat, since a propeller at fixed
-   * efficiency turns the same shaft power into the same thrust power.
-   */
   powerAvailable: number;
-  /**
-   * Power required at the best-rate speed, ft·lbf/s.
-   *
-   * Not a cell: the sheet marks this on its plot by hand. The curve bottoms
-   * exactly at the best-rate speed rather than near it — minimising drag times
-   * speed gives back the same expression the sheet already uses for that speed
-   * — so the widest gap between the two curves is here, and it is what the
-   * best rate of climb is bought with.
-   */
   powerRequiredAtBestRate: number;
-  /** Workbook B33 — best rate of climb, fpm. */
   bestRateFpm: number;
-  /** Workbook A36:D42 — best rate against speed, per efficiency. */
   bestRateSweep: BestRateSweepRow[];
-  /** The efficiencies that sweep is taken at. */
   bestRateSweepEfficiencies: number[];
-
-  /** Workbook R3:W14 — rate of climb against speed, at two altitudes. */
   rateSweep: RateSweepPoint[];
-
-  /** Workbook B54 — shaft power at the study altitude, bhp. */
+  rateSweepSeaLevel: RateSweepPoint[];
+  rateSweepCruise: RateSweepPoint[];
   studyPowerBhp: number;
-  /** Workbook B58 — density there, slug/ft³. */
   studyDensity: number;
-  /** Workbook B59 — density ratio there. */
   studyDensityRatio: number;
-  /** Workbook D55:X69 — the study itself. */
   altitudeStudy: AltitudeStudyPoint[];
-  /** The efficiencies it is taken at. */
   altitudeStudyEfficiencies: number[];
-  /** Workbook P71, T71, X71 — the best rate each efficiency reaches, fpm. */
   altitudeStudyBestFpm: number[];
+  altitudeStudySeries: AltitudeStudySeries[];
 }
 
-/**
- * The excess-thrust fraction that becomes climb: what is left of the thrust
- * once parasite and induced drag are paid for, as a fraction of the weight.
- *
- * `cosSquared` is where the climb angle re-enters — the wing only has to hold
- * up the component of the weight normal to the flight path, so a steeper climb
- * needs less lift and makes less induced drag.
- */
-function climbGradient(
-  inputs: ClimbInputs,
-  thrustLbf: number,
-  dynamicPressure: number,
-  inducedDragFactor: number,
-  cosSquared: number
-): number {
-  const wingLoading = inputs.mtowLb / inputs.wingAreaFt2;
-  return (
-    thrustLbf / inputs.mtowLb -
-    (dynamicPressure * inputs.cdMin) / wingLoading -
-    (inducedDragFactor * wingLoading * cosSquared) / dynamicPressure
-  );
-}
-
-/**
- * Solves the climb angle against itself, since the induced drag depends on the
- * angle the answer comes out as. Under the parity switch it does not solve at
- * all: it takes the cosine at the seed, once, as the sheet does.
- */
-function solveClimbAngle(
-  inputs: ClimbInputs,
-  thrustLbf: number,
-  dynamicPressure: number,
-  inducedDragFactor: number
-): { sin: number; rad: number } {
-  const gradientAt = (angleRad: number) =>
-    climbGradient(
-      inputs,
-      thrustLbf,
-      dynamicPressure,
-      inducedDragFactor,
-      Math.cos(angleRad) ** 2
-    );
-
-  if (!CORRECT_CLIMB_ANGLE_ITERATES) {
-    const sin = gradientAt(CLIMB_ANGLE_SEED_RAD);
-    return { sin, rad: Math.asin(sin) };
-  }
-
-  let angleRad = 0;
-  for (let pass = 0; pass < ITERATION_PASSES; pass += 1) {
-    const sin = gradientAt(angleRad);
-    const next = Math.asin(Math.max(-1, Math.min(1, sin)));
-    if (Math.abs(next - angleRad) < ITERATION_TOLERANCE) {
-      return { sin, rad: next };
-    }
-    angleRad = next;
-  }
-  return { sin: Math.sin(angleRad), rad: angleRad };
-}
-
-/** Workbook B18 — the speed that maximises rate of climb, ft/s. */
-function bestRateSpeed(
-  inputs: ClimbInputs,
-  density: number,
-  inducedDragFactor: number
-): number {
-  return Math.sqrt(
-    ((2 * inputs.mtowLb) / (inputs.wingAreaFt2 * density)) *
-      Math.sqrt(inducedDragFactor / (3 * inputs.cdMin))
-  );
-}
-
-/** The induced drag factor and the best lift-to-drag ratio it implies. */
 function dragTerms(inputs: ClimbInputs) {
   const k = 1 / (PI_FOUR_FIGURE * inputs.aspectRatio * inputs.oswaldEfficiency);
   return { k, liftToDragMax: 1 / (2 * Math.sqrt(k * inputs.cdMin)) };
 }
 
-/**
- * One speed on the power-required curve.
- *
- * Exported because the sweep below spans this design's own range of speeds,
- * so the parity test needs a way to ask for the workbook's speeds directly.
- * The same applies to the two below it.
- */
+function climbGradient(
+  inputs: ClimbInputs,
+  thrustLbf: number,
+  dynamicPressure: number,
+  k: number,
+  cosSquared: number
+) {
+  const wingLoading = inputs.mtowLb / inputs.wingAreaFt2;
+  return (
+    thrustLbf / inputs.mtowLb -
+    (dynamicPressure * inputs.cdMin) / wingLoading -
+    (k * wingLoading * cosSquared) / dynamicPressure
+  );
+}
+
+function solveClimbAngle(
+  inputs: ClimbInputs,
+  thrustLbf: number,
+  dynamicPressure: number,
+  k: number,
+  mode: ClimbMode
+) {
+  const gradientAt = (angle: number) =>
+    climbGradient(
+      inputs,
+      thrustLbf,
+      dynamicPressure,
+      k,
+      Math.cos(angle) ** 2
+    );
+  if (mode === "workbook") {
+    const sin = gradientAt(CLIMB_ANGLE_SEED_RAD);
+    return { sin, rad: Math.asin(sin) };
+  }
+  let angle = 0;
+  for (let pass = 0; pass < 40; pass += 1) {
+    const sin = gradientAt(angle);
+    const next = Math.asin(Math.max(-1, Math.min(1, sin)));
+    if (Math.abs(next - angle) < 1e-12) return { sin, rad: next };
+    angle = next;
+  }
+  return { sin: Math.sin(angle), rad: angle };
+}
+
+function bestRateSpeed(inputs: ClimbInputs, density: number, k: number) {
+  return Math.sqrt(
+    ((2 * inputs.mtowLb) / (inputs.wingAreaFt2 * density)) *
+      Math.sqrt(k / (3 * inputs.cdMin))
+  );
+}
+
+function powerRequiredAt(
+  inputs: ClimbInputs,
+  density: number,
+  speedKtas: number,
+  knotToFps = KNOT_TO_FPS
+) {
+  const { k } = dragTerms(inputs);
+  const speedFps = speedKtas * knotToFps;
+  const q = 0.5 * density * speedFps ** 2;
+  const cl = inputs.mtowLb / (q * inputs.wingAreaFt2);
+  return (
+    q *
+    inputs.wingAreaFt2 *
+    (inputs.cdMin + k * cl ** 2) *
+    speedFps
+  );
+}
+
+function highSpeedPowerRoot(
+  inputs: ClimbInputs,
+  density: number,
+  powerBhp: number,
+  efficiency: number,
+  stallSpeedKtas: number,
+  knotToFps = KNOT_TO_FPS
+): number | null {
+  const available = efficiency * powerBhp * HP_TO_FT_LB_PER_S;
+  const excess = (speedKtas: number) =>
+    available - powerRequiredAt(inputs, density, speedKtas, knotToFps);
+  if (excess(stallSpeedKtas) <= 0) return null;
+  let low = stallSpeedKtas;
+  let high = Math.max(stallSpeedKtas * 1.25, inputs.cruiseSpeedKtas);
+  for (let pass = 0; pass < 60 && excess(high) > 0; pass += 1) high *= 1.2;
+  if (excess(high) > 0) return null;
+  for (let pass = 0; pass < 80; pass += 1) {
+    const middle = (low + high) / 2;
+    if (excess(middle) > 0) low = middle;
+    else high = middle;
+  }
+  return (low + high) / 2;
+}
+
 export function powerCurveAt(
   inputs: ClimbInputs,
   speedKtas: number
 ): PowerCurvePoint {
   const { k } = dragTerms(inputs);
   const speedFps = speedKtas * KNOT_TO_FPS;
-  const q = 0.5 * inputs.seaLevelDensity * speedFps ** 2;
-  const cl = inputs.mtowLb / (q * inputs.wingAreaFt2);
-  const dragLbf = q * inputs.wingAreaFt2 * (inputs.cdMin + k * cl ** 2);
+  const dynamicPressure = 0.5 * inputs.seaLevelDensity * speedFps ** 2;
+  const cl = inputs.mtowLb / (dynamicPressure * inputs.wingAreaFt2);
+  const dragLbf =
+    dynamicPressure *
+    inputs.wingAreaFt2 *
+    (inputs.cdMin + k * cl ** 2);
   return {
     speedKtas,
-    dynamicPressure: q,
+    dynamicPressure,
     cl,
     dragLbf,
     powerRequired: dragLbf * speedFps,
@@ -369,47 +283,41 @@ export function powerCurveAt(
   };
 }
 
-/** One speed on the rate-of-climb sweep, at sea level and at cruise altitude. */
 export function rateSweepAt(
   inputs: ClimbInputs,
-  speedKtas: number
+  speedKtas: number,
+  options: ClimbOptions = {}
 ): RateSweepPoint {
+  const mode = options.mode ?? "engineering";
   const { k } = dragTerms(inputs);
   const speedFps = speedKtas * KNOT_TO_FPS;
-  const thrust = thrustFromPower(
+  const thrustLbf = thrustFromPower(
     inputs.maxRatedPowerBhp,
     inputs.propEfficiencyClimb,
     speedKtas
   );
-  const cosSquared = Math.cos(CLIMB_ANGLE_SEED_RAD) ** 2;
   const rateAt = (density: number) => {
     const q = 0.5 * density * speedFps ** 2;
-    return {
-      q,
-      fpm:
-        speedFps *
-        SECONDS_PER_MINUTE *
-        climbGradient(inputs, thrust, q, k, cosSquared),
-    };
+    const angle = solveClimbAngle(inputs, thrustLbf, q, k, mode);
+    return { q, fpm: speedFps * SECONDS_PER_MINUTE * angle.sin };
   };
-  const seaLevel = rateAt(inputs.seaLevelDensity);
+  const sea = rateAt(inputs.seaLevelDensity);
   const cruise = rateAt(inputs.cruiseDensity);
   return {
     speedKtas,
-    thrustLbf: thrust,
-    dynamicPressureSeaLevel: seaLevel.q,
-    rateSeaLevelFpm: seaLevel.fpm,
+    thrustLbf,
+    dynamicPressureSeaLevel: sea.q,
+    rateSeaLevelFpm: sea.fpm,
     dynamicPressureCruise: cruise.q,
     rateCruiseFpm: cruise.fpm,
   };
 }
 
-/** Workbook B33 — the closed form for the best rate, fpm. */
 export function bestRateAt(
   inputs: ClimbInputs,
   efficiency: number,
   speedFps: number
-): number {
+) {
   const { liftToDragMax } = dragTerms(inputs);
   return (
     SECONDS_PER_MINUTE *
@@ -419,7 +327,6 @@ export function bestRateAt(
   );
 }
 
-/** Shaft power and density at the altitude the study is flown at. */
 export function studyConditions(inputs: ClimbInputs) {
   const density = densityAt(inputs.studyAltitudeFt);
   const densityRatio = density / inputs.seaLevelDensity;
@@ -430,31 +337,37 @@ export function studyConditions(inputs: ClimbInputs) {
   };
 }
 
-/** One speed in the altitude study. */
 export function altitudeStudyAt(
   inputs: ClimbInputs,
-  speedKcas: number
+  speedKcas: number,
+  options: ClimbOptions = {}
 ): AltitudeStudyPoint {
+  const mode = options.mode ?? "engineering";
+  const efficiencies =
+    options.altitudeStudyEfficiencies ??
+    (mode === "workbook"
+      ? WORKBOOK_ALTITUDE_EFFICIENCIES
+      : sensitivityEfficiencies(inputs.propEfficiencyClimb));
   const { density, densityRatio, powerBhp } = studyConditions(inputs);
   const speedKtas = speedKcas / Math.sqrt(densityRatio);
-  const speedFps = speedKtas * ALTITUDE_STUDY_KNOT_TO_FPS;
-  const q = 0.5 * density * speedFps ** 2;
-  const cl = inputs.mtowLb / (inputs.wingAreaFt2 * q);
+  const speedFps =
+    speedKtas *
+    (mode === "workbook" ? WORKBOOK_ALTITUDE_KNOT_TO_FPS : KNOT_TO_FPS);
+  const dynamicPressure = 0.5 * density * speedFps ** 2;
+  const cl = inputs.mtowLb / (inputs.wingAreaFt2 * dynamicPressure);
   const cdInduced =
     cl ** 2 / (PI_FOUR_FIGURE * inputs.aspectRatio * inputs.oswaldEfficiency);
   const cd = inputs.cdMin + cdInduced;
-  const dragLbf = q * cd * inputs.wingAreaFt2;
-
-  const thrustLbf = ALTITUDE_SWEEP_EFFICIENCIES.map(
+  const dragLbf = dynamicPressure * cd * inputs.wingAreaFt2;
+  const thrustLbf = efficiencies.map(
     (efficiency) => (efficiency * HP_TO_FT_LB_PER_S * powerBhp) / speedFps
   );
   const excessPower = thrustLbf.map((thrust) => (thrust - dragLbf) * speedFps);
-
   return {
     speedKcas,
     speedKtas,
     speedFps,
-    dynamicPressure: q,
+    dynamicPressure,
     cl,
     cdInduced,
     cd,
@@ -470,128 +383,215 @@ export function altitudeStudyAt(
   };
 }
 
-export function climb(inputs: ClimbInputs): ClimbResult {
-  const power = inputs.maxRatedPowerBhp;
-
-  const inducedDragFactor =
-    1 / (PI_FOUR_FIGURE * inputs.aspectRatio * inputs.oswaldEfficiency);
-  const liftToDragMax = 1 / (2 * Math.sqrt(inducedDragFactor * inputs.cdMin));
-
+export function climb(
+  uncheckedInputs: ClimbInputs,
+  options: ClimbOptions = {}
+): ClimbResult {
+  const inputs = climbInputsSchema.parse(uncheckedInputs);
+  const mode = options.mode ?? "engineering";
+  const { k, liftToDragMax } = dragTerms(inputs);
   const cruiseSpeedFps = inputs.cruiseSpeedKtas * KNOT_TO_FPS;
   const dynamicPressure = 0.5 * inputs.seaLevelDensity * cruiseSpeedFps ** 2;
   const thrustLbf =
-    (inputs.propEfficiencyClimb * HP_TO_FT_LB_PER_S * power) / cruiseSpeedFps;
-
-  const angle = solveClimbAngle(
-    inputs,
-    thrustLbf,
-    dynamicPressure,
-    inducedDragFactor
-  );
+    (inputs.propEfficiencyClimb * HP_TO_FT_LB_PER_S *
+      inputs.maxRatedPowerBhp) /
+    cruiseSpeedFps;
+  const angle = solveClimbAngle(inputs, thrustLbf, dynamicPressure, k, mode);
   const rateOfClimbFps = cruiseSpeedFps * angle.sin;
+  const bestRateSpeedFps = bestRateSpeed(inputs, inputs.seaLevelDensity, k);
+  const bestRateSpeedKtas = bestRateSpeedFps / KNOT_TO_FPS;
+  const bestRateSpeedCruiseKtas =
+    bestRateSpeed(inputs, inputs.cruiseDensity, k) / KNOT_TO_FPS;
+  const powerAvailable =
+    inputs.propEfficiencyClimb *
+    inputs.maxRatedPowerBhp *
+    HP_TO_FT_LB_PER_S;
 
-  const bestRateSpeedFps = bestRateSpeed(
+  const seaStall = inputs.stallSpeedKcas;
+  const cruiseStall =
+    seaStall * Math.sqrt(inputs.seaLevelDensity / inputs.cruiseDensity);
+  const seaRoot = highSpeedPowerRoot(
     inputs,
     inputs.seaLevelDensity,
-    inducedDragFactor
+    inputs.maxRatedPowerBhp,
+    inputs.propEfficiencyClimb,
+    seaStall
   );
-
-  // Power required to hold level flight, against what the propeller delivers.
-  const powerAvailable = inputs.propEfficiencyClimb * power * HP_TO_FT_LB_PER_S;
-  // Each sweep spans this aeroplane's own range of speeds rather than the one
-  // the workbook was filled in for.
-  const topSpeedKtas = inputs.cruiseSpeedKtas * SWEEP_SPEED_MARGIN;
-
-  const powerCurve: PowerCurvePoint[] = span(
-    Math.round(topSpeedKtas / POWER_CURVE_POINTS),
-    Math.round(topSpeedKtas),
-    POWER_CURVE_POINTS
-  ).map((v) => powerCurveAt(inputs, v));
-
-  const rateStep = topSpeedKtas / RATE_SWEEP_POINTS;
-  const rateSweep: RateSweepPoint[] = span(
-    Math.round(rateStep / 2),
-    Math.round(topSpeedKtas + rateStep / 2),
+  const cruiseRoot = highSpeedPowerRoot(
+    inputs,
+    inputs.cruiseDensity,
+    inputs.maxRatedPowerBhp,
+    inputs.propEfficiencyClimb,
+    cruiseStall
+  );
+  const hasClimbSolution = seaRoot !== null;
+  const workbookTop = inputs.cruiseSpeedKtas * 1.5;
+  const workbookRateStep = workbookTop / RATE_SWEEP_POINTS;
+  const workbookRateSpeeds = span(
+    Math.round(workbookRateStep / 2),
+    Math.round(workbookTop + workbookRateStep / 2),
     RATE_SWEEP_POINTS
-  ).map((v) => rateSweepAt(inputs, v));
+  );
+  const powerSpeeds = physicalOrParitySpeeds({
+    anchors: [bestRateSpeedKtas, inputs.cruiseSpeedKtas],
+    count: POWER_CURVE_POINTS,
+    mode,
+    parity: span(
+      Math.round(workbookTop / POWER_CURVE_POINTS),
+      Math.round(workbookTop),
+      POWER_CURVE_POINTS
+    ),
+    root: seaRoot,
+    start: seaStall,
+  });
+  const powerCurve = powerSpeeds.map((speed) => powerCurveAt(inputs, speed));
+  const rateSweepSeaLevel = physicalOrParitySpeeds({
+    anchors: [bestRateSpeedKtas],
+    count: RATE_SWEEP_POINTS,
+    mode,
+    parity: workbookRateSpeeds,
+    root: seaRoot,
+    start: seaStall,
+  }).map((speed) => rateSweepAt(inputs, speed, { mode }));
+  const rateSweepCruise = physicalOrParitySpeeds({
+    anchors: [bestRateSpeedCruiseKtas],
+    count: RATE_SWEEP_POINTS,
+    mode,
+    parity: workbookRateSpeeds,
+    root: cruiseRoot,
+    start: cruiseStall,
+  }).map((speed) => rateSweepAt(inputs, speed, { mode }));
 
-  // Shaft power falls off with density by Gagg and Ferrar.
+  const bestRateSweepEfficiencies =
+    options.bestRateSweepEfficiencies ??
+    (mode === "workbook"
+      ? WORKBOOK_BEST_RATE_EFFICIENCIES
+      : sensitivityEfficiencies(inputs.propEfficiencyClimb));
+  const bestRateSweep = span(
+    Math.round((bestRateSpeedFps * 2) / 6) * 2,
+    Math.round((bestRateSpeedFps * 7) / 6 / 2) * 2,
+    BEST_RATE_SWEEP_POINTS
+  ).map((speedFps) => ({
+    speedFps,
+    ratesFpm: bestRateSweepEfficiencies.map((efficiency) =>
+      bestRateAt(inputs, efficiency, speedFps)
+    ),
+  }));
+
   const {
     density: studyDensity,
     densityRatio: studyDensityRatio,
     powerBhp: studyPowerBhp,
   } = studyConditions(inputs);
-
-  // From a little below the stall at this altitude to well past the cruise.
-  const studyStallKcas = inputs.stallSpeedKcas;
-  const altitudeStudy: AltitudeStudyPoint[] = span(
-    Math.round(studyStallKcas * 0.65),
+  const altitudeStudyEfficiencies =
+    options.altitudeStudyEfficiencies ??
+    (mode === "workbook"
+      ? WORKBOOK_ALTITUDE_EFFICIENCIES
+      : sensitivityEfficiencies(inputs.propEfficiencyClimb));
+  const workbookStudySpeeds = span(
+    Math.round(inputs.stallSpeedKcas * 0.65),
     Math.round(inputs.cruiseSpeedKtas * 1.15),
     ALTITUDE_SWEEP_POINTS
-  ).map((v) => altitudeStudyAt(inputs, v));
+  );
+  const altitudeStudySeries = altitudeStudyEfficiencies.map((efficiency) => {
+    const rootKtas = highSpeedPowerRoot(
+      inputs,
+      studyDensity,
+      studyPowerBhp,
+      efficiency,
+      inputs.stallSpeedKcas / Math.sqrt(studyDensityRatio),
+      mode === "workbook" ? WORKBOOK_ALTITUDE_KNOT_TO_FPS : KNOT_TO_FPS
+    );
+    const rootKcas =
+      rootKtas === null ? null : rootKtas * Math.sqrt(studyDensityRatio);
+    const speeds = physicalOrParitySpeeds({
+      anchors: [],
+      count: ALTITUDE_SWEEP_POINTS,
+      mode,
+      parity: workbookStudySpeeds,
+      root: rootKcas,
+      start: inputs.stallSpeedKcas,
+    });
+    const points = speeds.map((speed) =>
+      altitudeStudyAt(inputs, speed, {
+        mode,
+        altitudeStudyEfficiencies: [efficiency],
+      })
+    );
+    return {
+      efficiency,
+      points,
+      bestFpm:
+        points.length === 0
+          ? Number.NaN
+          : Math.max(...points.map((point) => point.ratesFpm[0])),
+    };
+  });
+  const altitudeStudy =
+    mode === "workbook"
+      ? workbookStudySpeeds.map((speed) =>
+          altitudeStudyAt(inputs, speed, {
+            mode,
+            altitudeStudyEfficiencies,
+          })
+        )
+      : altitudeStudySeries.find(
+          (series) => series.efficiency === inputs.propEfficiencyClimb
+        )?.points ?? altitudeStudySeries[0]?.points ?? [];
+  const altitudeStudyBestFpm = altitudeStudySeries.map(
+    (series) => series.bestFpm
+  );
+  const bestPoint = rateSweepSeaLevel.reduce<RateSweepPoint | null>(
+    (best, point) =>
+      best === null || point.rateSeaLevelFpm > best.rateSeaLevelFpm
+        ? point
+        : best,
+    null
+  );
 
   return {
-    inducedDragFactor,
+    mode,
+    hasClimbSolution,
+    noSolutionReason: hasClimbSolution
+      ? null
+      : "Installed power cannot sustain level flight at the stall boundary.",
+    inducedDragFactor: k,
     liftToDragMax,
     cruiseSpeedFps,
     dynamicPressure,
     thrustLbf,
-
     sinClimbAngle: angle.sin,
     climbAngleRad: angle.rad,
-    // The sheet rounds the radian-to-degree factor, as the take-off sheet does.
-    climbAngleDeg: angle.rad * 57.3,
+    climbAngleDeg: angle.rad * (mode === "workbook" ? 57.3 : 180 / Math.PI),
     rateOfClimbFps,
     rateOfClimbFpm: rateOfClimbFps * SECONDS_PER_MINUTE,
-
     bestRateSpeedFps,
-    bestRateSpeedKtas: bestRateSpeedFps / KNOT_TO_FPS,
-    bestRateSpeedCruiseKtas:
-      bestRateSpeed(inputs, inputs.cruiseDensity, inducedDragFactor) /
-      KNOT_TO_FPS,
-
+    bestRateSpeedKtas,
+    bestRateSpeedCruiseKtas,
+    bestRateSpeedFromCurveKtas: bestPoint?.speedKtas ?? Number.NaN,
     powerCurve,
     powerAvailable,
-    powerRequiredAtBestRate: powerCurveAt(
-      inputs,
-      bestRateSpeedFps / KNOT_TO_FPS
-    ).powerRequired,
-    bestRateFpm: bestRateAt(
-      inputs,
-      inputs.propEfficiencyClimb,
-      bestRateSpeedFps
-    ),
-    bestRateSweep: span(
-      Math.round((bestRateSpeedFps * 2) / 6) * 2,
-      Math.round((bestRateSpeedFps * 7) / 6 / 2) * 2,
-      BEST_RATE_SWEEP_POINTS
-    ).map((speedFps) => ({
-      speedFps,
-      ratesFpm: BEST_RATE_SWEEP_EFFICIENCIES.map((efficiency) =>
-        bestRateAt(inputs, efficiency, speedFps)
-      ),
-    })),
-    bestRateSweepEfficiencies: BEST_RATE_SWEEP_EFFICIENCIES,
-
-    rateSweep,
-
+    powerRequiredAtBestRate: powerCurveAt(inputs, bestRateSpeedKtas).powerRequired,
+    bestRateFpm: bestRateAt(inputs, inputs.propEfficiencyClimb, bestRateSpeedFps),
+    bestRateSweep,
+    bestRateSweepEfficiencies,
+    rateSweep: rateSweepSeaLevel,
+    rateSweepSeaLevel,
+    rateSweepCruise,
     studyPowerBhp,
     studyDensity,
     studyDensityRatio,
     altitudeStudy,
-    altitudeStudyEfficiencies: ALTITUDE_SWEEP_EFFICIENCIES,
-    altitudeStudyBestFpm: ALTITUDE_SWEEP_EFFICIENCIES.map((_, column) =>
-      Math.max(...altitudeStudy.map((point) => point.ratesFpm[column]))
-    ),
+    altitudeStudyEfficiencies,
+    altitudeStudyBestFpm,
+    altitudeStudySeries,
   };
 }
 
 export interface ClimbWarning {
   key: string;
   severity: "defect" | "check";
-  /** Names the quantity, never a cell — the reader has no workbook open. */
   message: string;
-  /** The workbook cell, for whoever is auditing. Shown only on hover. */
   cell?: string;
 }
 
@@ -600,69 +600,45 @@ export function climbWarnings(
   result: ClimbResult
 ): ClimbWarning[] {
   const warnings: ClimbWarning[] = [];
-
-  warnings.push({
-    key: "climb-angle-seed",
-    severity: "defect",
-    cell: "B13",
-    message: CORRECT_CLIMB_ANGLE_ITERATES
-      ? "The climb angle is being solved against itself rather than read at " +
-        "the seed, so the angle and the rate no longer match what this sheet " +
-        "has always produced."
-      : "The climb angle appears inside its own equation, through the lift " +
-        "the wing has to make. It is taken at a 57 degree seed that was " +
-        "never replaced with the answer, and the aeroplane climbs at under " +
-        "four — so the induced drag is counted at under a third of its " +
-        "value. Solved properly the rate of climb falls about a fifth.",
-  });
-
-  warnings.push({
-    key: "altitude-study-conversion",
-    severity: "defect",
-    cell: "F57",
-    message:
-      "The altitude study converts knots to feet per second with 1.633 " +
-      "instead of 1.688. Every speed, dynamic pressure, drag and rate in it " +
-      "carries that 3%; the rest of the sheet does not.",
-  });
-
-  warnings.push({
-    key: "best-rate-sweep-units",
-    severity: "check",
-    cell: "A36",
-    message:
-      "The best-rate sensitivity is headed in knots but its speeds are used " +
-      "as feet per second, which is what the closed form beside it feeds in. " +
-      "The numbers are consistent; the heading is not.",
-  });
-
-  const negative = result.rateSweep.filter(
-    (point) => point.rateSeaLevelFpm < 0
-  );
-  if (negative.length > 0) {
+  if (result.mode === "workbook") {
+    warnings.push(
+      {
+        key: "climb-angle-seed",
+        severity: "defect",
+        cell: "B13",
+        message:
+          "Parity mode evaluates induced drag at a 57 degree seed instead of solving the climb angle against itself.",
+      },
+      {
+        key: "altitude-study-conversion",
+        severity: "defect",
+        cell: "F57",
+        message:
+          "Parity mode converts knots with 1.633 ft/s instead of the physical 1.688 ft/s conversion.",
+      }
+    );
+  } else {
     warnings.push({
-      key: "rate-sweep-negative",
+      key: "constant-efficiency-thrust",
       severity: "check",
       message:
-        `The sea-level rate goes negative above ` +
-        `${negative[0].speedKtas} kt: past there the aeroplane cannot hold ` +
-        "height at full power, which is the level-flight limit rather than a " +
-        "climb rate.",
+        "Thrust uses the constant-efficiency power-over-speed approximation; it is not a propeller map with installation losses varying by advance ratio.",
     });
   }
-
+  if (!result.hasClimbSolution) {
+    warnings.push({
+      key: "no-climb-envelope",
+      severity: "check",
+      message: result.noSolutionReason ?? "No valid climb envelope was found.",
+    });
+  }
   const study = result.altitudeStudyBestFpm[0];
   if (Number.isFinite(study) && study > result.bestRateFpm) {
     warnings.push({
       key: "study-beats-sea-level",
       severity: "check",
-      message:
-        `The study at ${inputs.studyAltitudeFt.toFixed(0)} ft reaches a ` +
-        `better rate than the closed form gives at sea level, which it ` +
-        "should not. The two use different drag models, and the study also " +
-        "carries the conversion error noted above.",
+      message: `The study at ${inputs.studyAltitudeFt.toFixed(0)} ft reaches a better rate than the sea-level result; review the power-lapse and drag assumptions.`,
     });
   }
-
   return warnings;
 }
