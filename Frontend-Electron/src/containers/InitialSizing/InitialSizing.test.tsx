@@ -8,7 +8,7 @@ vi.mock("react-plotly.js", () => function MockPlot() {
 
 test("backend-driven chart does not show manual sweep controls", () => {
   render(
-    <InitialSizing data={{ suggestedAxisLimits: [2000, 4000] }} />
+    <InitialSizing data={{ suggestedAxisLimits: [2000, 4000] }} primary="Raymer" />
   );
 
   expect(document.querySelector("#sweepMin")).toBeNull();

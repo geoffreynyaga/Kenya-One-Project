@@ -117,6 +117,10 @@ export function useMtowSheet(axisRange: number[]) {
   const [crew, setCrew] = usePersistentValue<string>("kenya-one:mtow:crew", "2");
   const [errors, setErrors] = useState<MtowFieldErrors>({});
 
+  // SOLVE is only worth pressing when the inputs have moved away from what the
+  // figure was drawn from. The sheet opens unsolved, so it starts pressable.
+  const [isStale, setIsStale] = useState(true);
+
   const setters: Record<keyof MtowValues, (value: string) => void> = {
     aircraft_type: setAircraftType,
     altitude: setAltitude,
@@ -160,6 +164,7 @@ export function useMtowSheet(axisRange: number[]) {
 
   const setField = (field: keyof MtowValues, value: string) => {
     setters[field](value);
+    setIsStale(true);
     if (field === "aircraft_type") return;
     setErrors((current) => {
       if (!current[field as MtowField]) return current;
@@ -176,8 +181,9 @@ export function useMtowSheet(axisRange: number[]) {
     if (Object.keys(nextErrors).length > 0) return false;
     setPassengerCount(Number(values.pax));
     setSubmitted(toRequest(values, axisRange, ldMax));
+    setIsStale(false);
     return true;
   };
 
-  return { values, setField, errors, setErrors, request, solve };
+  return { values, setField, errors, setErrors, isStale, request, solve };
 }

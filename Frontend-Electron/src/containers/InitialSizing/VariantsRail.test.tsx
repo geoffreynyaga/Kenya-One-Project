@@ -1,9 +1,21 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { within } from "@testing-library/dom";
 import { Provider, createStore } from "jotai";
+import { useState } from "react";
 
 import { committedStagesAtom, mtowLbAtom } from "../../domain/atoms";
+import { DEFAULT_METHOD, MethodName } from "./methods";
 import VariantsRail from "./VariantsRail";
+
+// The sheet owns which method is primary, so the rail is exercised through a
+// holder that keeps that choice the way MTOWSizing does.
+const Harness = ({ data }: { data: Record<string, number[] | number> }) => {
+  const [primary, setPrimary] = useState<MethodName>(DEFAULT_METHOD);
+
+  return (
+    <VariantsRail data={data} primary={primary} onSelectPrimary={setPrimary} />
+  );
+};
 
 const renderRail = (
   data: Record<string, number[] | number>,
@@ -12,10 +24,13 @@ const renderRail = (
   store,
   ...render(
     <Provider store={store}>
-      <VariantsRail data={data} />
+      <Harness data={data} />
     </Provider>
   ),
 });
+
+const rowFor = (name: string) =>
+  screen.getByRole("button", { name: new RegExp(`^${name}`) });
 
 test("missing intersections are not presented as zero-weight solutions", () => {
   renderRail({
@@ -25,9 +40,8 @@ test("missing intersections are not presented as zero-weight solutions", () => {
     sadraeyIntersect: [],
   });
 
-  const raymerRow = screen.getByText("Raymer").parentElement?.parentElement;
-  expect(raymerRow).not.toBeNull();
-  expect(within(raymerRow as HTMLElement).getByText("—")).toBeInTheDocument();
+  const raymerRow = rowFor("Raymer");
+  expect(within(raymerRow).getByText("—")).toBeInTheDocument();
   expect(raymerRow).not.toHaveTextContent("0 lbf");
 });
 
@@ -77,4 +91,33 @@ test("says nothing to do when the sheets already agree", () => {
   expect(
     screen.getByText("SHEET 02 IS SIZING AGAINST THIS WEIGHT")
   ).toBeInTheDocument();
+});
+
+test("picking another method promotes it and re-bases the deltas", () => {
+  const store = createStore();
+  store.set(mtowLbAtom, 2798);
+  renderRail(solved, store);
+
+  fireEvent.click(rowFor("Sadraey"));
+
+  expect(rowFor("Sadraey")).toHaveTextContent("PRIMARY");
+  expect(rowFor("Sadraey")).toHaveAttribute("aria-pressed", "true");
+  expect(rowFor("Raymer")).not.toHaveTextContent("PRIMARY");
+  // 2,798 against 2,883 rather than against itself.
+  expect(rowFor("Raymer")).toHaveTextContent("−85 lbf · −2.9%");
+  expect(screen.getByText("SADRAEY")).toBeInTheDocument();
+});
+
+test("carrying forward carries the method the reader picked", () => {
+  const store = createStore();
+  store.set(mtowLbAtom, 2798);
+  renderRail(solved, store);
+
+  fireEvent.click(rowFor("Gudmundsson"));
+  fireEvent.click(
+    screen.getByRole("button", { name: "CARRY 2,673 LBF FORWARD" })
+  );
+
+  expect(store.get(mtowLbAtom)).toBe(2673);
+  expect(store.get(committedStagesAtom).mtow).toBe(true);
 });

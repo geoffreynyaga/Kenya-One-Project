@@ -11,6 +11,7 @@ import { useAtom, useSetAtom } from "jotai";
 
 import { committedStagesAtom, mtowLbAtom } from "../../domain/atoms";
 import { formatDelta, formatValue, toNumber } from "./format";
+import { METHODS, MethodName } from "./methods";
 
 interface Props {
   data: {
@@ -19,12 +20,19 @@ interface Props {
     roskamIntersect?: number | number[];
     sadraeyIntersect?: number | number[];
   };
+  primary: MethodName;
+  onSelectPrimary: (method: MethodName) => void;
 }
 
 /**
  * The spine of the sheet: every fuel-fraction method the discipline offers,
  * with its number, one marked primary, and an explicit statement of which
  * value moves to the next sheet.
+ *
+ * Which method is primary is the reader's call — the four disagree by design,
+ * and the sheet has no standing to insist on Raymer for an airframe the reader
+ * knows better. Picking a row promotes it on the figure, re-bases the deltas,
+ * and is what carrying forward will write.
  *
  * "Carried forward" used to be a label and nothing more — the number stayed on
  * this page while Sheet 02 sized against a weight typed into the workbook
@@ -35,18 +43,14 @@ interface Props {
 export default function VariantsRail(props: Props) {
   const [carried, setCarried] = useAtom(mtowLbAtom);
   const setCommitted = useSetAtom(committedStagesAtom);
-  const raymer = toNumber(props.data.raymerIntersect);
-  const gudmundsson = toNumber(props.data.gudmundssonIntersect);
-  const roskam = toNumber(props.data.roskamIntersect);
-  const sadraey = toNumber(props.data.sadraeyIntersect);
 
-  // Raymer is the primary method and the value carried to Sheet 02.
-  const methods = [
-    { name: "Raymer", value: raymer, primary: true },
-    { name: "Gudmundsson", value: gudmundsson, primary: false },
-    { name: "Roskam", value: roskam, primary: false },
-    { name: "Sadraey", value: sadraey, primary: false },
-  ];
+  const methods = METHODS.map((method) => ({
+    name: method.name,
+    value: toNumber(props.data[method.intersect]),
+    primary: method.name === props.primary,
+  }));
+
+  const primaryValue = methods.find((m) => m.primary)?.value;
 
   const solved = methods
     .map((m) => m.value)
@@ -65,7 +69,7 @@ export default function VariantsRail(props: Props) {
 
   // A pound either way is rounding, not a disagreement.
   const diverged =
-    raymer !== undefined && Math.abs(raymer - carried) > 1;
+    primaryValue !== undefined && Math.abs(primaryValue - carried) > 1;
 
   return (
     <div className="flex min-h-0 flex-col border-l border-rule-mid bg-panel">
@@ -79,11 +83,16 @@ export default function VariantsRail(props: Props) {
       </div>
 
       {methods.map((method) => (
-        <div
+        <button
+          aria-pressed={method.primary}
           key={method.name}
-          className={`border-t border-rule-soft px-[18px] py-[11px] ${
-            method.primary ? "bg-accent-wash shadow-carried" : ""
+          className={`block w-full border-t border-rule-soft px-[18px] py-[11px] text-left transition-colors ${
+            method.primary
+              ? "bg-accent-wash shadow-carried"
+              : "hover:bg-white/70"
           }`}
+          type="button"
+          onClick={() => props.onSelectPrimary(method.name)}
         >
           <div className="mb-[7px] flex items-baseline justify-between">
             <span className="text-body">{method.name}</span>
@@ -99,10 +108,31 @@ export default function VariantsRail(props: Props) {
             </span>
           </div>
           <div className="font-mono text-micro text-ink-faint">
-            {method.primary ? "PRIMARY" : formatDelta(method.value, raymer)}
+            {method.primary ? "PRIMARY" : formatDelta(method.value, primaryValue)}
           </div>
-        </div>
+        </button>
       ))}
+
+      {/* Carrying forward sits with the methods, not at the foot of a tall
+          rail where it scrolled out of sight. */}
+      {primaryValue !== undefined && diverged ? (
+        <div className="flex flex-col gap-[9px] border-t border-rule-mid px-[18px] py-[14px]">
+          <p className="text-note leading-5 text-accent-dark">
+            Sheet 02 is sizing against {formatValue(carried)} lbf, not the{" "}
+            {formatValue(primaryValue)} lbf solved here.
+          </p>
+          <button
+            className="border border-accent bg-accent px-3 py-[8px] font-mono text-[10.5px] font-medium tracking-band text-white transition-colors hover:bg-accent-dark"
+            onClick={() => {
+              setCarried(primaryValue);
+              setCommitted((current) => ({ ...current, mtow: true }));
+            }}
+            type="button"
+          >
+            CARRY {formatValue(primaryValue)} LBF FORWARD
+          </button>
+        </div>
+      ) : null}
 
       <div className="mt-auto flex flex-col gap-[9px] border-t border-rule-mid px-[18px] py-[14px]">
         <div className="flex justify-between font-mono text-note text-ink-label">
@@ -121,7 +151,7 @@ export default function VariantsRail(props: Props) {
         </div>
         <div className="flex justify-between font-mono text-note text-ink-label">
           <span>CARRIED FWD</span>
-          <span className="text-accent">RAYMER</span>
+          <span className="text-accent">{props.primary.toUpperCase()}</span>
         </div>
         <div className="flex justify-between font-mono text-note text-ink-label">
           <span>LATER SHEETS USE</span>
@@ -130,25 +160,7 @@ export default function VariantsRail(props: Props) {
           </span>
         </div>
 
-        {raymer !== undefined && diverged ? (
-          <>
-            <p className="text-note leading-5 text-accent-dark">
-              Sheet 02 is sizing against {formatValue(carried)} lbf, not the{" "}
-              {formatValue(raymer)} lbf solved here.
-            </p>
-            <button
-              className="border border-accent bg-accent px-3 py-[8px] font-mono text-[10.5px] font-medium tracking-band text-white transition-colors hover:bg-accent-dark"
-              onClick={() => {
-                setCarried(raymer);
-                setCommitted((current) => ({ ...current, mtow: true }));
-              }}
-              type="button"
-            >
-              CARRY {formatValue(raymer)} LBF FORWARD
-            </button>
-          </>
-        ) : null}
-        {raymer !== undefined && !diverged ? (
+        {primaryValue !== undefined && !diverged ? (
           <p className="font-mono text-micro text-ink-faint">
             SHEET 02 IS SIZING AGAINST THIS WEIGHT
           </p>
