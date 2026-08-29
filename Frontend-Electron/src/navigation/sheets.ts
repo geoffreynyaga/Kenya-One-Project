@@ -32,7 +32,12 @@ export const GROUPS: Group[] = [
     live: true,
     path: "/performance/take-off",
   },
-  { id: "control", label: "CONTROL", live: false, path: null },
+  {
+    id: "control",
+    label: "CONTROL",
+    live: true,
+    path: "/control/aileron",
+  },
   { id: "report", label: "REPORT", live: false, path: null },
 ];
 
@@ -62,14 +67,25 @@ export const PERFORMANCE_SHEETS: Sheet[] = [
   { id: "05", label: "05 LANDING", path: "/performance/landing" },
 ];
 
+/** Sheet index for the control group, in the order they are sized. */
+export const CONTROL_SHEETS: Sheet[] = [
+  { id: "01", label: "01 AILERON", path: "/control/aileron" },
+  { id: "02", label: "02 ELEVATOR", path: null },
+  { id: "03", label: "03 RUDDER", path: null },
+];
+
 /**
  * Which group a project path sits in. Sizing routes are flat and predate the
  * groups, so anything not claimed by a group prefix belongs to sizing.
  */
 export function groupOf(pathname: string): string {
-  return pathname.includes("/performance/") ? "performance" : "sizing";
+  if (pathname.includes("/performance/")) return "performance";
+  if (pathname.includes("/control/")) return "control";
+  return "sizing";
 }
 
 export function sheetsOf(group: string): Sheet[] {
-  return group === "performance" ? PERFORMANCE_SHEETS : SIZING_SHEETS;
+  if (group === "performance") return PERFORMANCE_SHEETS;
+  if (group === "control") return CONTROL_SHEETS;
+  return SIZING_SHEETS;
 }

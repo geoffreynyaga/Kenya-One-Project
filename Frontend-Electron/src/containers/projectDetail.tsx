@@ -49,6 +49,7 @@ import Climb from "./performance/climb/Climb";
 import Cruise from "./performance/cruise/Cruise";
 import Range from "./performance/range/Range";
 import Landing from "./performance/landing/Landing";
+import Aileron from "./control/aileron/Aileron";
 
 const ProjectDetail = () => {
   const routes = [
@@ -110,6 +111,10 @@ const ProjectDetail = () => {
     {
       path: "performance/landing",
       component: Landing,
+    },
+    {
+      path: "control/aileron",
+      component: Aileron,
     },
   ];
 

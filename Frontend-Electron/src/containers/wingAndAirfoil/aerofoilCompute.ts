@@ -17,6 +17,8 @@
  * `spreadsheets/1. initial sizing.xlsx`.
  */
 
+import { polhamusLiftSlopePerRad } from "../../domain/liftSlope";
+
 const FT_PER_M = 3.28;
 const FT2_PER_M2 = 10.7639;
 const FPS_PER_KNOT = 1.688;
@@ -214,14 +216,13 @@ export function threeDimensional(
   const { aspectRatio: ar } = inputs;
   const beta = flow.prandtlGlauert;
 
-  const liftSlopePolhamusPerRad =
-    (2 * WORKBOOK_PI * ar) /
-    (2 +
-      Math.sqrt(
-        ((ar * beta) / flow.sectionSlopeRatio) ** 2 *
-          (1 + Math.tan(rad(inputs.sweepHalfDeg)) ** 2 / beta ** 2) +
-          4
-      ));
+  const liftSlopePolhamusPerRad = polhamusLiftSlopePerRad({
+    aspectRatio: ar,
+    sweepHalfChordDeg: inputs.sweepHalfDeg,
+    prandtlGlauert: beta,
+    sectionSlopeRatio: flow.sectionSlopeRatio,
+    pi: WORKBOOK_PI,
+  });
 
   const sectionSlopePerRad = inputs.sectionLiftSlopePerDeg * 57.3;
 

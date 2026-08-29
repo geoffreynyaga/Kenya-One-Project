@@ -20,7 +20,6 @@ import {
 } from "../../../domain/constants";
 import { staticThrustLbf as propellerStaticThrust } from "../../../domain/propeller";
 import {
-  APPROACH_SPEED_MARGIN,
   BrakingSolution,
   CORRECT_LANDING_WEIGHT_IS_MISSION_END,
   FLARE_LIFT_FRACTION,
@@ -70,7 +69,8 @@ export function landing(inputs: LandingInputs): LandingResult {
   const stallFps = inputs.stallSpeedLandingKcas * KNOT_TO_FPS;
   const speed = (kcas: number): number => kcas * KNOT_TO_FPS;
 
-  const referenceKcas = APPROACH_SPEED_MARGIN * inputs.stallSpeedLandingKcas;
+  const referenceKcas =
+    inputs.approachSpeedRatio * inputs.stallSpeedLandingKcas;
   const touchdownKcas = TOUCHDOWN_SPEED_MARGIN * inputs.stallSpeedLandingKcas;
 
   const speeds: LandingSpeed[] = [
