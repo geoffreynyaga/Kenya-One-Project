@@ -34,6 +34,7 @@ const INITIAL_QUANTITY_STATUSES: Record<string, QuantityStatus> = {
   propellerDiameterFt: "unresolved",
   hubDiameterRatio: "unresolved",
   propEfficiencyTakeoff: "unresolved",
+  cruisePowerFraction: "unresolved",
 };
 
 export const quantityStatusesAtom = persisted<Record<string, QuantityStatus>>(
