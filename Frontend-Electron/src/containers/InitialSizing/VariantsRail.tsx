@@ -9,7 +9,12 @@
 
 import { useAtom, useSetAtom } from "jotai";
 
-import { committedStagesAtom, mtowLbAtom } from "../../domain/atoms";
+import {
+  committedStagesAtom,
+  emptyWeightFractionAtom,
+  fuelFractionAtom,
+  mtowLbAtom,
+} from "../../domain/atoms";
 import { formatDelta, formatValue, toNumber } from "./format";
 import { METHODS, MethodName } from "./methods";
 
@@ -19,6 +24,9 @@ interface Props {
     gudmundssonIntersect?: number | number[];
     roskamIntersect?: number | number[];
     sadraeyIntersect?: number | number[];
+    /** How each method split the weight it solved, keyed in lower case. */
+    emptyWeightFraction?: Record<string, number>;
+    fuelFraction?: Record<string, number>;
   };
   primary: MethodName;
   onSelectPrimary: (method: MethodName) => void;
@@ -43,6 +51,8 @@ interface Props {
 export default function VariantsRail(props: Props) {
   const [carried, setCarried] = useAtom(mtowLbAtom);
   const setCommitted = useSetAtom(committedStagesAtom);
+  const setEmptyWeightFraction = useSetAtom(emptyWeightFractionAtom);
+  const setFuelFraction = useSetAtom(fuelFractionAtom);
 
   const methods = METHODS.map((method) => ({
     name: method.name,
@@ -125,6 +135,16 @@ export default function VariantsRail(props: Props) {
             className="border border-accent bg-accent px-3 py-[8px] font-mono text-[10.5px] font-medium tracking-band text-white transition-colors hover:bg-accent-dark"
             onClick={() => {
               setCarried(primaryValue);
+              // The weight alone is half of what this method decided; the
+              // split it made is the other half, and Sheet 04 checks its
+              // component buildup against that empty weight.
+              const key = props.primary.toLowerCase();
+              const emptyFraction = props.data.emptyWeightFraction?.[key];
+              const fuel = props.data.fuelFraction?.[key];
+              if (emptyFraction !== undefined) {
+                setEmptyWeightFraction(emptyFraction);
+              }
+              if (fuel !== undefined) setFuelFraction(fuel);
               setCommitted((current) => ({ ...current, mtow: true }));
             }}
             type="button"

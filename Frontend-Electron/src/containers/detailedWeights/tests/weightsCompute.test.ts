@@ -4,7 +4,7 @@ import {
   ComponentKey,
   weightsBreakdown,
   weightsWarnings,
-} from "./weightsCompute";
+} from "../weightsCompute";
 
 /** Workbook column L, rows 6-18. */
 const AVERAGE_LB: Record<ComponentKey, number> = {

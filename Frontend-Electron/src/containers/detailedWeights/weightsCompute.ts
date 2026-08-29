@@ -16,6 +16,8 @@
  * expressed as a fraction of MTOW in M, moment-armed in N and moment in O.
  */
 
+import { BAND_SOURCE_LABEL, BandSource, bandFor } from "./weightsBands";
+
 /** Workbook rows 6-18, in sheet order. */
 export type ComponentKey =
   | "wing"
@@ -134,6 +136,12 @@ export interface WeightsGeometry {
 export interface WeightsCarried {
   /** MTOW & WEIGHTS I32 header — the design gross weight, lb. */
   mtowLb: number;
+  /**
+   * Which empirical model Sheet 01 sized against. The published tables this
+   * sheet checks its components against are keyed on the same classification,
+   * so a twin is no longer graded against a sailplane's fractions.
+   */
+  aircraftType: string;
   /** Drag analysis P8 — overall fuselage length, m. S5 works back from it. */
   fuselageOverallLengthM: number;
   /** MTOW & WEIGHTS I34 — the empty weight this sheet is checking. */
@@ -299,6 +307,22 @@ const RAYMER_WING_LAMBDA_IS_SPAN = true;
  */
 const MTOW_CASE_OMITS_OIL_WEIGHT = true;
 
+/**
+ * A third workbook defect, also reproduced for parity.
+ *
+ * Raymer 15.47 takes the horizontal tail's own thickness ratio over the cosine
+ * of its *sweep*. The workbook's E9 writes
+ * `((100*'Wing & Airfoil'!B32)/COS(RADIANS([2]Aileron!$B$20)))^(-0.12)`, which
+ * is the *wing's* thickness ratio over the cosine of the tail's *taper ratio*
+ * — a number that is not an angle. The sweep it should have used sits on
+ * Aileron B19 and is read correctly by the very next term.
+ *
+ * The cosine of a taper ratio read as degrees is close enough to 1 that the
+ * numerical effect is a fraction of a percent; the wrong thickness ratio is
+ * worth more. Reproduced, and {@link weightsWarnings} surfaces it.
+ */
+const RAYMER_TAIL_USES_WING_THICKNESS_AND_TAPER = true;
+
 /** Component weight by each method that the workbook fills in for that row. */
 export type MethodWeights = Partial<Record<MethodKey, number>>;
 
@@ -377,12 +401,18 @@ function horizontalTailWeights(i: WeightsInputs): MethodWeights {
   const nzW = c.ultimateLoadFactor * c.mtowLb;
   const areaFt2 = s.horizontalTailAreaM2 * FT2_PER_M2;
 
+  // See RAYMER_TAIL_USES_WING_THICKNESS_AND_TAPER: 15.47 wants the tail's own
+  // thickness ratio over the cosine of its sweep, and gets neither.
+  const thicknessTerm = RAYMER_TAIL_USES_WING_THICKNESS_AND_TAPER
+    ? (100 * c.thicknessToChord) / cosDeg(s.horizontalTailTaperRatio)
+    : (100 * s.horizontalTailThicknessM) / cosDeg(s.horizontalTailSweepDeg);
+
   const raymer =
     0.016 *
     nzW ** 0.414 *
     s.cruiseDynamicPressure ** 0.168 *
     areaFt2 ** 0.896 *
-    ((100 * c.thicknessToChord) / cosDeg(s.horizontalTailTaperRatio)) ** -0.12 *
+    thicknessTerm ** -0.12 *
     (s.horizontalTailAspectRatio / cosDeg(s.horizontalTailSweepDeg) ** 2) **
       0.043 *
     s.horizontalTailTaperRatio ** -0.02;
@@ -563,10 +593,13 @@ export function averageOf(weights: MethodWeights): number {
 export interface ComponentRow {
   key: ComponentKey;
   label: string;
-  /** Workbook C — the generalised lower limit, or null where the sheet has none. */
+  /** The lower limit of what this component ought to weigh, or null where
+   *  nothing published covers it. See `weightsBands.ts`. */
   lowerLimitLb: number | null;
-  /** Workbook D — the generalised upper limit. */
+  /** The upper limit. */
   upperLimitLb: number | null;
+  /** Which table the band came from, so a flagged row can say what flagged it. */
+  bandSource: BandSource | null;
   /** Workbook E..K. */
   methods: MethodWeights;
   /** Workbook L. */
@@ -580,21 +613,6 @@ export interface ComponentRow {
   /** True when the average falls outside the generalised band. */
   outsideBand: boolean;
 }
-
-/** Workbook C6:D18 — the generalised band, as a fraction of MTOW. */
-const GENERALISED_BAND: Partial<Record<ComponentKey, [number, number]>> = {
-  wing: [0.09, 0.11],
-  horizontalTail: [0.018, 0.022],
-  verticalTail: [0.014, 0.016],
-  fuselage: [0.06, 0.1],
-  installedEngine: [0.18, 0.2],
-  fuelSystem: [0.014, 0.018],
-  flightControl: [0.014, 0.016],
-  hydraulicSystem: [0.06, 0.06],
-  avionicSystem: [0.004, 0.006],
-  electricalSystem: [0.02, 0.03],
-  furnishings: [0.04, 0.06],
-};
 
 export interface LoadRow {
   key: "fuel" | "oil" | "passengers" | "payload" | "crew";
@@ -667,15 +685,16 @@ export function weightsBreakdown(inputs: WeightsInputs): WeightsResult {
   const rows: ComponentRow[] = COMPONENTS.map((key) => {
     const methods = base[key];
     const averageLb = averageOf(methods);
-    const band = GENERALISED_BAND[key];
-    const lowerLimitLb = band ? band[0] * c.mtowLb : null;
-    const upperLimitLb = band ? band[1] * c.mtowLb : null;
+    const band = bandFor(key, c.aircraftType);
+    const lowerLimitLb = band ? band.lower * c.mtowLb : null;
+    const upperLimitLb = band ? band.upper * c.mtowLb : null;
     const armM = inputs.arms[key];
     return {
       key,
       label: COMPONENT_LABELS[key],
       lowerLimitLb,
       upperLimitLb,
+      bandSource: band?.source ?? null,
       methods,
       averageLb,
       fractionOfMtow: averageLb / c.mtowLb,
@@ -813,16 +832,41 @@ export function weightsWarnings(result: WeightsResult): WeightsWarning[] {
     });
   }
 
+  if (RAYMER_TAIL_USES_WING_THICKNESS_AND_TAPER) {
+    warnings.push({
+      key: "raymer-tail-thickness",
+      severity: "defect",
+      cell: "E9",
+      message:
+        "Raymer's horizontal tail weight wants the tail's own thickness ratio " +
+        "over the cosine of its sweep. This sheet feeds it the wing's " +
+        "thickness ratio over the cosine of the tail's taper ratio, which is " +
+        "not an angle. Reproduced as the sheet has always computed it.",
+    });
+  }
+
   const outside = result.rows.filter((row) => row.outsideBand);
   if (outside.length > 0) {
+    // Which table did the flagging matters: a row outside a published band for
+    // this kind of aeroplane is a finding, and one outside the workbook's own
+    // numbers for a piston twin may only mean the aeroplane is not one.
+    const bySource = outside.reduce<Record<string, string[]>>((groups, row) => {
+      const source = row.bandSource ?? "workbook";
+      groups[source] = [...(groups[source] ?? []), row.label.toLowerCase()];
+      return groups;
+    }, {});
+
     warnings.push({
       key: "outside-band",
       severity: "check",
-      message: `${outside.length} component${
-        outside.length === 1 ? "" : "s"
-      } fall outside the generalised band: ${outside
-        .map((row) => row.label.toLowerCase())
-        .join(", ")}.`,
+      message: Object.entries(bySource)
+        .map(
+          ([source, labels]) =>
+            `${labels.join(", ")} ${
+              labels.length === 1 ? "falls" : "fall"
+            } outside ${BAND_SOURCE_LABEL[source as BandSource]}`
+        )
+        .join("; ") + ".",
     });
   }
 

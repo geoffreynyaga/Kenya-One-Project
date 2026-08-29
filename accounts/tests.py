@@ -72,6 +72,21 @@ def test_mtow_solve_is_independent_of_requested_plot_range():
     assert all(2700 < result < 3000 for result in method_results)
     assert 2800 < response.data["finalMTOW"] < 2900
 
+    # The split each method decided, which the detailed weights sheet checks
+    # its component buildup against.
+    for method, mtow in zip(
+        ("raymer", "gudmundsson", "roskam", "sadraey"), method_results
+    ):
+        empty_fraction = response.data["emptyWeightFraction"][method]
+        fuel_fraction = response.data["fuelFraction"][method]
+        assert 0.55 < empty_fraction < 0.75
+        assert 0.05 < fuel_fraction < 0.25
+        # Empty, fuel and useful load are the whole aeroplane.
+        useful_load = 3 * 180 + 3 * 50 + 1 * 200
+        assert (
+            abs((empty_fraction + fuel_fraction) * mtow + useful_load - mtow) < 1
+        )
+
     assert response.data["suggestedAxisLimits"] == [2000, 4000]
     assert len(response.data["wtoGuess"]) == 401
     assert response.data["wtoGuess"][0] == 2000

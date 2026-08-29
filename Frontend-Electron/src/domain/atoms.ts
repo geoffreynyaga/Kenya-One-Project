@@ -22,15 +22,20 @@ import { atom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
 import {
+  AVGAS_LB_PER_GAL,
+  BAGGAGE_PER_PASSENGER_LB,
+  CREW_WEIGHT_LB,
   densityAt,
   FT2_PER_M2,
   KNOT_TO_FPS,
   KNOT_TO_MPS,
   LIFT_OFF_SPEED_COEFFICIENT,
   M_PER_FT,
+  PASSENGER_WEIGHT_LB,
   SEA_LEVEL_DENSITY_SLUG_FT3,
   SPEED_OF_SOUND_MPS,
 } from "./constants";
+import { estimatedFuselageLengthM } from "./fuselageLength";
 import { polhamusLiftSlopePerRad } from "./liftSlope";
 import { Stage, STAGES } from "./stages";
 
@@ -45,6 +50,31 @@ const persisted = <T>(key: string, initial: T) =>
 
 /** Maximum take-off weight, read off the sizing curve. Workbook MTOW!D65. */
 export const mtowLbAtom = persisted("mtowLb", 5850);
+
+/**
+ * Which empirical empty-weight model the sizing service used. The 13 names are
+ * the service's own; Sheet 01 picks one and later sheets need it because the
+ * statistical tables they draw first-pass geometry from are keyed on the same
+ * classification. Workbook MTOW!B4.
+ */
+export const aircraftTypeAtom = persisted("aircraftType", "GA_Twin");
+
+/**
+ * How the solved MTOW divides, as fractions of it.
+ *
+ * Sheet 01 does not only decide a weight — it decides a split, and the method
+ * carried forward is what decided it. Sheet 04 exists to check its component
+ * buildup against that empty weight, so carrying the weight without the split
+ * left it checking against a number typed into the workbook years ago.
+ *
+ * Written by Sheet 01 when a method is carried forward; seeded from the
+ * workbook aeroplane until it is.
+ */
+export const emptyWeightFractionAtom = persisted(
+  "emptyWeightFraction",
+  0.6303921440830421
+);
+export const fuelFractionAtom = persisted("fuelFraction", 0.1439667448143937);
 
 /** Workbook Sref!B10. Read by Sref, Wing & Airfoil, V-n. */
 export const clMaxAtom = persisted("clMax", 1.8);
@@ -200,10 +230,29 @@ export const tailSectionLiftSlopePerDegAtom = persisted(
 export const tailIncidenceDegAtom = persisted("tailIncidenceDeg", -0.35661);
 
 /**
- * Fuselage length and diameter, m. Seeded until a layout stage owns them.
- * Workbook Elevator!B4, Elevator!B3.
+ * Fuselage length, m, until a layout stage owns it.
+ *
+ * The workbook's 9.1 m was standing in here for every aeroplane, so a
+ * single-seat homebuilt and a jet transport were both sized around a piston
+ * twin's fuselage. Raymer tabulates the length against take-off weight by
+ * aircraft type for exactly this purpose, so an untouched design now sits on
+ * that estimate rather than on one aeroplane's measurement, and a human who
+ * has drawn a fuselage overrides it. Wing loading below does the same thing
+ * for the same reason. Workbook Elevator!B4.
  */
-export const fuselageLengthMAtom = persisted("fuselageLengthM", 9.1);
+export const fuselageLengthOverrideMAtom = persisted<number | null>(
+  "fuselageLengthOverrideM",
+  null
+);
+
+export const fuselageLengthMAtom = atom(
+  (get) =>
+    get(fuselageLengthOverrideMAtom) ??
+    estimatedFuselageLengthM(get(aircraftTypeAtom), get(mtowLbAtom)) ??
+    9.1
+);
+
+/** Workbook Elevator!B3. Seeded until a layout stage owns it. */
 export const fuselageDiameterMAtom = persisted("fuselageDiameterM", 1.3462);
 
 /**
@@ -440,6 +489,41 @@ export const wingLiftSlopePerRadAtom = atom((get) => {
       ((get(sectionLiftSlopePerDegAtom) * 180) / Math.PI) / (2 * Math.PI),
   });
 });
+
+/**
+ * The weight breakdown Sheet 01 sized, in pounds.
+ *
+ * Fractions are what the sizing service returns and what is stored, because a
+ * fraction stays true when the weight moves; the pounds follow from whichever
+ * weight is currently carried. Sheet 04 checks its component buildup against
+ * the empty weight, and reads the fuel for the tanks it has to size.
+ */
+export const emptyWeightLbAtom = atom(
+  (get) => get(mtowLbAtom) * get(emptyWeightFractionAtom)
+);
+
+export const fuelWeightLbAtom = atom(
+  (get) => get(mtowLbAtom) * get(fuelFractionAtom)
+);
+
+/** Usable fuel, US gallons — the volume Raymer's fuel-system weight takes. */
+export const fuelGallonsAtom = atom(
+  (get) => get(fuelWeightLbAtom) / AVGAS_LB_PER_GAL
+);
+
+/**
+ * The useful load, split the way the sizing service splits it: people at a
+ * fixed weight each, and a baggage allowance per passenger.
+ */
+export const passengersLbAtom = atom(
+  (get) => get(passengerCountAtom) * PASSENGER_WEIGHT_LB
+);
+
+export const payloadLbAtom = atom(
+  (get) => get(passengerCountAtom) * BAGGAGE_PER_PASSENGER_LB
+);
+
+export const crewLbAtom = atom((get) => get(pilotCountAtom) * CREW_WEIGHT_LB);
 
 /** Workbook Sref!B16: k = 1/(pi * AR * e). */
 export const inducedDragFactorAtom = atom(

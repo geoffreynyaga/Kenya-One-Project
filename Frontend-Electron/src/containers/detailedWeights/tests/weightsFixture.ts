@@ -1,4 +1,4 @@
-import { WeightsInputs } from "./weightsCompute";
+import { WeightsInputs } from "../weightsCompute";
 
 /**
  * Cached values from sheet "Detailed Weights" of
@@ -27,6 +27,7 @@ export const WORKBOOK_INPUTS: WeightsInputs = {
   },
   carried: {
     mtowLb: 5850,
+    aircraftType: "GA_Twin",
     fuselageOverallLengthM: 9.1,
     initialEmptyWeightLb: 3687.7945428857965,
     fuelWeightLb: 842.2054571142032,
