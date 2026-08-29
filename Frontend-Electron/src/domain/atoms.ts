@@ -131,6 +131,46 @@ export const rollRadiusOfGyrationAtom = persisted(
   0.34
 );
 
+/** The same in pitch, which is what the elevator has to overcome at rotation. */
+export const pitchRadiusOfGyrationAtom = persisted(
+  "pitchRadiusOfGyration",
+  0.29
+);
+
+/** Workbook Aileron!B19 — horizontal tail efficiency. */
+export const horizontalTailEfficiencyAtom = persisted(
+  "horizontalTailEfficiency",
+  0.98
+);
+
+/**
+ * Tail section lift-curve slope, per degree, and the incidence the tailplane
+ * is rigged at. Workbook Elevator!H2, Elevator!H4.
+ */
+export const tailSectionLiftSlopePerDegAtom = persisted(
+  "tailSectionLiftSlopePerDeg",
+  0.101
+);
+export const tailIncidenceDegAtom = persisted("tailIncidenceDeg", -0.35661);
+
+/**
+ * Fuselage length and diameter, m. Seeded until a layout stage owns them.
+ * Workbook Elevator!B4, Elevator!B3.
+ */
+export const fuselageLengthMAtom = persisted("fuselageLengthM", 9.1);
+export const fuselageDiameterMAtom = persisted("fuselageDiameterM", 1.3462);
+
+/**
+ * Angle of attack the wing makes no lift at, degrees — negative for a cambered
+ * section. Wing & Airfoil owns it; the elevator needs it because the lift the
+ * wing makes at zero incidence is what the tail has to trim against.
+ * Workbook Wing & Airfoil!B24.
+ */
+export const zeroLiftAlphaDegAtom = persisted("zeroLiftAlphaDeg", -4);
+
+/** The incidence the wing is rigged at, degrees. Workbook Wing & Airfoil!B15. */
+export const wingIncidenceDegAtom = persisted("wingIncidenceDeg", 1.8);
+
 /**
  * Approach speed as a multiple of the stall. Landing flies it, and the aileron
  * is sized at it because that is the slowest the roll has to be made at.
@@ -454,6 +494,33 @@ export const wingspanFtAtom = atom((get) =>
 export const meanChordFtAtom = atom(
   (get) => get(wingAreaFt2Atom) / get(wingspanFtAtom)
 );
+
+/**
+ * Workbook Wing & Airfoil!L14 — the lift the wing makes at zero incidence.
+ * A cambered section still lifts when the chord line is level, and that lift
+ * is what the tail has to balance in trim.
+ */
+export const wingLiftAtZeroIncidenceAtom = atom(
+  (get) =>
+    (Math.abs(get(zeroLiftAlphaDegAtom)) *
+      Math.PI *
+      get(wingLiftSlopePerRadAtom)) /
+    180
+);
+
+/**
+ * Workbook Wing & Airfoil!L15 — the wing-and-fuselage pitching moment
+ * coefficient, the section's moment scaled from the section's lift slope onto
+ * the wing's.
+ */
+export const wingFuselageMomentCoefficientAtom = atom(
+  (get) =>
+    ((get(wingLiftSlopePerRadAtom) * Math.PI) / 180) *
+    (get(sectionMomentCoefficientAtom) / get(sectionLiftSlopePerDegAtom))
+);
+
+/** Tail arm in metres. */
+export const tailArmMAtom = atom((get) => get(tailArmFtAtom) * M_PER_FT);
 
 /** Wingspan in metres, which is the unit the control sheets are written in. */
 export const wingspanMAtom = atom((get) => get(wingspanFtAtom) * M_PER_FT);
