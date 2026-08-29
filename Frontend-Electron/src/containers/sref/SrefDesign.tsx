@@ -30,6 +30,7 @@ import {
   weightFields,
 } from "./srefFields";
 import { computeLocal, recommendEngines } from "./srefCompute";
+import { srefFormErrors, toSrefRequest } from "./srefSchema";
 import { useSrefSheet } from "./useSrefSheet";
 import {
   CONSTRAINT_KEYS,
@@ -46,9 +47,15 @@ import {
   allowedLeftOfStall,
 } from "./srefFeasibility";
 import {
+  confirmQuantitiesAtom,
+  committedStagesAtom,
   powerPerEngineHpAtom,
   powerRequiredHpAtom,
+  QuantityStatus,
+  quantityStatusesAtom,
+  resetQuantitiesAtom,
   selectedEngineAtom,
+  sharedNumericQuantity,
   stallLimitWingLoadingAtom,
   wingAreaM2Atom,
 } from "../../domain/atoms";
@@ -59,7 +66,46 @@ const MONO = tokens.fontFamily.mono.join(", ");
 
 const STORAGE_KEY = "kenya-one:sref:v1";
 
-/** The number each requirement sense applies to, for the toggle row. */
+const SREF_QUANTITY_KEYS = [
+  "clMax",
+  "stallSpeedKcas",
+  "aspectRatio",
+  "vmaxKnots",
+  "cruiseAltitudeFt",
+  "propEfficiencyCruise",
+  "powerLoading",
+  "engineCount",
+  "propEfficiencyClimb",
+  "propEfficiencyTakeoff",
+  "rollingFriction",
+  "takeoffGearDrag",
+  "cruiseSpeedKnots",
+  "cd0",
+  "oswaldEfficiency",
+] as const;
+
+const SREF_FIELD_QUANTITY_KEYS: Partial<Record<FormField, string>> = {
+  altitude: "cruiseAltitudeFt",
+  clMax: "clMax",
+  stallSpeed: "stallSpeedKcas",
+  vmax: "vmaxKnots",
+  cd0: "cd0",
+  aspectRatio: "aspectRatio",
+  oswaldEfficiency: "oswaldEfficiency",
+  propEfficiencyCruise: "propEfficiencyCruise",
+  propEfficiencyClimb: "propEfficiencyClimb",
+  propEfficiencyTakeoff: "propEfficiencyTakeoff",
+  takeoffGearDrag: "takeoffGearDrag",
+  rollingFriction: "rollingFriction",
+  designWeight: "mtowLb",
+  taxiFraction: "taxiFraction",
+  climbFraction: "climbFraction",
+  cruiseWeightRatio: "cruiseWeightRatio",
+  cruiseSpeed: "cruiseSpeedKnots",
+  powerLoading: "powerLoading",
+  engineCount: "engineCount",
+};
+
 const SENSE_VALUES: Record<
   ConstraintKey | "stall",
   (values: FormValues) => string
@@ -71,111 +117,21 @@ const SENSE_VALUES: Record<
   vmax: (v) => `${v.vmax} kt`,
 };
 
-const integerFields = new Set<FormField>(["engineCount"]);
-
-const fractionFields = new Set<FormField>([
-  "oswaldEfficiency",
-  "propEfficiencyCruise",
-  "propEfficiencyClimb",
-  "propEfficiencyTakeoff",
-  "taxiFraction",
-  "climbFraction",
-  "cruiseWeightRatio",
-]);
-
-/**
- * What is left of this sheet's own state once the design quantities moved to
- * `domain/atoms`: which bands are open and which engine is selected.
- */
 interface ViewState {
   openSections: string[];
   engineNumber: number | null;
-  /** Whether each requirement is a floor or a ceiling — drives the shading. */
   senses: Senses;
 }
 
-// The two bands you actually tune start open; the bands that are mostly
-// consequences of other stages start collapsed.
 const DEFAULT_VIEW: ViewState = {
   openSections: ["REQUIREMENTS", "DESIGN POINT"],
   engineNumber: null,
   senses: DEFAULT_SENSE_STATE,
 };
 
-function toRequest(values: FormValues): SrefSizingRequest {
-  const number = (field: FormField) => Number(values[field]);
-  return {
-    atmosphere: {
-      altitude_ft: number("altitude"),
-      service_ceiling_ft: number("serviceCeiling"),
-    },
-    requirements: {
-      cl_max: number("clMax"),
-      stall_speed_kcas: number("stallSpeed"),
-      vmax_knots: number("vmax"),
-      takeoff_run_ft: number("takeoffRun"),
-      rate_of_climb_fpm: number("rateOfClimb"),
-      ceiling_rate_of_climb_fpm: number("ceilingRoc"),
-    },
-    aerodynamics: {
-      cd0: number("cd0"),
-      aspect_ratio: number("aspectRatio"),
-      oswald_efficiency: number("oswaldEfficiency"),
-      induced_drag_factor_override: number("inducedDragFactor"),
-      ld_max: number("ldMax"),
-      prop_efficiency_cruise: number("propEfficiencyCruise"),
-      prop_efficiency_climb: number("propEfficiencyClimb"),
-      prop_efficiency_takeoff: number("propEfficiencyTakeoff"),
-      cl_takeoff: number("clTakeoff"),
-      takeoff_speed_knots: number("takeoffSpeed"),
-      takeoff_gear_drag: number("takeoffGearDrag"),
-      rolling_friction: number("rollingFriction"),
-    },
-    weights: {
-      design_weight_lb: number("designWeight"),
-      taxi_fraction: number("taxiFraction"),
-      climb_fraction: number("climbFraction"),
-      cruise_weight_ratio: number("cruiseWeightRatio"),
-      cruise_speed_knots: number("cruiseSpeed"),
-    },
-    design_point: {
-      wing_loading_lb_per_ft2: number("wingLoading"),
-      power_loading_lb_per_hp: number("powerLoading"),
-      engine_count: number("engineCount"),
-    },
-  };
-}
-
-function validate(values: FormValues): Partial<Record<FormField, string>> {
-  const errors: Partial<Record<FormField, string>> = {};
-  (Object.keys(values) as FormField[]).forEach((field) => {
-    if (values[field].trim() === "") {
-      errors[field] = "Enter a number.";
-      return;
-    }
-    const value = Number(values[field]);
-    if (!Number.isFinite(value)) {
-      errors[field] = "Enter a number.";
-    } else if (value <= 0 && field !== "takeoffGearDrag") {
-      errors[field] = "Must be greater than zero.";
-    } else if (field === "takeoffGearDrag" && value < 0) {
-      errors[field] = "Cannot be negative.";
-    } else if (fractionFields.has(field) && value > 1) {
-      errors[field] = "Use a fraction from 0 to 1.";
-    } else if (integerFields.has(field) && !Number.isInteger(value)) {
-      errors[field] = "Enter a whole number.";
-    }
-  });
-  return errors;
-}
-
 const formatNumber = (value: number, digits = 2) =>
   new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
 
-/**
- * Numbers are rounded for reading and shown at full precision on demand — when
- * the cell has focus, or in its tooltip.
- */
 function readable(raw: string): string {
   if (raw.trim() === "" || raw.length <= 8) return raw;
   const value = Number(raw);
@@ -186,14 +142,9 @@ function readable(raw: string): string {
 interface HintProps {
   inputId: string;
   spec: FieldSpec;
-  /** Full-precision value, shown under the explanation. */
   exact?: string;
 }
 
-/**
- * Same tooltip as the MTOW sheet: CSS-only, so it appears the instant the
- * pointer lands rather than waiting on the browser's native title delay.
- */
 function Hint({ inputId, spec, exact }: HintProps) {
   const helpId = `${inputId}-help`;
   return (
@@ -241,10 +192,9 @@ interface ValueCellProps {
   values: FormValues;
   errors: Partial<Record<FormField, string>>;
   overridden: boolean;
-  /** What the owning stage still holds, when this cell has diverged from it. */
   upstream: number | null;
+  status: QuantityStatus | null;
   onChange: (field: FormField, value: string) => void;
-  /** Editing finished — the draft string can go, leaving the stored number. */
   onBlur: (field: FormField) => void;
   onOverride: (field: FormField) => void;
   onRestore: (field: FormField) => void;
@@ -256,6 +206,7 @@ function ValueCell({
   errors,
   overridden,
   upstream,
+  status,
   onChange,
   onBlur,
   onOverride,
@@ -266,16 +217,14 @@ function ValueCell({
   const error = errors[field];
   const errorId = `${field}-error`;
   const raw = values[field];
-  // A consequence is read-only until you take it over by hand. Whether this
-  // stage computes it or another one does only changes the caption.
   const editable = source !== "consequence" || overridden;
   const hasOrigin = Boolean(spec.origin);
+  const unresolved = status === "unresolved";
+  const provisional = status === "provisional";
 
   let provenance: string | null = null;
   if (source === "consequence") provenance = spec.formula ?? `← ${spec.origin}`;
   else if (source === "figure") provenance = "← FIG. 2.1";
-  // An override here is sheet-local: the owning stage keeps its own number,
-  // so say which one it still has.
   let caption = provenance;
   if (provenance && overridden) {
     caption =
@@ -284,18 +233,26 @@ function ValueCell({
         : `OVERRIDDEN · ${provenance}`;
   }
 
-  // CAUTION: quantities in a design loop carry a quiet tag here. It only turns
-  // loud when the loop actually fires — see domain/loops.ts.
+  // Loop tags come from the single registry in domain/loops.ts.
   const loops = spec.quantity ? loopsFor(spec.quantity) : [];
 
   const label = (
-    <span className="min-w-0 text-body leading-[1.35] text-ink-muted">
+    <span
+      className={`min-w-0 text-body leading-[1.35] ${
+        unresolved ? "text-accent" : "text-ink-muted"
+      }`}
+    >
       {spec.label}
       {spec.unit ? (
         <span className="ml-[5px] font-mono text-micro text-ink-faint">
           [{spec.unit}]
         </span>
       ) : null}{" "}
+      {status && status !== "confirmed" ? (
+        <span className="mr-1 font-mono text-micro tracking-band text-accent">
+          {unresolved ? "UNRESOLVED" : "PROVISIONAL"}
+        </span>
+      ) : null}
       <Hint
         exact={raw !== readable(raw) ? raw : undefined}
         inputId={field}
@@ -304,10 +261,14 @@ function ValueCell({
     </span>
   );
 
+  let statusClass = "";
+  if (error || unresolved) statusClass = "bg-accent-wash";
+  else if (provisional) statusClass = "bg-panel";
+
   return (
     <div
       className={`grid grid-cols-[minmax(0,1fr)_104px] items-baseline gap-x-3 px-[18px] py-[7px] ${
-        error ? "bg-accent-wash" : ""
+        statusClass
       } ${hasOrigin ? "shadow-carried" : ""} ${
         source === "consequence" ? "bg-field/70" : ""
       } ${editable ? "hover:bg-white/70 focus-within:bg-white" : ""}`}
@@ -534,11 +495,7 @@ function ConstraintFigure({
   const yMin = 0;
   const yMax = Math.max(...allWp, picked.powerLoading) * 1.05;
 
-  /**
-   * One shaded shape per constraint, covering the half-plane its sense rules
-   * out. Overlaps darken, which is what the pencil hatching in the workbook
-   * did.
-   */
+  // Overlapping excluded half-planes darken automatically.
   const region = feasibleRegion(curves, stallLimit, senses);
 
   const shading = [
@@ -708,8 +665,6 @@ function ConstraintFigure({
 }
 
 export default function SrefDesign() {
-  // The shared quantities come from domain/atoms; the ten fields only this
-  // sheet uses stay local. See useSrefSheet for the split.
   const {
     values,
     setField,
@@ -725,16 +680,17 @@ export default function SrefDesign() {
     STORAGE_KEY,
     DEFAULT_VIEW
   );
-  const [errors, setErrors] = useState<Partial<Record<FormField, string>>>({});
   const { senses } = view;
 
-  // Sized outputs are shared quantities, so they are read, not recomputed.
+  const committedStages = useAtomValue(committedStagesAtom);
+  const quantityStatuses = useAtomValue(quantityStatusesAtom);
+  const errors = useMemo(() => srefFormErrors(values), [values]);
+
   const wingAreaM2 = useAtomValue(wingAreaM2Atom);
   const powerRequiredHp = useAtomValue(powerRequiredHpAtom);
   const powerPerEngineHp = useAtomValue(powerPerEngineHpAtom);
   const stallLimitWingLoading = useAtomValue(stallLimitWingLoadingAtom);
 
-  // What is left is private to this sheet: atmosphere, mission weights, CLc.
   const local = useMemo(
     () =>
       computeLocal({
@@ -750,19 +706,18 @@ export default function SrefDesign() {
     [values, wingAreaM2]
   );
 
-  const [submitted, setSubmitted] = useState<SrefSizingRequest>(() =>
-    toRequest(values)
-  );
+  const [submitted, setSubmitted] = useState<SrefSizingRequest | null>(null);
 
   const query = useQuery({
     queryKey: ["sref-sizing", submitted],
-    queryFn: () => fetchSrefSizing(submitted),
+    queryFn: () => fetchSrefSizing(submitted!),
+    enabled: submitted !== null,
     staleTime: 5 * 60 * 1000,
     retry: 1,
     refetchOnWindowFocus: false,
   });
 
-  // Static reference data: fetched once, never refetched.
+  // Engine specifications are immutable reference data.
   const catalog = useQuery({
     queryKey: ["sref-engines"],
     queryFn: fetchSrefEngines,
@@ -778,7 +733,6 @@ export default function SrefDesign() {
     [engines, powerPerEngineHp]
   );
 
-  // Default to the closest engine that covers the requirement until picked.
   const selectedNumber =
     view.engineNumber ?? recommendations[0]?.engine.number ?? null;
   const selectedEngine =
@@ -792,16 +746,11 @@ export default function SrefDesign() {
   const selectEngine = (number: number) =>
     setView((current) => ({ ...current, engineNumber: number }));
 
-  /*
-   * Publish the engine downstream. Every performance stage flies on its rated
-   * power, and none of them has a catalogue to look it up in — the catalogue
-   * is server data, which never crosses a stage boundary.
-   *
-   * The recommended engine counts as selected: it is what this sheet shows as
-   * the choice, and leaving the atom null would have the performance stages
-   * fall back to the bare power requirement while the page says otherwise.
-   */
+  // Downstream stages need only the selected engine's rated data.
   const publishEngine = useSetAtom(selectedEngineAtom);
+  const setCommittedStages = useSetAtom(committedStagesAtom);
+  const confirmQuantities = useSetAtom(confirmQuantitiesAtom);
+  const resetQuantities = useSetAtom(resetQuantitiesAtom);
   useEffect(() => {
     if (selectedEngine === null) return;
     publishEngine({
@@ -814,33 +763,26 @@ export default function SrefDesign() {
 
   const changeField = (field: FormField, value: string) => {
     setField(field, value);
-    setErrors((current) => {
-      if (!current[field]) return current;
-      const next = { ...current };
-      delete next[field];
-      return next;
-    });
+    setSubmitted(null);
+    resetQuantities([...SREF_QUANTITY_KEYS]);
+    setCommittedStages((current) => ({ ...current, sref: false }));
   };
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const nextErrors = validate(values);
-    setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
-    const request = toRequest(values);
-    if (JSON.stringify(request) === JSON.stringify(submitted)) {
+    if (Object.keys(errors).length > 0) return;
+    const request = toSrefRequest(values);
+    confirmQuantities([...SREF_QUANTITY_KEYS]);
+    setCommittedStages((current) => ({ ...current, sref: true }));
+    if (submitted && JSON.stringify(request) === JSON.stringify(submitted)) {
       void query.refetch();
     } else {
       setSubmitted(request);
     }
   };
 
-  // Clicking the plot takes the design point off the stall limit, which is an
-  // override on the shared wing-loading quantity.
   const pickPoint = (wingLoading: number, powerLoading: number) => {
-    // Stored at full precision: rounding here can nudge a point that sits
-    // exactly on a constraint over to the wrong side of it. Cells round for
-    // reading on their own.
+    // Rounding can move a boundary point outside the feasible region.
     const next: FormValues = {
       ...values,
       wingLoading: String(wingLoading),
@@ -851,21 +793,23 @@ export default function SrefDesign() {
     commitField("wingLoading");
     commitField("powerLoading");
 
-    // The figure plots the submitted point, so moving the design point has to
-    // resolve the curves as well or nothing on the plot moves.
-    setErrors(validate(next));
-    setSubmitted(toRequest(next));
+    const nextErrors = srefFormErrors(next);
+    if (Object.keys(nextErrors).length > 0) return;
+    setSubmitted(toSrefRequest(next));
+    confirmQuantities([...SREF_QUANTITY_KEYS]);
+    setCommittedStages((current) => ({ ...current, sref: true }));
   };
 
   const reset = () => {
     resetSheet();
     resetView();
-    setErrors({});
+    publishEngine(null);
+    resetQuantities([...SREF_QUANTITY_KEYS]);
+    setCommittedStages((current) => ({ ...current, sref: false }));
   };
 
   const result = query.data;
 
-  // Which constraints the point actually satisfies, given the senses.
   const feasibility = useMemo(
     () =>
       (result
@@ -888,8 +832,6 @@ export default function SrefDesign() {
     [result, senses]
   );
 
-  // A flipped sense inverts half the diagram, so say so rather than leaving
-  // someone to wonder why the allowed region moved.
   const flipped = useMemo(() => flippedSenses(senses), [senses]);
 
   const restoreConventionalSenses = () =>
@@ -914,6 +856,17 @@ export default function SrefDesign() {
     onBlur: commitField,
     onOverride: overrideField,
     onRestore: restoreField,
+  };
+
+  const fieldStatus = (spec: FieldSpec): QuantityStatus | null => {
+    if (spec.source === "consequence" && !isOverridden(spec.field)) {
+      const key = SREF_FIELD_QUANTITY_KEYS[spec.field] ?? spec.quantity;
+      return key
+        ? sharedNumericQuantity(quantityStatuses, key, 0).status
+        : null;
+    }
+    if (committedStages.sref) return "confirmed";
+    return errors[spec.field] ? "unresolved" : "provisional";
   };
 
   const toggleSection = (key: string, open: boolean) => {
@@ -941,6 +894,7 @@ export default function SrefDesign() {
           key={spec.field}
           overridden={isOverridden(spec.field)}
           spec={spec}
+          status={fieldStatus(spec)}
           upstream={upstreamValue(spec.field)}
           {...cellProps}
         />
@@ -949,11 +903,13 @@ export default function SrefDesign() {
   );
 
   const summaryItems: Array<[string, string]> = [
-    ["WING AREA SREF", `${formatNumber(wingAreaM2)} m²`],
-    ["POWER REQUIRED", `${formatNumber(powerRequiredHp, 1)} hp`],
+    ["WING AREA SREF", submitted ? `${formatNumber(wingAreaM2)} m²` : "—"],
+    ["POWER REQUIRED", submitted ? `${formatNumber(powerRequiredHp, 1)} hp` : "—"],
     [
       "PER ENGINE",
-      `${formatNumber(powerPerEngineHp, 1)} hp × ${values.engineCount}`,
+      submitted
+        ? `${formatNumber(powerPerEngineHp, 1)} hp × ${values.engineCount}`
+        : "—",
     ],
   ];
 
@@ -984,6 +940,22 @@ export default function SrefDesign() {
   }
 
   function renderConstraint() {
+    if (submitted === null) {
+      return (
+        <section
+          className="m-5 border border-accent bg-accent-wash p-5 text-accent"
+          role="status"
+        >
+          <h2 className="font-mono text-label font-medium tracking-label">
+            CALCULATION UNAVAILABLE
+          </h2>
+          <p className="mt-2 font-mono text-note">
+            Review the provisional entries, complete the unresolved values,
+            then solve and confirm.
+          </p>
+        </section>
+      );
+    }
     if (query.isPending) {
       return (
             <div className="m-5 border border-rule bg-field p-8 font-mono text-note text-ink-muted">Building the matching plot…</div>
@@ -1364,7 +1336,7 @@ export default function SrefDesign() {
               disabled={query.isFetching}
               type="submit"
             >
-              {query.isFetching ? "SOLVING…" : "SOLVE CONSTRAINTS"}
+              {query.isFetching ? "SOLVING…" : "SOLVE & CONFIRM"}
             </button>
             <button
               className="border border-l-0 border-rule px-4 py-3 font-mono text-meta tracking-tab text-ink-muted transition-colors hover:border-ink hover:text-ink"

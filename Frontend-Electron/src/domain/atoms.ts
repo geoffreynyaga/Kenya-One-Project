@@ -30,7 +30,11 @@ export type SharedNumericQuantity =
   | { status: "unresolved"; value: null }
   | { status: "provisional" | "confirmed"; value: number };
 
-const INITIAL_QUANTITY_STATUSES: Record<string, QuantityStatus> = {};
+const INITIAL_QUANTITY_STATUSES: Record<string, QuantityStatus> = {
+  propellerDiameterFt: "unresolved",
+  hubDiameterRatio: "unresolved",
+  propEfficiencyTakeoff: "unresolved",
+};
 
 export const quantityStatusesAtom = persisted<Record<string, QuantityStatus>>(
   "quantityStatuses:v1",
@@ -287,10 +291,16 @@ export const selectedEngineAtom = persisted<SelectedEngine | null>(
 );
 
 // @link spreadsheets/2. Performance.xlsx, take-off!C8
-export const propellerDiameterFtAtom = provisional("propellerDiameterFt", 6.25);
+export const propellerDiameterFtAtom = provisional("propellerDiameterFt", 0);
 
 // @link spreadsheets/2. Performance.xlsx, take-off!C11
-export const hubDiameterRatioAtom = provisional("hubDiameterRatio", 0.2);
+export const hubDiameterRatioAtom = provisional("hubDiameterRatio", 0);
+
+// Sref owns the low-speed sizing estimate used by Take-off. @link Sref!B28
+export const propEfficiencyTakeoffAtom = provisional(
+  "propEfficiencyTakeoff",
+  0
+);
 
 // Owned by Cruise. @link cruise!B8
 export const cruisePowerFractionAtom = provisional("cruisePowerFraction", 0.73);
@@ -457,9 +467,10 @@ export const powerPerEngineHpAtom = atom(
   (get) => get(powerRequiredHpAtom) / get(engineCountAtom)
 );
 
+// Zero means no engine is installed; it is not a power requirement fallback.
 export const installedPowerBhpAtom = atom((get) => {
   const engine = get(selectedEngineAtom);
-  if (engine === null) return get(powerRequiredHpAtom);
+  if (engine === null) return 0;
   return engine.ratedHp * get(engineCountAtom);
 });
 

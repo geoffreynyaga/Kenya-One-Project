@@ -10,6 +10,7 @@ import {
   fetchSrefSizing,
 } from "../../api/srefDesign";
 import SrefDesign from "./SrefDesign";
+import { propEfficiencyTakeoffAtom } from "../../domain/atoms";
 
 vi.mock("plotly.js-basic-dist", () => ({ default: {} }));
 vi.mock("react-plotly.js/factory", () => ({
@@ -113,18 +114,50 @@ afterEach(() => {
  * quantities. Anything that should survive a remount does so through
  * localStorage, which setupTests clears between tests.
  */
-function renderPage() {
+function renderPage(solve = true) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(
-    <Provider store={createStore()}>
+  const store = createStore();
+  const view = render(
+    <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <SrefDesign />
       </QueryClientProvider>
     </Provider>
   );
+  if (solve) {
+    fireEvent.change(
+      screen.getByLabelText("Prop efficiency · take-off estimate"),
+      { target: { value: "0.45" } }
+    );
+    fireEvent.click(screen.getByRole("button", { name: "SOLVE & CONFIRM" }));
+  }
+  return { ...view, store };
 }
+
+test("withholds results until the provisional inputs are confirmed", () => {
+  renderPage(false);
+
+  expect(screen.getByText("CALCULATION UNAVAILABLE")).toBeInTheDocument();
+  expect(screen.getByText("WING AREA SREF").nextElementSibling).toHaveTextContent(
+    "—"
+  );
+  expect(fetchSrefSizingMock).not.toHaveBeenCalled();
+  expect(screen.queryByText("Constraint diagram — power loading vs wing loading")).toBeNull();
+  expect(screen.getAllByText("PROVISIONAL").length).toBeGreaterThan(0);
+  expect(screen.getByLabelText("Prop efficiency · take-off estimate")).toHaveAttribute(
+    "aria-invalid",
+    "true"
+  );
+  expect(screen.getAllByText("UNRESOLVED").length).toBeGreaterThan(0);
+});
+
+test("publishes the Sref-owned take-off efficiency on confirmation", () => {
+  const { store } = renderPage();
+
+  expect(store.get(propEfficiencyTakeoffAtom)).toBe(0.45);
+});
 
 test("renders workbook-parity summary and sized outputs", async () => {
   renderPage();
@@ -163,7 +196,7 @@ test("the engine catalog is fetched once, not per solve", async () => {
   fireEvent.change(screen.getByLabelText("Maximum speed"), {
     target: { value: "180" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "SOLVE CONSTRAINTS" }));
+  fireEvent.click(screen.getByRole("button", { name: "SOLVE & CONFIRM" }));
 
   await screen.findByRole("table", { name: "Engine catalog" });
   expect(fetchSrefEnginesMock).toHaveBeenCalledTimes(1);
@@ -390,7 +423,7 @@ test("blocks solve with an invalid input", async () => {
   fireEvent.change(screen.getByLabelText("Max lift coefficient"), {
     target: { value: "" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "SOLVE CONSTRAINTS" }));
+  fireEvent.click(screen.getByRole("button", { name: "SOLVE & CONFIRM" }));
 
   expect(screen.getAllByText("Enter a number.").length).toBeGreaterThan(0);
   expect(fetchSrefSizingMock).toHaveBeenCalledTimes(1);

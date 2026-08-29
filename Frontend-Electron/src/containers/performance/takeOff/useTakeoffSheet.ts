@@ -1,25 +1,12 @@
-/**
- * Bridges the take-off sheet to the shared design quantities.
- *
- * Eleven of this sheet's inputs are decisions other stages already own —
- * the weight, the wing, the engine, the drag build-up — and those are read
- * from `domain/atoms` rather than kept here. What is left is what take-off
- * itself decides: the propeller it turns, the speeds it is flown at, the
- * obstacle it has to clear, and the efficiencies each of the three methods
- * assumes.
- *
- * `takeoffFixture` is not used here. It holds the cached values the sheet was
- * checked against and belongs to the tests.
- */
-
 import { useAtom, useAtomValue } from "jotai";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 import {
   aspectRatioAtom,
   cd0Atom,
   cdTakeoffAtom,
   clMaxAtom,
+  committedStagesAtom,
   cruiseSpeedKnotsAtom,
   engineCountAtom,
   hubDiameterRatioAtom,
@@ -27,56 +14,43 @@ import {
   mtowLbAtom,
   oswaldEfficiencyAtom,
   propellerDiameterFtAtom,
+  propEfficiencyCruiseAtom,
+  propEfficiencyTakeoffAtom,
+  quantityStatusesAtom,
   rollingFrictionAtom,
   SelectedEngine,
   selectedEngineAtom,
+  sharedNumericQuantity,
   stallSpeedKcasAtom,
   vmaxKnotsAtom,
   wingAreaM2Atom,
 } from "../../../domain/atoms";
 import { SEA_LEVEL_DENSITY_SLUG_FT3 } from "../../../domain/constants";
 import { usePersistentState } from "../../../hooks/usePersistentState";
-import { TakeoffInputs } from "./takeoffCompute";
+import { TakeoffInputs, takeoffEntrySchemas } from "./takeoffSchema";
 
-/** The fields take-off owns outright — nothing upstream decides them. */
 export type EntryField =
   | "propellerDiameterFt"
   | "hubDiameterRatio"
-  | "propEfficiencyCruise"
   | "propEfficiencyMax"
-  | "propEfficiencyTakeoff"
   | "propEfficiencyRapid"
-  | "obstacleHeightFt"
-  | "liftOffDistanceFt";
+  | "obstacleHeightFt";
 
-/**
- * Defaults for the fields this sheet stores itself. The propeller diameter and
- * the spinner ratio are entries too, but climb and landing need them as well,
- * so they live in `domain/atoms` and are written straight through — see
- * `setEntry` below.
- */
 type LocalField = Exclude<
   EntryField,
-  "propellerDiameterFt" | "hubDiameterRatio"
+  | "propellerDiameterFt"
+  | "hubDiameterRatio"
 >;
 
 const ENTRY_DEFAULTS: Record<LocalField, number> = {
-  propEfficiencyCruise: 0.75,
-  propEfficiencyMax: 0.75,
-  propEfficiencyTakeoff: 0.45,
-  propEfficiencyRapid: 0.4,
-  obstacleHeightFt: 50,
-  liftOffDistanceFt: 1011,
+  propEfficiencyMax: 0,
+  propEfficiencyRapid: 0,
+  obstacleHeightFt: 0,
 };
 
-const ENTRY_KEY = "kenya-one:takeoff:entry:v1";
+const ENTRY_KEY = "kenya-one:takeoff:entry:v2";
 const SECTIONS_KEY = "kenya-one:takeoff:sections:v2";
 
-/**
- * Which input bands start open. A record rather than a list of open keys, so
- * that a band added later keeps the default set here instead of inheriting
- * whatever an already-saved sheet happened to have open.
- */
 const SECTION_DEFAULTS = {
   propeller: true,
   run: false,
@@ -87,9 +61,12 @@ export type SectionKey = keyof typeof SECTION_DEFAULTS;
 
 export interface TakeoffSheet {
   inputs: TakeoffInputs;
-  /** The engine the power is coming from, or null while none is selected. */
   engine: SelectedEngine | null;
-  setEntry: (field: EntryField, value: number) => void;
+  upstreamResolved: { mtow: boolean; sref: boolean };
+  unresolvedUpstream: string[];
+  entryText: (field: EntryField) => string;
+  entryError: (field: EntryField) => string | null;
+  setEntry: (field: EntryField, value: string) => void;
   openSections: Record<SectionKey, boolean>;
   toggleSection: (key: SectionKey, open: boolean) => void;
   reset: () => void;
@@ -113,11 +90,16 @@ export function useTakeoffSheet(): TakeoffSheet {
     propellerDiameterFtAtom
   );
   const [hubDiameterRatio, setHubDiameterRatio] = useAtom(hubDiameterRatioAtom);
+  const propEfficiencyCruise = useAtomValue(propEfficiencyCruiseAtom);
+  const propEfficiencyTakeoff = useAtomValue(propEfficiencyTakeoffAtom);
   const engine = useAtomValue(selectedEngineAtom);
+  const committedStages = useAtomValue(committedStagesAtom);
+  const quantityStatuses = useAtomValue(quantityStatusesAtom);
 
   const [entry, setEntryState, resetEntry] = usePersistentState<
     Record<LocalField, number>
   >(ENTRY_KEY, ENTRY_DEFAULTS);
+  const [drafts, setDrafts] = useState<Partial<Record<EntryField, string>>>({});
   const [openSections, setOpenSections, resetSections] = usePersistentState<
     Record<SectionKey, boolean>
   >(SECTIONS_KEY, SECTION_DEFAULTS);
@@ -127,6 +109,8 @@ export function useTakeoffSheet(): TakeoffSheet {
       ...entry,
       propellerDiameterFt,
       hubDiameterRatio,
+      propEfficiencyCruise,
+      propEfficiencyTakeoff,
       maxRatedPowerBhp,
       cruiseSpeedKcas,
       maxSpeedKcas,
@@ -146,6 +130,8 @@ export function useTakeoffSheet(): TakeoffSheet {
       entry,
       propellerDiameterFt,
       hubDiameterRatio,
+      propEfficiencyCruise,
+      propEfficiencyTakeoff,
       maxRatedPowerBhp,
       cruiseSpeedKcas,
       maxSpeedKcas,
@@ -165,7 +151,53 @@ export function useTakeoffSheet(): TakeoffSheet {
   return {
     inputs,
     engine,
-    setEntry: (field, value) => {
+    upstreamResolved: {
+      mtow: committedStages.mtow,
+      sref: committedStages.sref && engine !== null,
+    },
+    unresolvedUpstream: [
+      ...(!committedStages.mtow ? ["Confirm MTOW & WEIGHTS"] : []),
+      ...(!committedStages.sref ? ["Confirm SREF & POWER"] : []),
+      ...(engine === null ? ["Select an engine in SREF & POWER"] : []),
+      ...([
+        ["mtowLb", "Maximum take-off weight"],
+        ["clMax", "Maximum lift coefficient"],
+        ["stallSpeedKcas", "Stall speed"],
+        ["aspectRatio", "Aspect ratio"],
+        ["vmaxKnots", "Maximum speed"],
+        ["cruiseSpeedKnots", "Cruise speed"],
+        ["propEfficiencyCruise", "Cruise propeller efficiency"],
+        ["engineCount", "Engine count"],
+        ["oswaldEfficiency", "Span efficiency"],
+        ["cd0", "Minimum drag coefficient"],
+        ["rollingFriction", "Rolling friction"],
+        ["takeoffGearDrag", "Take-off gear drag"],
+      ] as const).flatMap(([key, label]) =>
+        sharedNumericQuantity(quantityStatuses, key, 0).status === "confirmed"
+          ? []
+          : [`Confirm ${label} in its owning stage`]
+      ),
+    ],
+    entryText: (field) => drafts[field] ?? String(inputs[field]),
+    entryError: (field) => {
+      const error = validateEntry(field, drafts[field] ?? String(inputs[field]));
+      if (error) return error;
+      if (field === "propellerDiameterFt" || field === "hubDiameterRatio") {
+        const quantity = sharedNumericQuantity(
+          quantityStatuses,
+          field,
+          inputs[field]
+        );
+        if (quantity.status === "confirmed") return null;
+        if (quantity.status === "unresolved") return "Enter a value.";
+        return "Confirm or replace this provisional value.";
+      }
+      return null;
+    },
+    setEntry: (field, raw) => {
+      setDrafts((current) => ({ ...current, [field]: raw }));
+      if (validateEntry(field, raw)) return;
+      const value = Number(raw);
       if (field === "propellerDiameterFt") {
         setPropellerDiameterFt(value);
         return;
@@ -184,6 +216,12 @@ export function useTakeoffSheet(): TakeoffSheet {
     reset: () => {
       resetEntry();
       resetSections();
+      setDrafts({});
     },
   };
+}
+
+function validateEntry(field: EntryField, raw: string): string | null {
+  const parsed = takeoffEntrySchemas[field].safeParse(raw);
+  return parsed.success ? null : parsed.error.issues[0]?.message ?? "Enter a value.";
 }

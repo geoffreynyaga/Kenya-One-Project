@@ -1,16 +1,3 @@
-/**
- * Bridges the Sref sheet's form to the shared design quantities.
- *
- * Seventeen of this sheet's fields are read by other stages and live in
- * `domain/atoms`. Four are consequences the domain layer derives. The
- * remaining six belong to this sheet alone and stay in local persisted state.
- *
- * Atoms hold numbers, because that is what every other stage wants. Inputs
- * edit strings, because "1." and "0.0" have to survive being typed. The draft
- * map below is that seam: a field being edited keeps its raw string, and the
- * atom is written only when the string parses.
- */
-
 import { useAtom, useAtomValue } from "jotai";
 import { useCallback, useMemo, useState } from "react";
 
@@ -28,7 +15,9 @@ import {
   mtowLbAtom,
   oswaldEfficiencyAtom,
   powerLoadingAtom,
+  propEfficiencyClimbAtom,
   propEfficiencyCruiseAtom,
+  propEfficiencyTakeoffAtom,
   rollingFrictionAtom,
   stallSpeedKcasAtom,
   takeoffGearDragAtom,
@@ -41,14 +30,11 @@ import {
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { FormField, FormValues } from "./srefFields";
 
-/** Fields this sheet owns outright — nothing else reads them. */
 export type PrivateField =
   | "serviceCeiling"
   | "takeoffRun"
   | "rateOfClimb"
   | "ceilingRoc"
-  | "propEfficiencyClimb"
-  | "propEfficiencyTakeoff"
   | "takeoffSpeed";
 
 const PRIVATE_DEFAULTS: Record<PrivateField, number> = {
@@ -56,8 +42,6 @@ const PRIVATE_DEFAULTS: Record<PrivateField, number> = {
   takeoffRun: 1500,
   rateOfClimb: 1600,
   ceilingRoc: 100,
-  propEfficiencyClimb: 0.7,
-  propEfficiencyTakeoff: 0.583014076612842,
   takeoffSpeed: 67.11577841941003,
 };
 
@@ -65,17 +49,12 @@ const PRIVATE_KEY = "kenya-one:sref:private:v1";
 const SHADOW_KEY = "kenya-one:sref:shadows:v1";
 
 export interface SrefSheet {
-  /** Every field as a string, ready for the inputs. */
   values: FormValues;
-  /** Write a field. Shared fields reach their atom; drafts hold the rest. */
   setField: (field: FormField, value: string) => void;
-  /** Drop the draft string for a field once editing ends. */
   commitField: (field: FormField) => void;
-  /** Take a derived field over by hand. */
   overrideField: (field: FormField) => void;
   restoreField: (field: FormField) => void;
   isOverridden: (field: FormField) => boolean;
-  /** What the owning stage still holds, for a field shadowed here. */
   upstreamValue: (field: FormField) => number | null;
   reset: () => void;
 }
@@ -88,6 +67,8 @@ export function useSrefSheet(): SrefSheet {
   const [cd0, setCd0] = useAtom(cd0Atom);
   const [oswald, setOswald] = useAtom(oswaldEfficiencyAtom);
   const [propCruise, setPropCruise] = useAtom(propEfficiencyCruiseAtom);
+  const [propClimb, setPropClimb] = useAtom(propEfficiencyClimbAtom);
+  const [propTakeoff, setPropTakeoff] = useAtom(propEfficiencyTakeoffAtom);
   const [designWeight, setDesignWeight] = useAtom(mtowLbAtom);
   const [taxiFraction, setTaxiFraction] = useAtom(taxiFractionAtom);
   const [climbFraction, setClimbFraction] = useAtom(climbFractionAtom);
@@ -111,12 +92,7 @@ export function useSrefSheet(): SrefSheet {
     Record<PrivateField, number>
   >(PRIVATE_KEY, PRIVATE_DEFAULTS);
 
-  /**
-   * Sheet-local shadows of values another stage owns, or that the domain layer
-   * derives. Overriding one here is sensitivity work: it must not reach back
-   * and move a decision an upstream stage committed, which is exactly the
-   * transcription drift this layer exists to stop.
-   */
+  // Sensitivity overrides never mutate the owning stage.
   const [shadows, setShadows, resetShadows] = usePersistentState<
     Partial<Record<FormField, number>>
   >(SHADOW_KEY, {});
@@ -132,6 +108,8 @@ export function useSrefSheet(): SrefSheet {
         cd0: setCd0,
         oswaldEfficiency: setOswald,
         propEfficiencyCruise: setPropCruise,
+        propEfficiencyClimb: setPropClimb,
+        propEfficiencyTakeoff: setPropTakeoff,
         designWeight: setDesignWeight,
         taxiFraction: setTaxiFraction,
         climbFraction: setClimbFraction,
@@ -142,13 +120,12 @@ export function useSrefSheet(): SrefSheet {
         engineCount: setEngineCount,
         takeoffGearDrag: setGearDrag,
         rollingFriction: setRollingFriction,
-        // The design point is a shared decision, not a local shadow: every
-        // stage downstream sizes against the wing this picks.
         wingLoading: (v: number) => setWingLoadingOverride(v),
       }) as Partial<Record<FormField, (value: number) => void>>,
     [
       setClMax, setStallSpeed, setVmax, setAspectRatio, setCd0, setOswald,
-      setPropCruise, setDesignWeight, setTaxiFraction, setClimbFraction,
+      setPropCruise, setPropClimb, setPropTakeoff, setDesignWeight,
+      setTaxiFraction, setClimbFraction,
       setCruiseRatio, setCruiseSpeed, setAltitude, setPowerLoading,
       setEngineCount, setWingLoadingOverride, setGearDrag, setRollingFriction,
     ]
@@ -163,6 +140,8 @@ export function useSrefSheet(): SrefSheet {
       cd0,
       oswaldEfficiency: oswald,
       propEfficiencyCruise: propCruise,
+      propEfficiencyClimb: propClimb,
+      propEfficiencyTakeoff: propTakeoff,
       designWeight,
       taxiFraction,
       climbFraction,
@@ -182,6 +161,7 @@ export function useSrefSheet(): SrefSheet {
     }),
     [
       clMax, stallSpeed, vmax, aspectRatio, cd0, oswald, propCruise,
+      propClimb, propTakeoff,
       designWeight, taxiFraction, climbFraction, cruiseRatio, cruiseSpeed,
       altitude, powerLoading, engineCount, gearDrag, rollingFriction,
       wingLoading, inducedDragFactor, ldMax, clTakeoff, shadows, privates,
@@ -207,7 +187,6 @@ export function useSrefSheet(): SrefSheet {
         setPrivates((current) => ({ ...current, [field]: value }));
         return;
       }
-      // Once shadowed, edits stay local; the upstream stage keeps its number.
       if (field in shadows) {
         setShadows((current) => ({ ...current, [field]: value }));
         return;

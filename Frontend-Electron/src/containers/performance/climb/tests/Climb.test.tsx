@@ -1,6 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { Provider, createStore } from "jotai";
 
+import {
+  propellerDiameterFtAtom,
+  selectedEngineAtom,
+} from "../../../../domain/atoms";
 import Climb from "../Climb";
+import { WORKBOOK_INPUTS } from "./fixture";
 
 vi.mock("plotly.js-basic-dist", () => ({ default: {} }));
 vi.mock("react-plotly.js/factory", () => ({
@@ -10,9 +16,25 @@ vi.mock("react-plotly.js/factory", () => ({
 
 beforeEach(() => window.localStorage.clear());
 
+function renderClimb() {
+  const store = createStore();
+  store.set(propellerDiameterFtAtom, WORKBOOK_INPUTS.propellerDiameterFt);
+  store.set(selectedEngineAtom, {
+    number: 4,
+    name: "IO-540-D",
+    ratedHp: WORKBOOK_INPUTS.maxRatedPowerBhp,
+    rpm: WORKBOOK_INPUTS.propellerRpm,
+  });
+  return render(
+    <Provider store={store}>
+      <Climb />
+    </Provider>
+  );
+}
+
 describe("Climb", () => {
   it("reads its carried inputs from the shared design quantities", () => {
-    render(<Climb />);
+    renderClimb();
 
     fireEvent.click(screen.getByText("CARRIED · UPSTREAM"));
 
@@ -22,7 +44,12 @@ describe("Climb", () => {
   });
 
   it("leaves the advance ratio blank when no engine has been selected", () => {
-    const { container } = render(<Climb />);
+    const store = createStore();
+    const { container } = render(
+      <Provider store={store}>
+        <Climb />
+      </Provider>
+    );
 
     // The propeller speed is the engine's, and there is none to invent.
     const table = container.querySelectorAll("details table")[0];
@@ -33,7 +60,7 @@ describe("Climb", () => {
   });
 
   it("moves the best rate when the propeller efficiency changes", () => {
-    const { container } = render(<Climb />);
+    const { container } = renderClimb();
 
     const before =
       screen.getByText("BEST RATE OF CLIMB").nextElementSibling?.textContent;
@@ -47,7 +74,7 @@ describe("Climb", () => {
   });
 
   it("shows all four figures without opening anything", () => {
-    const { container } = render(<Climb />);
+    const { container } = renderClimb();
 
     const figures = container.querySelectorAll("figure");
     expect(figures).toHaveLength(4);
@@ -66,7 +93,7 @@ describe("Climb", () => {
   });
 
   it("keeps every cell reference inside a tooltip", () => {
-    const { container } = render(<Climb />);
+    const { container } = renderClimb();
 
     container.querySelectorAll('[role="tooltip"]').forEach((n) => n.remove());
     expect(container.textContent ?? "").not.toMatch(/WORKBOOK/);
