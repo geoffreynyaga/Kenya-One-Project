@@ -689,6 +689,19 @@ export default function SrefDesign() {
     sharedNumericQuantity(quantityStatuses, "cruiseFraction", 0).status ===
       "confirmed";
 
+  // What stops the sheet solving, said plainly. The cruise fraction is the one
+  // that strands a reader: MTOW derives it, so no amount of typing here
+  // resolves it, and a disabled button explains nothing on its own.
+  const blockers = [
+    ...(cruiseFractionReady
+      ? []
+      : [
+          "Cruise fraction is unresolved. Carry a method forward on 01 MTOW, " +
+            "or override it under WEIGHTS & CRUISE to size against your own figure.",
+        ]),
+    ...Object.values(errors),
+  ];
+
   const wingAreaM2 = useAtomValue(wingAreaM2Atom);
   const powerRequiredHp = useAtomValue(powerRequiredHpAtom);
   const powerPerEngineHp = useAtomValue(powerPerEngineHpAtom);
@@ -765,9 +778,12 @@ export default function SrefDesign() {
   }, [publishEngine, selectedEngine]);
 
   const changeField = (field: FormField, value: string) => {
+    // Typing a number is the reader replacing a provisional value, and the
+    // atom write already records that. Resetting every quantity here undid it
+    // on the same keystroke, so a PROVISIONAL tag could never be cleared by
+    // editing. Only the solved result goes stale.
     setField(field, value);
     setSubmitted(null);
-    resetQuantities([...SREF_QUANTITY_KEYS]);
     setCommittedStages((current) => ({ ...current, sref: false }));
   };
 
@@ -952,10 +968,22 @@ export default function SrefDesign() {
           <h2 className="font-mono text-label font-medium tracking-label">
             CALCULATION UNAVAILABLE
           </h2>
-          <p className="mt-2 font-mono text-note">
-            Review the provisional entries, complete the unresolved values,
-            then solve and confirm.
-          </p>
+          {blockers.length === 0 ? (
+            <p className="mt-2 font-mono text-note">
+              Review the provisional entries, then solve and confirm.
+            </p>
+          ) : (
+            <>
+              <p className="mt-2 font-mono text-note">
+                Resolve these before the sheet can solve:
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 font-mono text-note">
+                {blockers.map((blocker) => (
+                  <li key={blocker}>{blocker}</li>
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       );
     }
@@ -1335,8 +1363,9 @@ export default function SrefDesign() {
 
           <div className="sticky bottom-0 mt-4 flex border-t border-rule-mid bg-panel">
             <button
-              className="flex-1 border border-accent bg-accent px-4 py-3 font-mono text-meta font-medium tracking-tab text-white transition-colors hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-wait disabled:border-rule disabled:bg-panel disabled:text-ink-faint"
+              className="flex-1 border border-accent bg-accent px-4 py-3 font-mono text-meta font-medium tracking-tab text-white transition-colors hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-not-allowed disabled:border-rule disabled:bg-panel disabled:text-ink-faint"
               disabled={query.isFetching || !cruiseFractionReady}
+              title={cruiseFractionReady ? undefined : blockers[0]}
               type="submit"
             >
               {query.isFetching ? "SOLVING…" : "SOLVE & CONFIRM"}

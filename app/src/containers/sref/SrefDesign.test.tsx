@@ -13,6 +13,7 @@ import SrefDesign from "./SrefDesign";
 import {
   cruiseFractionAtom,
   propEfficiencyTakeoffAtom,
+  quantityStatusesAtom,
 } from "../../domain/atoms";
 
 vi.mock("plotly.js-basic-dist", () => ({ default: {} }));
@@ -155,6 +156,35 @@ test("withholds results until the provisional inputs are confirmed", () => {
     "true"
   );
   expect(screen.getAllByText("UNRESOLVED").length).toBeGreaterThan(0);
+});
+
+test("names the quantity that blocks the solve and the sheet that owns it", () => {
+  renderPage(false);
+
+  // MTOW derives the cruise fraction, so nothing typed on this sheet resolves
+  // it. A disabled button and "complete the unresolved values" left the reader
+  // hunting for an entry that does not exist here.
+  expect(
+    screen.getByText(/Cruise fraction is unresolved/)
+  ).toBeInTheDocument();
+  expect(screen.getByText(/Carry a method forward on 01 MTOW/)).toBeInTheDocument();
+  expect(
+    screen.getByRole("button", { name: "SOLVE & CONFIRM" })
+  ).toBeDisabled();
+});
+
+test("clears a provisional tag when the reader replaces the value", () => {
+  const { store } = renderPage(false);
+
+  expect(store.get(quantityStatusesAtom).clMax).not.toBe("confirmed");
+
+  fireEvent.change(screen.getByLabelText("Max lift coefficient"), {
+    target: { value: "1.6" },
+  });
+
+  // The atom write confirms the quantity. Resetting every Sref key on the same
+  // keystroke used to undo that, so the tag could never be cleared by editing.
+  expect(store.get(quantityStatusesAtom).clMax).toBe("confirmed");
 });
 
 test("publishes the Sref-owned take-off efficiency on confirmation", () => {
