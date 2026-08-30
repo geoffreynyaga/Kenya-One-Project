@@ -17,9 +17,17 @@ export const WORKBOOK_INPUTS: RangeInputs = {
 
   taxiFraction: 0.98,
   climbFraction: 0.97,
-  cruiseWeightRatio: 0.8560332551941533,
+  // Historical parity feeds the whole-mission ratio into this slot. Production
+  // receives the Breguet cruise-only fraction from MTOW.
+  cruiseFraction: 0.8560332551941533,
 
   passengerCount: 4,
+  designRangeKm: 1200,
+};
+
+export const ENGINEERING_INPUTS: RangeInputs = {
+  ...WORKBOOK_INPUTS,
+  cruiseFraction: 0.9247094817834837,
 };
 
 /**

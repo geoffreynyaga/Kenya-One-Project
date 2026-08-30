@@ -4,7 +4,6 @@ import { CruiseInputs } from "../utils";
 export const WORKBOOK_INPUTS: CruiseInputs = {
   cruiseAltitudeFt: 10000,
   propEfficiencyCruise: 0.75,
-  cruiseSfc: 0.5,
   cruiseSpeedKtas: 140,
   cruisePowerFraction: 0.73,
   bankAngleDeg: 40,

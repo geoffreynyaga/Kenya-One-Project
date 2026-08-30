@@ -109,6 +109,12 @@ export default function MTOWSizing() {
           <InitialSizing data={data} primary={primary} />
           <VariantsRail
             data={data}
+            mission={{
+              designRangeKm: request.range,
+              passengerCount: request.pax,
+              pilotCount: request.crew,
+              propEfficiencyCruise: request.propellerEfficiency,
+            }}
             primary={primary}
             onSelectPrimary={setPrimary}
           />

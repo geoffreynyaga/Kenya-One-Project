@@ -55,7 +55,7 @@ export const srefFormSchema = z
     designWeight: positive,
     taxiFraction: fraction,
     climbFraction: fraction,
-    cruiseWeightRatio: fraction,
+    cruiseFraction: fraction,
     cruiseSpeed: positive,
     wingLoading: positive,
     powerLoading: positive,
@@ -144,7 +144,7 @@ function requestFromParsed(values: ParsedSrefForm): SrefSizingRequest {
       design_weight_lb: values.designWeight,
       taxi_fraction: values.taxiFraction,
       climb_fraction: values.climbFraction,
-      cruise_weight_ratio: values.cruiseWeightRatio,
+      cruise_fraction: values.cruiseFraction,
       cruise_speed_knots: values.cruiseSpeed,
     },
     design_point: {

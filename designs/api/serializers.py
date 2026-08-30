@@ -157,7 +157,7 @@ class SrefWeightsSerializer(serializers.Serializer):
     climb_fraction = serializers.FloatField(
         min_value=0.000001, max_value=1, required=False
     )
-    cruise_weight_ratio = serializers.FloatField(
+    cruise_fraction = serializers.FloatField(
         min_value=0.000001, max_value=1, required=False
     )
     cruise_speed_knots = serializers.FloatField(min_value=0.000001, required=False)

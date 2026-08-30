@@ -2,8 +2,16 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { Provider, createStore } from "jotai";
 
 import {
+  aspectRatioAtom,
+  cd0Atom,
+  committedStagesAtom,
+  cruiseSpeedKnotsAtom,
+  mtowLbAtom,
+  oswaldEfficiencyAtom,
   propellerDiameterFtAtom,
+  propEfficiencyClimbAtom,
   selectedEngineAtom,
+  stallSpeedKcasAtom,
 } from "../../../../domain/atoms";
 import Climb from "../Climb";
 import { WORKBOOK_INPUTS } from "./fixture";
@@ -16,8 +24,15 @@ vi.mock("react-plotly.js/factory", () => ({
 
 beforeEach(() => window.localStorage.clear());
 
-function renderClimb() {
+function confirmedStore() {
   const store = createStore();
+  store.set(mtowLbAtom, WORKBOOK_INPUTS.mtowLb);
+  store.set(cruiseSpeedKnotsAtom, WORKBOOK_INPUTS.cruiseSpeedKtas);
+  store.set(stallSpeedKcasAtom, WORKBOOK_INPUTS.stallSpeedKcas);
+  store.set(aspectRatioAtom, WORKBOOK_INPUTS.aspectRatio);
+  store.set(propEfficiencyClimbAtom, WORKBOOK_INPUTS.propEfficiencyClimb);
+  store.set(oswaldEfficiencyAtom, WORKBOOK_INPUTS.oswaldEfficiency);
+  store.set(cd0Atom, WORKBOOK_INPUTS.cdMin);
   store.set(propellerDiameterFtAtom, WORKBOOK_INPUTS.propellerDiameterFt);
   store.set(selectedEngineAtom, {
     number: 4,
@@ -25,65 +40,69 @@ function renderClimb() {
     ratedHp: WORKBOOK_INPUTS.maxRatedPowerBhp,
     rpm: WORKBOOK_INPUTS.propellerRpm,
   });
-  return render(
-    <Provider store={store}>
+  store.set(committedStagesAtom, {
+    mtow: true,
+    sref: true,
+    performance: false,
+    wingAndAirfoil: false,
+    drag: false,
+    vn: false,
+    detailedWeights: false,
+    wingStructural: false,
+    costs: false,
+  });
+  return store;
+}
+
+function renderConfirmedClimb() {
+  const view = render(
+    <Provider store={confirmedStore()}>
       <Climb />
     </Provider>
   );
+  fireEvent.change(screen.getByRole("textbox", { name: /Study altitude/ }), {
+    target: { value: "5000" },
+  });
+  return view;
 }
 
 describe("Climb", () => {
-  it("reads its carried inputs from the shared design quantities", () => {
-    renderClimb();
-
-    fireEvent.click(screen.getByText("CARRIED · UPSTREAM"));
-
-    expect(screen.getByText("Installed power")).toBeInTheDocument();
-    expect(screen.getByText("Cruise density")).toBeInTheDocument();
-    expect(screen.getByText("Propeller diameter")).toBeInTheDocument();
-  });
-
-  it("leaves the advance ratio blank when no engine has been selected", () => {
-    const store = createStore();
+  it("keeps a fresh design unavailable and draws no invalid chart", () => {
     const { container } = render(
-      <Provider store={store}>
+      <Provider store={createStore()}>
         <Climb />
       </Provider>
     );
-
-    // The propeller speed is the engine's, and there is none to invent.
-    const table = container.querySelectorAll("details table")[0];
-    const advanceRatio = table
-      .querySelectorAll("tbody tr")[0]
-      .querySelectorAll("td")[6];
-    expect(advanceRatio.textContent).toBe("—");
+    expect(screen.getByText("CALCULATION UNAVAILABLE")).toBeInTheDocument();
+    expect(screen.getByText(/Confirm MTOW & WEIGHTS/)).toBeInTheDocument();
+    expect(container.querySelectorAll("figure")).toHaveLength(0);
   });
 
-  it("moves the best rate when the propeller efficiency changes", () => {
-    const { container } = renderClimb();
-
-    const before =
-      screen.getByText("BEST RATE OF CLIMB").nextElementSibling?.textContent;
-
-    const efficiency = container.querySelector("#cl-propEfficiencyClimb")!;
-    fireEvent.change(efficiency, { target: { value: "0.8" } });
-
-    const after =
-      screen.getByText("BEST RATE OF CLIMB").nextElementSibling?.textContent;
-    expect(after).not.toEqual(before);
+  it("rejects a blank study altitude before calculation", () => {
+    render(
+      <Provider store={confirmedStore()}>
+        <Climb />
+      </Provider>
+    );
+    expect(screen.getByText("Enter an altitude.")).toBeInTheDocument();
+    expect(screen.getByText("CALCULATION UNAVAILABLE")).toBeInTheDocument();
   });
 
-  it("shows all four figures without opening anything", () => {
-    const { container } = renderClimb();
+  it("carries climb efficiency from Sref instead of editing it locally", () => {
+    const { container } = renderConfirmedClimb();
+    fireEvent.click(screen.getByText("CARRIED · UPSTREAM"));
+    expect(screen.getByText("Climb propeller efficiency")).toBeInTheDocument();
+    expect(container.querySelector("#cl-propEfficiencyClimb")).toBeNull();
+  });
 
-    const figures = container.querySelectorAll("figure");
-    expect(figures).toHaveLength(4);
-
-    // None of them is behind a disclosure — the tables are, the plots are not.
-    figures.forEach((figure) => expect(figure.closest("details")).toBeNull());
-
+  it("derives the curve peak and shows all four physical-envelope figures", () => {
+    const { container } = renderConfirmedClimb();
+    expect(screen.getByText("Curve peak")).toBeInTheDocument();
+    expect(container.querySelectorAll("figure")).toHaveLength(4);
     expect(
-      Array.from(figures).map((f) => f.querySelector("figcaption")?.textContent)
+      Array.from(container.querySelectorAll("figure")).map(
+        (figure) => figure.querySelector("figcaption span")?.textContent
+      )
     ).toEqual([
       "RATE OF CLIMB · AGAINST SPEED",
       "POWER · REQUIRED AGAINST AVAILABLE",
@@ -92,10 +111,9 @@ describe("Climb", () => {
     ]);
   });
 
-  it("keeps every cell reference inside a tooltip", () => {
-    const { container } = renderClimb();
-
-    container.querySelectorAll('[role="tooltip"]').forEach((n) => n.remove());
-    expect(container.textContent ?? "").not.toMatch(/WORKBOOK/);
+  it("keeps cell references and workbook language inside tooltips", () => {
+    const { container } = renderConfirmedClimb();
+    container.querySelectorAll('[role="tooltip"]').forEach((node) => node.remove());
+    expect(container.textContent ?? "").not.toMatch(/WORKBOOK|\b[A-Z]{1,2}\d+\b/);
   });
 });

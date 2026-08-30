@@ -26,7 +26,7 @@ export interface SrefLocalInputs {
   designWeightLb: number;
   taxiFraction: number;
   climbFraction: number;
-  cruiseWeightRatio: number;
+  cruiseFraction: number;
   cruiseSpeedKnots: number;
   wingAreaM2: number;
 }
@@ -49,7 +49,7 @@ export function computeLocal(inputs: SrefLocalInputs): SrefLocal {
   // G2 / G3 / G4.
   const weightStartCruise =
     inputs.taxiFraction * inputs.climbFraction * inputs.designWeightLb;
-  const weightEndCruise = weightStartCruise * inputs.cruiseWeightRatio;
+  const weightEndCruise = weightStartCruise * inputs.cruiseFraction;
   const weightAverageCruise = (weightStartCruise + weightEndCruise) / 2;
 
   // G5.

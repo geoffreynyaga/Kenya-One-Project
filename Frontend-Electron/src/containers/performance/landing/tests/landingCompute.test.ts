@@ -1,6 +1,7 @@
 import {
   landing,
   landingStallSpeedKcas,
+  landingWeightLb,
   landingWarnings,
 } from "../landingCompute";
 import { WORKBOOK_INPUTS } from "./fixture";
@@ -19,7 +20,7 @@ function close(actual: number, expected: number, tolerance = 1e-9): boolean {
 const FLARE_TOLERANCE = 1e-4;
 
 describe("landingCompute parity with the landing sheet", () => {
-  const result = landing(WORKBOOK_INPUTS);
+  const result = landing(WORKBOOK_INPUTS, { mode: "workbook" });
   const speed = (key: string) =>
     result.speeds.find((entry) => entry.key === key)!;
 
@@ -76,11 +77,27 @@ describe("landingCompute parity with the landing sheet", () => {
 });
 
 describe("the landing stall speed", () => {
+  it("derives post-burn landing weight from the confirmed fuel fraction", () => {
+    expect(
+      landingWeightLb(WORKBOOK_INPUTS.mtowLb, WORKBOOK_INPUTS.fuelFraction)
+    ).toBeCloseTo(
+      WORKBOOK_INPUTS.mtowLb * (1 - WORKBOOK_INPUTS.fuelFraction),
+      9
+    );
+    expect(
+      landingWeightLb(
+        WORKBOOK_INPUTS.mtowLb,
+        WORKBOOK_INPUTS.fuelFraction,
+        { mode: "workbook" }
+      )
+    ).toBe(WORKBOOK_INPUTS.mtowLb);
+  });
+
   it("follows the weight and the wing", () => {
     const kcas = landingStallSpeedKcas(
       WORKBOOK_INPUTS.mtowLb,
       WORKBOOK_INPUTS.wingAreaFt2,
-      WORKBOOK_INPUTS.clMax
+      WORKBOOK_INPUTS.clMaxLanding
     );
     // The clean stall at maximum weight, which is what stands in until a
     // high-lift stage sets the flapped lift coefficient.
@@ -91,7 +108,7 @@ describe("the landing stall speed", () => {
       landingStallSpeedKcas(
         WORKBOOK_INPUTS.mtowLb / 4,
         WORKBOOK_INPUTS.wingAreaFt2,
-        WORKBOOK_INPUTS.clMax
+        WORKBOOK_INPUTS.clMaxLanding
       )
     ).toBeCloseTo(kcas / 2, 6);
   });
@@ -99,25 +116,23 @@ describe("the landing stall speed", () => {
 
 describe("a different aeroplane", () => {
   it("falls back to a fraction of static thrust when idle power is unknown", () => {
-    const result = landing({
-      ...WORKBOOK_INPUTS,
-      idlePowerBhp: null,
-      idlePropEfficiency: null,
-    });
+    const result = landing(
+      {
+        ...WORKBOOK_INPUTS,
+        idlePowerBhp: null,
+        idlePropEfficiency: null,
+      },
+      { mode: "workbook" }
+    );
     expect(result.braking).toHaveLength(1);
     expect(result.brakingUsed.source).toBe("staticThrustFraction");
     expect(close(result.brakingUsed.distanceFt, 700.6617309027368)).toBe(true);
   });
 
-  it("says nothing rather than a negative distance when it cannot stop", () => {
-    const result = landing({ ...WORKBOOK_INPUTS, brakingFriction: 0.001 });
-    expect(Number.isFinite(result.brakingUsed.distanceFt)).toBe(false);
-    expect(
-      landingWarnings(
-        { ...WORKBOOK_INPUTS, brakingFriction: 0.001 },
-        result
-      ).map((warning) => warning.key)
-    ).toContain("never-stops");
+  it("returns no result when the selected runway cannot stop the aeroplane", () => {
+    expect(() =>
+      landing({ ...WORKBOOK_INPUTS, brakingFriction: 0.001 })
+    ).toThrow(/do not produce a stopping solution/i);
   });
 
   const LIGHT_SINGLE = {
@@ -155,15 +170,23 @@ describe("a different aeroplane", () => {
 });
 
 describe("landingWarnings", () => {
-  const warnings = landingWarnings(WORKBOOK_INPUTS, landing(WORKBOOK_INPUTS));
+  const workbookResult = landing(WORKBOOK_INPUTS, { mode: "workbook" });
+  const warnings = landingWarnings(WORKBOOK_INPUTS, workbookResult, {
+    mode: "workbook",
+  });
   const keys = warnings.map((warning) => warning.key);
 
   it("names the overweight landing", () => {
     expect(keys).toContain("lands-at-mtow");
   });
 
-  it("names the clean stall standing in for the flapped one", () => {
-    expect(keys).toContain("stall-at-clean-clmax");
+  it("does not report the corrected engineering path as overweight", () => {
+    const engineering = landing(WORKBOOK_INPUTS);
+    expect(
+      landingWarnings(WORKBOOK_INPUTS, engineering).map(
+        (warning) => warning.key
+      )
+    ).not.toContain("lands-at-mtow");
   });
 
   it("compares the two idle-thrust methods when both are available", () => {

@@ -1,22 +1,10 @@
-/**
- * Bridges the climb sheet to the shared design quantities.
- *
- * Almost everything this sheet needs was decided somewhere upstream — the
- * weight, the wing, the engine and the propeller turning on it, the drag
- * build-up. What climb decides for itself is the propeller efficiency it flies
- * the climb at, the best-rate speed read off the plot, and the altitude the
- * sensitivity study is flown at.
- *
- * `climbFixture` is not used here. It holds the cached values the sheet was
- * checked against and belongs to the tests.
- */
-
-import { useAtom, useAtomValue } from "jotai";
-import { useMemo } from "react";
+import { useAtomValue } from "jotai";
+import { useMemo, useState } from "react";
 
 import {
   aspectRatioAtom,
   cd0Atom,
+  committedStagesAtom,
   cruiseDensityAtom,
   cruiseSpeedKnotsAtom,
   installedPowerBhpAtom,
@@ -24,53 +12,34 @@ import {
   oswaldEfficiencyAtom,
   propellerDiameterFtAtom,
   propEfficiencyClimbAtom,
-  stallSpeedKcasAtom,
+  quantityStatusesAtom,
   SelectedEngine,
+  QuantityStatus,
   selectedEngineAtom,
+  sharedNumericQuantity,
+  stallSpeedKcasAtom,
   wingAreaFt2Atom,
 } from "../../../domain/atoms";
 import { SEA_LEVEL_DENSITY_SLUG_FT3 } from "../../../domain/constants";
 import { usePersistentState } from "../../../hooks/usePersistentState";
-import { ClimbInputs } from "./climbCompute";
+import { ClimbInputs } from "./climbSchema";
+import { studyAltitudeError } from "./climbSchema";
 
-/** The fields climb owns outright — nothing upstream decides them. */
-export type EntryField =
-  "propEfficiencyClimb" | "bestRateSpeedFromPlotKtas" | "studyAltitudeFt";
+export type EntryField = "studyAltitudeFt";
 
-/** The propeller efficiency is shared with Sref, so it is written through. */
-type LocalField = Exclude<EntryField, "propEfficiencyClimb">;
-
-const ENTRY_DEFAULTS: Record<LocalField, number> = {
-  bestRateSpeedFromPlotKtas: 72,
-  studyAltitudeFt: 5000,
-};
-
-/**
- * Which input bands start open. A record rather than a list of open keys, so
- * a band added later keeps the default set here.
- */
-const SECTION_DEFAULTS = {
-  climb: true,
-  carried: false,
-};
-
-export type SectionKey = keyof typeof SECTION_DEFAULTS;
-
-const ENTRY_KEY = "kenya-one:climb:entry:v1";
+const ENTRY_KEY = "kenya-one:climb:entry:v2";
 const SECTIONS_KEY = "kenya-one:climb:sections:v1";
-
-/**
- * The propeller speed at its rating. It comes off the engine chosen on Sref,
- * and there is no sensible number to invent when none has been chosen, so the
- * sheet says the advance ratio is unknown instead.
- */
-const RPM_WHEN_NO_ENGINE = NaN;
+const SECTION_DEFAULTS = { climb: true, carried: false };
+export type SectionKey = keyof typeof SECTION_DEFAULTS;
 
 export interface ClimbSheet {
   inputs: ClimbInputs;
-  /** The engine the power and the propeller speed come from. */
   engine: SelectedEngine | null;
-  setEntry: (field: EntryField, value: number) => void;
+  unresolvedUpstream: string[];
+  quantityStatus: (key: string) => QuantityStatus;
+  entryText: (field: EntryField) => string;
+  entryError: (field: EntryField) => string | null;
+  setEntry: (field: EntryField, value: string) => void;
   openSections: Record<SectionKey, boolean>;
   toggleSection: (key: SectionKey, open: boolean) => void;
   reset: () => void;
@@ -88,26 +57,27 @@ export function useClimbSheet(): ClimbSheet {
   const propellerDiameterFt = useAtomValue(propellerDiameterFtAtom);
   const engine = useAtomValue(selectedEngineAtom);
   const stallSpeedKcas = useAtomValue(stallSpeedKcasAtom);
-  const [propEfficiencyClimb, setPropEfficiencyClimb] = useAtom(
-    propEfficiencyClimbAtom
-  );
+  const propEfficiencyClimb = useAtomValue(propEfficiencyClimbAtom);
+  const committedStages = useAtomValue(committedStagesAtom);
+  const quantityStatuses = useAtomValue(quantityStatusesAtom);
 
-  const [entry, setEntryState, resetEntry] = usePersistentState<
-    Record<LocalField, number>
-  >(ENTRY_KEY, ENTRY_DEFAULTS);
+  const [entry, setEntryState, resetEntry] = usePersistentState<{
+    studyAltitudeFt: number | null;
+  }>(ENTRY_KEY, { studyAltitudeFt: null });
+  const [draft, setDraft] = useState<string | null>(null);
   const [openSections, setOpenSections, resetSections] = usePersistentState<
     Record<SectionKey, boolean>
   >(SECTIONS_KEY, SECTION_DEFAULTS);
 
   const inputs = useMemo<ClimbInputs>(
     () => ({
-      ...entry,
-      propEfficiencyClimb,
       cruiseSpeedKtas,
       stallSpeedKcas,
       seaLevelDensity: SEA_LEVEL_DENSITY_SLUG_FT3,
       cruiseDensity,
-      propellerRpm: engine?.rpm ?? RPM_WHEN_NO_ENGINE,
+      propEfficiencyClimb,
+      studyAltitudeFt: entry.studyAltitudeFt ?? Number.NaN,
+      propellerRpm: engine?.rpm ?? Number.NaN,
       propellerDiameterFt,
       maxRatedPowerBhp,
       mtowLb,
@@ -117,31 +87,60 @@ export function useClimbSheet(): ClimbSheet {
       oswaldEfficiency,
     }),
     [
-      entry,
-      stallSpeedKcas,
-      propEfficiencyClimb,
-      cruiseSpeedKtas,
+      aspectRatio,
+      cdMin,
       cruiseDensity,
+      cruiseSpeedKtas,
       engine,
-      propellerDiameterFt,
+      entry.studyAltitudeFt,
       maxRatedPowerBhp,
       mtowLb,
-      wingAreaFt2,
-      cdMin,
-      aspectRatio,
       oswaldEfficiency,
+      propellerDiameterFt,
+      propEfficiencyClimb,
+      stallSpeedKcas,
+      wingAreaFt2,
     ]
   );
+
+  const requiredQuantities = [
+    ["mtowLb", "maximum take-off weight"],
+    ["cruiseSpeedKnots", "cruise speed"],
+    ["stallSpeedKcas", "stall speed"],
+    ["aspectRatio", "aspect ratio"],
+    ["propEfficiencyClimb", "climb propeller efficiency"],
+    ["oswaldEfficiency", "span efficiency"],
+    ["cd0", "minimum drag coefficient"],
+    ["propellerDiameterFt", "propeller diameter"],
+  ] as const;
 
   return {
     inputs,
     engine,
-    setEntry: (field, value) => {
-      if (field === "propEfficiencyClimb") {
-        setPropEfficiencyClimb(value);
-        return;
-      }
-      setEntryState((current) => ({ ...current, [field]: value }));
+    unresolvedUpstream: [
+      ...(!committedStages.mtow ? ["Confirm MTOW & WEIGHTS"] : []),
+      ...(!committedStages.sref ? ["Confirm SREF & POWER"] : []),
+      ...(engine === null ? ["Select an engine in SREF & POWER"] : []),
+      ...requiredQuantities.flatMap(([key, label]) =>
+        sharedNumericQuantity(quantityStatuses, key, 0).status === "confirmed"
+          ? []
+          : [`Confirm ${label} in its owning stage`]
+      ),
+    ],
+    quantityStatus: (key) =>
+      sharedNumericQuantity(quantityStatuses, key, 0).status,
+    entryText: () =>
+      draft ??
+      (entry.studyAltitudeFt === null ? "" : String(entry.studyAltitudeFt)),
+    entryError: () =>
+      studyAltitudeError(
+        draft ??
+          (entry.studyAltitudeFt === null ? "" : String(entry.studyAltitudeFt))
+      ),
+    setEntry: (_field, raw) => {
+      setDraft(raw);
+      if (studyAltitudeError(raw)) return;
+      setEntryState({ studyAltitudeFt: Number(raw) });
     },
     openSections,
     toggleSection: (key, open) =>
@@ -151,6 +150,7 @@ export function useClimbSheet(): ClimbSheet {
     reset: () => {
       resetEntry();
       resetSections();
+      setDraft(null);
     },
   };
 }
