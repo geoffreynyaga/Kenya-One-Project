@@ -1,10 +1,10 @@
 import {
-  CORRECT_CLOSED_RUN_USES_VLOF,
-  CORRECT_ROTATION_USES_VLOF,
   takeoff,
+  takeoffInputIssues,
   takeoffWarnings,
   thrustModel,
 } from "../takeoffCompute";
+import { takeoffEntrySchemas } from "../takeoffSchema";
 import { WORKBOOK_INPUTS } from "./fixture";
 
 function close(actual: number, expected: number, tolerance = 1e-9): boolean {
@@ -14,7 +14,10 @@ function close(actual: number, expected: number, tolerance = 1e-9): boolean {
 }
 
 describe("takeoffCompute parity with the take-off sheet", () => {
-  const result = takeoff(WORKBOOK_INPUTS);
+  const result = takeoff(WORKBOOK_INPUTS, {
+    mode: "workbook",
+    workbookLiftOffDistanceFt: 1011,
+  });
 
   it("sizes the propeller and its static thrust on C10:C13", () => {
     expect(close(result.propDiscAreaFt2, 30.68359375)).toBe(true);
@@ -75,7 +78,7 @@ describe("takeoffCompute parity with the take-off sheet", () => {
     expect(close(first.speedFps, 0)).toBe(true);
     expect(close(first.frictionLbf, 234)).toBe(true);
     expect(close(first.thrustLbf, 1864.877049186326)).toBe(true);
-    // Every force is taken at the entry speed, so the run opens on two equal steps.
+    // Entry-speed forces make the first two accelerations equal.
     expect(close(first.accelerationFps2, 8.97032557884762)).toBe(true);
     expect(close(second.accelerationFps2, 8.97032557884762)).toBe(true);
     expect(close(second.speedFps, 4.48516278942381)).toBe(true);
@@ -143,8 +146,6 @@ describe("takeoffCompute parity with the take-off sheet", () => {
 
 describe("a ground run the sheet's 37 rows do not cover", () => {
   it("keeps integrating instead of stopping at the tabulated rows", () => {
-    // Less power means a slower run, so 37 half-second steps no longer reach
-    // lift-off. The sheet stops there regardless; this carries on.
     const result = takeoff({ ...WORKBOOK_INPUTS, maxRatedPowerBhp: 400 });
 
     expect(result.groundRun.length).toBeGreaterThan(37);
@@ -188,17 +189,6 @@ describe("takeoffWarnings", () => {
   const warnings = takeoffWarnings(WORKBOOK_INPUTS, result);
   const keys = warnings.map((warning) => warning.key);
 
-  it("says when the assumed lift-off run has drifted from the computed one", () => {
-    // The sheet's own 1011 ft is within 6% of the 956 ft it computes, so it
-    // passes quietly. Move it and the mean acceleration stops meaning much.
-    const near = takeoffWarnings(WORKBOOK_INPUTS, takeoff(WORKBOOK_INPUTS));
-    expect(near.map((w) => w.key)).not.toContain("assumed-run-stale");
-
-    const inputs = { ...WORKBOOK_INPUTS, liftOffDistanceFt: 2000 };
-    const far = takeoffWarnings(inputs, takeoff(inputs));
-    expect(far.map((w) => w.key)).toContain("assumed-run-stale");
-  });
-
   it("names the three defects the sheet carries", () => {
     expect(keys).toContain("closed-run-speed");
     expect(keys).toContain("rotation-speed");
@@ -217,9 +207,97 @@ describe("takeoffWarnings", () => {
   });
 });
 
-describe("the parity switches", () => {
-  it("default to reproducing the sheet", () => {
-    expect(CORRECT_CLOSED_RUN_USES_VLOF).toBe(false);
-    expect(CORRECT_ROTATION_USES_VLOF).toBe(false);
+describe("take-off input validation", () => {
+  it("rejects blank text before numeric coercion", () => {
+    const parsed = takeoffEntrySchemas.propellerDiameterFt.safeParse("  ");
+    expect(parsed.success).toBe(false);
+    if (!parsed.success) {
+      expect(parsed.error.issues[0]?.message).toBe("Enter a value.");
+    }
+  });
+
+  it("enforces physical field constraints at the compute boundary", () => {
+    const issues = takeoffInputIssues({
+      ...WORKBOOK_INPUTS,
+      engineCount: 1.5,
+      hubDiameterRatio: 1,
+      groundFrictionCoefficient: -0.01,
+    });
+    const fields = issues.map(({ field }) => field);
+
+    expect(fields).toEqual(
+      expect.arrayContaining([
+        "engineCount",
+        "hubDiameterRatio",
+        "groundFrictionCoefficient",
+      ])
+    );
+  });
+
+  it("enforces stall, cruise and maximum-speed ordering", () => {
+    const fields = takeoffInputIssues({
+      ...WORKBOOK_INPUTS,
+      stallSpeedKcas: 145,
+      cruiseSpeedKcas: 140,
+      maxSpeedKcas: 130,
+    }).map(({ field }) => field);
+
+    expect(fields).toContain("stallSpeedKcas");
+    expect(fields).toContain("cruiseSpeedKcas");
+  });
+});
+
+describe("engineering mode", () => {
+  it("is authoritative and includes the corrected distances", () => {
+    const result = takeoff(WORKBOOK_INPUTS);
+
+    expect(result.mode).toBe("engineering");
+    expect(result.groundRunClosedFt).toBeCloseTo(2 * 488.1304321959502, 8);
+    expect(result.rotationDistanceFt).toBeCloseTo(result.liftOffSpeedFps, 8);
+    expect(result.totalDistanceFt).toBeCloseTo(
+      result.groundRunIntegratedFt +
+        result.rotationDistanceFt +
+        result.transitionDistanceFt +
+        result.climbDistanceFt,
+      8
+    );
+  });
+
+  it("derives timing from the integrated run instead of a stored graph read-back", () => {
+    const result = takeoff(WORKBOOK_INPUTS);
+
+    expect(result.meanAccelerationFps2).toBeCloseTo(
+      result.liftOffSpeedFps ** 2 / (2 * result.groundRunIntegratedFt),
+      8
+    );
+    expect(result.timeToLiftOffS).toBeCloseTo(
+      result.liftOffSpeedFps / result.meanAccelerationFps2,
+      8
+    );
+  });
+
+  it("does not report balanced field for a single-engine design", () => {
+    const inputs = { ...WORKBOOK_INPUTS, engineCount: 1 };
+    const result = takeoff(inputs);
+
+    expect(result.balancedFieldApplicable).toBe(false);
+    expect(result.balancedFieldLengthFt).toBeNaN();
+    expect(takeoffWarnings(inputs, result).map((warning) => warning.key)).toContain(
+      "balanced-field-not-applicable"
+    );
+  });
+
+  it("uses engine-count-specific remaining power and climb requirements", () => {
+    const twin = takeoff(WORKBOOK_INPUTS);
+    const triple = takeoff({ ...WORKBOOK_INPUTS, engineCount: 3 });
+    const quad = takeoff({ ...WORKBOOK_INPUTS, engineCount: 4 });
+
+    expect(twin.requiredClimbGradientRad).toBe(0.024);
+    expect(triple.requiredClimbGradientRad).toBe(0.027);
+    expect(quad.requiredClimbGradientRad).toBe(0.03);
+    expect(triple.thrustEngineOutLbf / twin.thrustEngineOutLbf).toBeCloseTo(
+      (2 / 3) / (1 / 2),
+      8
+    );
   });
 });

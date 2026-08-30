@@ -22,9 +22,8 @@ import {
   SECONDS_PER_HOUR,
 } from "../../../domain/constants";
 import { minimumDragSpeedKtas } from "../../../domain/dragPolar";
+import { solvePowerLimitedSpeedRange } from "../../../domain/levelFlight";
 import {
-  CORRECT_MISSION_FRACTION_DOUBLE_COUNTS,
-  CORRECT_SANITY_KM_CONVERSION,
   Distance,
   PolarPoint,
   POLAR_POINT_COUNT,
@@ -34,10 +33,24 @@ import {
   RangeWarning,
   SANITY_FT_PER_KM_AS_WRITTEN,
   span,
-  SPEED_SWEEP_MARGIN,
   SPEED_SWEEP_POINT_COUNT,
   SpeedRangePoint,
+  WORKBOOK_DOUBLE_COUNTS_MISSION_FRACTIONS,
 } from "./utils";
+import { rangeInputsSchema } from "./rangeSchema";
+
+export interface RangeOptions {
+  mode?: "engineering" | "workbook";
+}
+
+export class RangeNoSolutionError extends Error {
+  constructor(
+    message = "No level-flight speed range exists at the selected cruise power and altitude."
+  ) {
+    super(message);
+    this.name = "RangeNoSolutionError";
+  }
+}
 
 /** A distance in feet, in the three units the sheet quotes. */
 function distance(ft: number, ftPerKm = FT_PER_KM): Distance {
@@ -69,7 +82,12 @@ function constantAttitudeRangeFt(
   return (cl / cd) * (Math.log(initialWeightLb / finalWeightLb) / fuelPerFoot);
 }
 
-export function range(inputs: RangeInputs): RangeResult {
+export function range(
+  uncheckedInputs: RangeInputs,
+  options: RangeOptions = {}
+): RangeResult {
+  const inputs = rangeInputsSchema.parse(uncheckedInputs);
+  const mode = options.mode ?? "engineering";
   const { mtowLb, wingAreaFt2: area, cdMin, inducedDragFactor: k } = inputs;
 
   const speedFps = inputs.cruiseSpeedKtas * KNOT_TO_FPS;
@@ -87,11 +105,30 @@ export function range(inputs: RangeInputs): RangeResult {
     (HP_TO_FT_LB_PER_S * SECONDS_PER_HOUR * inputs.propEfficiencyCruise);
 
   const initialWeightLb = mtowLb * inputs.taxiFraction * inputs.climbFraction;
-  const finalWeightLb =
-    initialWeightLb *
-    (CORRECT_MISSION_FRACTION_DOUBLE_COUNTS
-      ? inputs.cruiseWeightRatio / (inputs.taxiFraction * inputs.climbFraction)
-      : inputs.cruiseWeightRatio);
+  const finalWeightLb = initialWeightLb * inputs.cruiseFraction;
+  const stallKtas =
+    Math.sqrt((2 * initialWeightLb) / (density * area * inputs.clMax)) /
+    KNOT_TO_FPS;
+  const levelFlightEnvelope = solvePowerLimitedSpeedRange(
+    {
+      weightLb: initialWeightLb,
+      wingAreaFt2: area,
+      cdMin,
+      inducedDragFactor: k,
+    },
+    density,
+    inputs.propEfficiencyCruise * cruisePowerBhp * HP_TO_FT_LB_PER_S,
+    stallKtas
+  );
+  if (!levelFlightEnvelope.holdsHeight) throw new RangeNoSolutionError();
+  if (
+    inputs.cruiseSpeedKtas < levelFlightEnvelope.minKtas ||
+    inputs.cruiseSpeedKtas > levelFlightEnvelope.maxKtas
+  ) {
+    throw new RangeNoSolutionError(
+      "The requested cruise speed lies outside the level-flight envelope at the selected cruise power and altitude."
+    );
+  }
 
   const dynamic = density * speedFps ** 2 * area;
   const clInitial = (2 * initialWeightLb) / dynamic;
@@ -182,9 +219,9 @@ export function range(inputs: RangeInputs): RangeResult {
     cdCruise,
     liftToDrag,
     liftToDragMax,
-    // Quoted at maximum weight, as the sheet writes it — see the warnings.
+    // Engineering mode uses the representative mean cruise weight.
     bestLiftToDragSpeedKtas: minimumDragSpeedKtas(
-      mtowLb,
+      mode === "workbook" ? mtowLb : (initialWeightLb + finalWeightLb) / 2,
       density,
       area,
       k,
@@ -199,7 +236,7 @@ export function range(inputs: RangeInputs): RangeResult {
       hours: sanityHours,
       distance: distance(
         speedFps * sanityHours * SECONDS_PER_HOUR,
-        CORRECT_SANITY_KM_CONVERSION ? FT_PER_KM : SANITY_FT_PER_KM_AS_WRITTEN
+        mode === "workbook" ? SANITY_FT_PER_KM_AS_WRITTEN : FT_PER_KM
       ),
     },
 
@@ -217,9 +254,8 @@ export function range(inputs: RangeInputs): RangeResult {
     bestLiftToDragCl: Math.sqrt(cdMin / k),
 
     rangeBySpeed: span(
-      Math.sqrt((2 * initialWeightLb) / (density * area * inputs.clMax)) /
-        KNOT_TO_FPS,
-      inputs.cruiseSpeedKtas * SPEED_SWEEP_MARGIN,
+      levelFlightEnvelope.minKtas,
+      levelFlightEnvelope.maxKtas,
       SPEED_SWEEP_POINT_COUNT
     ).map<SpeedRangePoint>((speedKtas) => ({
       speedKtas,
@@ -237,47 +273,33 @@ export function range(inputs: RangeInputs): RangeResult {
 
 export function rangeWarnings(
   inputs: RangeInputs,
-  result: RangeResult
+  result: RangeResult,
+  options: RangeOptions = {}
 ): RangeWarning[] {
   const warnings: RangeWarning[] = [];
+  const mode = options.mode ?? "engineering";
 
-  if (!CORRECT_MISSION_FRACTION_DOUBLE_COUNTS) {
-    const honestFuelLb =
-      result.initialWeightLb *
-      (1 -
-        inputs.cruiseWeightRatio /
-          (inputs.taxiFraction * inputs.climbFraction));
-    const overstated =
-      100 *
-      ((result.initialWeightLb - result.finalWeightLb - honestFuelLb) /
-        honestFuelLb);
+  if (mode === "workbook" && WORKBOOK_DOUBLE_COUNTS_MISSION_FRACTIONS) {
     warnings.push({
       key: "mission-fraction-double-counted",
       severity: "defect",
       cell: "B9",
       message:
-        "The end-of-cruise weight is the start-of-cruise weight times the " +
-        "fraction left after the whole mission, and the start-of-cruise " +
-        "weight has already had taxi and climb taken off it. Both phases are " +
-        "counted twice, so the cruise burns " +
-        `${overstated.toFixed(0)}% more fuel than the mission put aboard for ` +
-        "it, and every range here is longer for it.",
+        "Parity mode uses the historical whole-mission fraction after taxi and climb have already been removed. Engineering mode uses the cruise-only Breguet fraction.",
     });
   }
 
-  warnings.push({
-    key: "best-ld-speed-at-mtow",
-    severity: "check",
-    cell: "B20",
-    message:
-      "The speed for best lift-to-drag is worked out at maximum take-off " +
-      "weight, while every range beside it is flown between the start- and " +
-      "end-of-cruise weights. It is the right speed for a placard and about " +
-      `${(100 * (1 - Math.sqrt(result.initialWeightLb / inputs.mtowLb))).toFixed(1)}% ` +
-      "fast for the cruise the fourth range actually integrates.",
-  });
+  if (mode === "workbook") {
+    warnings.push({
+      key: "best-ld-speed-at-mtow",
+      severity: "check",
+      cell: "B20",
+      message:
+        "Parity mode quotes best lift-to-drag speed at maximum take-off weight. Engineering mode evaluates it at mean cruise weight.",
+    });
+  }
 
-  if (!CORRECT_SANITY_KM_CONVERSION) {
+  if (mode === "workbook") {
     warnings.push({
       key: "sanity-km-conversion",
       severity: "defect",
@@ -290,16 +312,27 @@ export function rangeWarnings(
     });
   }
 
+  const designRangeNm = inputs.designRangeKm * FT_PER_KM / FT_PER_NM;
+  const rangeErrorPercent =
+    (100 * (result.ranges.speedAndAltitude.nm - designRangeNm)) /
+    designRangeNm;
+  warnings.push({
+    key: "design-range-check",
+    severity: "check",
+    message:
+      `The constant-speed range is ${Math.abs(rangeErrorPercent).toFixed(1)}% ` +
+      `${rangeErrorPercent >= 0 ? "above" : "below"} the ${designRangeNm.toFixed(0)} nm mission requirement selected during weight sizing.`,
+  });
+
   warnings.push({
     key: "specific-range-typed",
     severity: "defect",
     cell: "E30",
     message:
-      "Every figure in the specific-range block is typed by hand — the speed, " +
-      "the fuel flow, the distance and the fuel burnt — and none of them " +
-      "follows from the cruise above it. They are worked out here from the " +
-      "cruise power setting and the fuel consumption instead, so they move " +
-      "with the design rather than going stale against it.",
+      "The historical specific-range comparison treated speed, fuel flow, " +
+      "distance and fuel burnt as independent entries. This calculation " +
+      "derives them from the cruise power setting and fuel consumption so " +
+      "they move with the design rather than going stale against it.",
   });
 
   const drift =

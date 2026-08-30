@@ -1,22 +1,14 @@
-/**
- * Bridges the cruise sheet to the shared design quantities.
- *
- * What cruise decides for itself is the loading range it has to be flyable
- * across, where the thrust line sits relative to the centre of gravity, and
- * the bank angle the turning stall is quoted at. The rest is upstream.
- */
-
-import { useAtomValue } from "jotai";
-import { useMemo } from "react";
+import { useAtom, useAtomValue } from "jotai";
+import { useMemo, useState } from "react";
 
 import {
   aerodynamicCentreMacAtom,
   cd0Atom,
   clAtMinimumDragAtom,
   clMaxAtom,
+  committedStagesAtom,
   cruiseAltitudeFtAtom,
   cruisePowerFractionAtom,
-  cruiseSfcAtom,
   cruiseSpeedKnotsAtom,
   inducedDragFactorAtom,
   installedPowerBhpAtom,
@@ -24,9 +16,12 @@ import {
   meanChordFtAtom,
   mtowLbAtom,
   propEfficiencyCruiseAtom,
+  quantityStatusesAtom,
+  QuantityStatus,
   sectionMomentCoefficientAtom,
   SelectedEngine,
   selectedEngineAtom,
+  sharedNumericQuantity,
   stallAngleDegAtom,
   tailArmFtAtom,
   thrustArmFtAtom,
@@ -34,36 +29,28 @@ import {
   wingAreaFt2Atom,
 } from "../../../domain/atoms";
 import { usePersistentState } from "../../../hooks/usePersistentState";
-import { CruiseInputs } from "./utils";
+import {
+  CruiseEntryField,
+  CruiseInputs,
+  cruiseEntryError,
+} from "./cruiseSchema";
 
-/** The fields cruise owns outright. */
-/**
- * What cruise actually decides: the loading range the aeroplane has to be
- * flyable across, and the bank angle the turning stall is quoted at. The
- * geometry it balances against belongs to the airframe and comes from atoms.
- */
-export type EntryField = "bankAngleDeg" | "forwardCgMac" | "aftCgMac";
+export type EntryField = CruiseEntryField;
+type LocalField = Exclude<EntryField, "cruisePowerFraction">;
 
-const ENTRY_DEFAULTS: Record<EntryField, number> = {
-  bankAngleDeg: 40,
-  forwardCgMac: 0.15,
-  aftCgMac: 0.4,
-};
-
-const SECTION_DEFAULTS = {
-  loading: true,
-  carried: false,
-};
-
-export type SectionKey = keyof typeof SECTION_DEFAULTS;
-
-const ENTRY_KEY = "kenya-one:cruise:entry:v1";
+const ENTRY_KEY = "kenya-one:cruise:entry:v2";
 const SECTIONS_KEY = "kenya-one:cruise:sections:v1";
+const SECTION_DEFAULTS = { loading: true, carried: false };
+export type SectionKey = keyof typeof SECTION_DEFAULTS;
 
 export interface CruiseSheet {
   inputs: CruiseInputs;
   engine: SelectedEngine | null;
-  setEntry: (field: EntryField, value: number) => void;
+  unresolvedUpstream: string[];
+  quantityStatus: (key: string) => QuantityStatus;
+  entryText: (field: EntryField) => string;
+  entryError: (field: EntryField) => string | null;
+  setEntry: (field: EntryField, raw: string) => void;
   openSections: Record<SectionKey, boolean>;
   toggleSection: (key: SectionKey, open: boolean) => void;
   reset: () => void;
@@ -72,8 +59,9 @@ export interface CruiseSheet {
 export function useCruiseSheet(): CruiseSheet {
   const cruiseAltitudeFt = useAtomValue(cruiseAltitudeFtAtom);
   const propEfficiencyCruise = useAtomValue(propEfficiencyCruiseAtom);
-  const cruiseSfc = useAtomValue(cruiseSfcAtom);
-  const cruisePowerFraction = useAtomValue(cruisePowerFractionAtom);
+  const [cruisePowerFraction, setCruisePowerFraction] = useAtom(
+    cruisePowerFractionAtom
+  );
   const cruiseSpeedKtas = useAtomValue(cruiseSpeedKnotsAtom);
   const maxRatedPowerBhp = useAtomValue(installedPowerBhpAtom);
   const mtowLb = useAtomValue(mtowLbAtom);
@@ -91,28 +79,32 @@ export function useCruiseSheet(): CruiseSheet {
   const thrustLineOffsetFt = useAtomValue(thrustLineOffsetFtAtom);
   const aerodynamicCentreMac = useAtomValue(aerodynamicCentreMacAtom);
   const mainGearMac = useAtomValue(mainGearMacAtom);
+  const committedStages = useAtomValue(committedStagesAtom);
+  const [quantityStatuses, setQuantityStatuses] = useAtom(quantityStatusesAtom);
 
   const [entry, setEntryState, resetEntry] = usePersistentState<
-    Record<EntryField, number>
-  >(ENTRY_KEY, ENTRY_DEFAULTS);
+    Record<LocalField, number | null>
+  >(ENTRY_KEY, { bankAngleDeg: null, forwardCgMac: null, aftCgMac: null });
+  const [drafts, setDrafts] = useState<Partial<Record<EntryField, string>>>({});
   const [openSections, setOpenSections, resetSections] = usePersistentState<
     Record<SectionKey, boolean>
   >(SECTIONS_KEY, SECTION_DEFAULTS);
 
   const inputs = useMemo<CruiseInputs>(
     () => ({
-      ...entry,
       cruiseAltitudeFt,
+      propEfficiencyCruise,
+      cruisePowerFraction,
+      cruiseSpeedKtas,
+      bankAngleDeg: entry.bankAngleDeg ?? Number.NaN,
+      forwardCgMac: entry.forwardCgMac ?? Number.NaN,
+      aftCgMac: entry.aftCgMac ?? Number.NaN,
       wingMomentCoefficient,
       tailArmFt,
       thrustArmFt,
       thrustLineOffsetFt,
       aerodynamicCentreMac,
       mainGearMac,
-      propEfficiencyCruise,
-      cruiseSfc,
-      cruisePowerFraction,
-      cruiseSpeedKtas,
       maxRatedPowerBhp,
       mtowLb,
       wingAreaFt2,
@@ -124,35 +116,106 @@ export function useCruiseSheet(): CruiseSheet {
       meanAerodynamicChordFt,
     }),
     [
-      entry,
+      aerodynamicCentreMac,
+      cdMin,
+      clAtMinimumDrag,
+      clMax,
       cruiseAltitudeFt,
-      wingMomentCoefficient,
+      cruisePowerFraction,
+      cruiseSpeedKtas,
+      entry,
+      inducedDragFactor,
+      mainGearMac,
+      maxRatedPowerBhp,
+      meanAerodynamicChordFt,
+      mtowLb,
+      propEfficiencyCruise,
+      stallAngleDeg,
       tailArmFt,
       thrustArmFt,
       thrustLineOffsetFt,
-      aerodynamicCentreMac,
-      mainGearMac,
-      propEfficiencyCruise,
-      cruiseSfc,
-      cruisePowerFraction,
-      cruiseSpeedKtas,
-      maxRatedPowerBhp,
-      mtowLb,
       wingAreaFt2,
-      cdMin,
-      inducedDragFactor,
-      clMax,
-      clAtMinimumDrag,
-      stallAngleDeg,
-      meanAerodynamicChordFt,
+      wingMomentCoefficient,
     ]
   );
+
+  const requiredQuantities = [
+    ["mtowLb", "maximum take-off weight"],
+    ["cruiseAltitudeFt", "cruise altitude"],
+    ["cruiseSpeedKnots", "cruise speed"],
+    ["propEfficiencyCruise", "cruise propeller efficiency"],
+    ["clMax", "maximum lift coefficient"],
+    ["aspectRatio", "aspect ratio"],
+    ["taperRatio", "wing taper ratio"],
+    ["oswaldEfficiency", "span efficiency"],
+    ["cd0", "minimum drag coefficient"],
+    ["clAtMinimumDrag", "lift coefficient at minimum drag"],
+    ["sectionMomentCoefficient", "wing pitching-moment coefficient"],
+    ["stallAngleDeg", "wing stall angle"],
+    ["tailArmFt", "tail arm"],
+    ["thrustArmFt", "thrust arm"],
+    ["thrustLineOffsetFt", "thrust-line offset"],
+    ["aerodynamicCentreMac", "aerodynamic-centre station"],
+    ["mainGearMac", "main-gear station"],
+  ] as const;
+
+  const entryRaw = (field: EntryField) => {
+    if (drafts[field] !== undefined) return drafts[field]!;
+    if (field === "cruisePowerFraction") {
+      const { status } = sharedNumericQuantity(
+        quantityStatuses,
+        field,
+        cruisePowerFraction
+      );
+      return status === "unresolved" ? "" : String(cruisePowerFraction);
+    }
+    const value = entry[field];
+    return value === null ? "" : String(value);
+  };
 
   return {
     inputs,
     engine,
-    setEntry: (field, value) =>
-      setEntryState((current) => ({ ...current, [field]: value })),
+    unresolvedUpstream: [
+      ...(!committedStages.mtow ? ["Confirm MTOW & WEIGHTS"] : []),
+      ...(!committedStages.sref ? ["Confirm SREF & POWER"] : []),
+      ...(!committedStages.wingAndAirfoil
+        ? ["Confirm WING & AIRFOIL"]
+        : []),
+      ...(!committedStages.drag ? ["Confirm DRAG ANALYSIS"] : []),
+      ...(engine === null ? ["Select an engine in SREF & POWER"] : []),
+      ...requiredQuantities.flatMap(([key, label]) =>
+        sharedNumericQuantity(quantityStatuses, key, 0).status === "confirmed"
+          ? []
+          : [`Confirm ${label} in its owning stage`]
+      ),
+    ],
+    quantityStatus: (key) =>
+      sharedNumericQuantity(quantityStatuses, key, 0).status,
+    entryText: entryRaw,
+    entryError: (field) => {
+      const error = cruiseEntryError(field, entryRaw(field));
+      if (error) return error;
+      if (field === "cruisePowerFraction") {
+        const { status } = sharedNumericQuantity(
+          quantityStatuses,
+          field,
+          cruisePowerFraction
+        );
+        if (status !== "confirmed") return "Confirm or replace this value.";
+      }
+      return null;
+    },
+    setEntry: (field, raw) => {
+      setDrafts((current) => ({ ...current, [field]: raw }));
+      if (cruiseEntryError(field, raw)) return;
+      const value = Number(raw);
+      if (field === "cruisePowerFraction") {
+        setCruisePowerFraction(value);
+        return;
+      }
+      setEntryState((current) => ({ ...current, [field]: value }));
+    },
     openSections,
     toggleSection: (key, open) =>
       setOpenSections((current) =>
@@ -161,6 +224,11 @@ export function useCruiseSheet(): CruiseSheet {
     reset: () => {
       resetEntry();
       resetSections();
+      setDrafts({});
+      setQuantityStatuses((current) => ({
+        ...current,
+        cruisePowerFraction: "unresolved",
+      }));
     },
   };
 }

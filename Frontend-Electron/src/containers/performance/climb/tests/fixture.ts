@@ -6,7 +6,6 @@ export const WORKBOOK_INPUTS: ClimbInputs = {
   seaLevelDensity: 0.002378,
   cruiseDensity: 0.001756,
   propEfficiencyClimb: 0.7,
-  bestRateSpeedFromPlotKtas: 72,
   studyAltitudeFt: 5000,
   stallSpeedKcas: 61,
   propellerRpm: 2700,

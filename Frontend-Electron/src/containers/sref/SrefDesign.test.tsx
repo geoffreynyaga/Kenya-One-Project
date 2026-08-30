@@ -10,6 +10,10 @@ import {
   fetchSrefSizing,
 } from "../../api/srefDesign";
 import SrefDesign from "./SrefDesign";
+import {
+  cruiseFractionAtom,
+  propEfficiencyTakeoffAtom,
+} from "../../domain/atoms";
 
 vi.mock("plotly.js-basic-dist", () => ({ default: {} }));
 vi.mock("react-plotly.js/factory", () => ({
@@ -30,8 +34,8 @@ const result: SrefSizingResult = {
   },
   stall_limit_wing_loading: 22.691275793164802,
   weight_start_cruise_lb: 5561.01,
-  weight_end_cruise_lb: 4760.409492467239,
-  weight_average_cruise_lb: 5160.70974623362,
+  weight_end_cruise_lb: 5142.31867529277,
+  weight_average_cruise_lb: 5351.664337646385,
   induced_drag_factor: 0.054006965223581664,
   // The workbook's own sweep either side of the stall limit, so the binding
   // constraint in these tests is the one the real sheet reports.
@@ -46,7 +50,7 @@ const result: SrefSizingResult = {
     power_required_hp: 508.69565217391306,
     power_per_engine_hp: 254.34782608695653,
     total_horsepower_hp: 508.69565217391306,
-    cruise_cl: 0.40822440553839295,
+    cruise_cl: 0.4233293675295598,
   },
 };
 
@@ -113,18 +117,51 @@ afterEach(() => {
  * quantities. Anything that should survive a remount does so through
  * localStorage, which setupTests clears between tests.
  */
-function renderPage() {
+function renderPage(solve = true) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return render(
-    <Provider store={createStore()}>
+  const store = createStore();
+  if (solve) store.set(cruiseFractionAtom, 0.9247094817834837);
+  const view = render(
+    <Provider store={store}>
       <QueryClientProvider client={queryClient}>
         <SrefDesign />
       </QueryClientProvider>
     </Provider>
   );
+  if (solve) {
+    fireEvent.change(
+      screen.getByLabelText("Prop efficiency · take-off estimate"),
+      { target: { value: "0.45" } }
+    );
+    fireEvent.click(screen.getByRole("button", { name: "SOLVE & CONFIRM" }));
+  }
+  return { ...view, store };
 }
+
+test("withholds results until the provisional inputs are confirmed", () => {
+  renderPage(false);
+
+  expect(screen.getByText("CALCULATION UNAVAILABLE")).toBeInTheDocument();
+  expect(screen.getByText("WING AREA SREF").nextElementSibling).toHaveTextContent(
+    "—"
+  );
+  expect(fetchSrefSizingMock).not.toHaveBeenCalled();
+  expect(screen.queryByText("Constraint diagram — power loading vs wing loading")).toBeNull();
+  expect(screen.getAllByText("PROVISIONAL").length).toBeGreaterThan(0);
+  expect(screen.getByLabelText("Prop efficiency · take-off estimate")).toHaveAttribute(
+    "aria-invalid",
+    "true"
+  );
+  expect(screen.getAllByText("UNRESOLVED").length).toBeGreaterThan(0);
+});
+
+test("publishes the Sref-owned take-off efficiency on confirmation", () => {
+  const { store } = renderPage();
+
+  expect(store.get(propEfficiencyTakeoffAtom)).toBe(0.45);
+});
 
 test("renders workbook-parity summary and sized outputs", async () => {
   renderPage();
@@ -163,7 +200,7 @@ test("the engine catalog is fetched once, not per solve", async () => {
   fireEvent.change(screen.getByLabelText("Maximum speed"), {
     target: { value: "180" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "SOLVE CONSTRAINTS" }));
+  fireEvent.click(screen.getByRole("button", { name: "SOLVE & CONFIRM" }));
 
   await screen.findByRole("table", { name: "Engine catalog" });
   expect(fetchSrefEnginesMock).toHaveBeenCalledTimes(1);
@@ -390,7 +427,7 @@ test("blocks solve with an invalid input", async () => {
   fireEvent.change(screen.getByLabelText("Max lift coefficient"), {
     target: { value: "" },
   });
-  fireEvent.click(screen.getByRole("button", { name: "SOLVE CONSTRAINTS" }));
+  fireEvent.click(screen.getByRole("button", { name: "SOLVE & CONFIRM" }));
 
   expect(screen.getAllByText("Enter a number.").length).toBeGreaterThan(0);
   expect(fetchSrefSizingMock).toHaveBeenCalledTimes(1);

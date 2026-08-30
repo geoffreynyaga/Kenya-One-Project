@@ -19,7 +19,8 @@
     "react-dom": "^19.0.0",
     "react-plotly.js": "^2.4.0",
     "react-router-dom": "^7",
-    "request-promise": "^4.2.5"
+    "request-promise": "^4.2.5",
+    "zod": "^4.5.4"
   },
   "scripts": {
     "start": "vite",

@@ -1,20 +1,3 @@
-/**
- * Field catalogue for the Sref & Power sizing sheet.
- *
- * Every cell on the sheet is one of four kinds, and the page renders each kind
- * differently so it is obvious which numbers you choose and which the sheet
- * works out for you:
- *
- *   entry   a constant typed on this sheet
- *   carried a value another sheet produced (Drag analysis, Wing & Airfoil,
- *           take-off, MTOW & WEIGHTS) and this sheet reads
- *   derived a formula over cells on this sheet — read-only unless overridden
- *   figure  read off the matching plot
- *
- * Provenance is the workbook cell in `spreadsheets/1. initial sizing.xlsx`,
- * sheet "Sref and POWER SIZING" unless another sheet is named.
- */
-
 export type FormField =
   | "altitude"
   | "serviceCeiling"
@@ -39,7 +22,7 @@ export type FormField =
   | "designWeight"
   | "taxiFraction"
   | "climbFraction"
-  | "cruiseWeightRatio"
+  | "cruiseFraction"
   | "cruiseSpeed"
   | "wingLoading"
   | "powerLoading"
@@ -47,25 +30,12 @@ export type FormField =
 
 export type FormValues = Record<FormField, string>;
 
-/**
- * The three fields the domain layer derives. They render read-only with their
- * formula, and carry an OVERRIDE for when you need to force one by hand.
- */
 export const DERIVED_FIELDS = [
   "inducedDragFactor",
   "ldMax",
   "wingLoading",
 ] as const;
 
-/**
- * Three kinds, mirroring what backs each cell:
- *
- *   choice       a number a human picked. Editable.
- *   consequence  a number that follows from choices, whether this stage
- *                computes it or another one does. Read-only until overridden;
- *                the caption says where it comes from.
- *   figure       a choice made by clicking a plot rather than typing.
- */
 export type FieldSource = "choice" | "consequence" | "figure";
 
 export interface FieldSpec {
@@ -248,14 +218,13 @@ export const aerodynamicFields: FieldSpec[] = [
   },
   {
     field: "propEfficiencyTakeoff",
-    label: "Prop efficiency · take-off",
+    label: "Prop efficiency · take-off estimate",
     unit: "ηp",
-    source: "consequence",
+    source: "choice",
     cell: "B28",
-    origin: "TAKE-OFF · Q28",
-    body: "Prop efficiency during the ground roll, close to static. The lowest of the three — advance ratio is near zero, so much of the disc is stalled.",
-    typical: "0.50–0.60.",
-    cite: "Gudmundsson ch. 14",
+    body: "Sizing estimate for low-speed propeller efficiency. Take-off later replaces it with the selected propeller model.",
+    typical: "0.45–0.50 fixed-pitch climb; 0.35–0.45 fixed-pitch cruise; 0.45–0.60 constant-speed.",
+    cite: "Gudmundsson §17.3.2",
   },
   {
     field: "clTakeoff",
@@ -334,13 +303,13 @@ export const weightFields: FieldSpec[] = [
     cite: "Raymer Table 3.2",
   },
   {
-    field: "cruiseWeightRatio",
-    label: "Cruise weight ratio w6/w1",
+    field: "cruiseFraction",
+    label: "Cruise fraction",
     source: "consequence",
     cell: "MTOW & WEIGHTS · B28",
     origin: "MTOW & WEIGHTS · B28",
-    body: "End-of-mission over start-of-mission weight: taxi × climb × cruise × descent × approach. The cruise term is the Breguet range fraction.",
-    typical: "≈ 0.86 for this mission.",
+    body: "Weight remaining after the cruise segment alone. MTOW derives it from the selected design range with the Breguet propeller-aircraft relation.",
+    typical: "Longer missions and higher fuel consumption reduce this fraction.",
     cite: "Raymer ch. 3",
   },
   {

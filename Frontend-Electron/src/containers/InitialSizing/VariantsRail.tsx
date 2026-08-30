@@ -7,13 +7,20 @@
  * Copyright (c) 2020 KENYA ONE PROJECT
  */
 
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 
 import {
   committedStagesAtom,
+  cruiseFractionAtom,
+  designRangeKmAtom,
   emptyWeightFractionAtom,
   fuelFractionAtom,
   mtowLbAtom,
+  passengerCountAtom,
+  pilotCountAtom,
+  quantityStatusesAtom,
+  propEfficiencyCruiseAtom,
+  sharedNumericQuantity,
 } from "../../domain/atoms";
 import { formatDelta, formatValue, toNumber } from "./format";
 import { METHODS, MethodName } from "./methods";
@@ -27,9 +34,16 @@ interface Props {
     /** How each method split the weight it solved, keyed in lower case. */
     emptyWeightFraction?: Record<string, number>;
     fuelFraction?: Record<string, number>;
+    cruiseFraction?: number;
   };
   primary: MethodName;
   onSelectPrimary: (method: MethodName) => void;
+  mission?: {
+    designRangeKm: number;
+    passengerCount: number;
+    pilotCount: number;
+    propEfficiencyCruise: number;
+  };
 }
 
 /**
@@ -53,6 +67,12 @@ export default function VariantsRail(props: Props) {
   const setCommitted = useSetAtom(committedStagesAtom);
   const setEmptyWeightFraction = useSetAtom(emptyWeightFractionAtom);
   const setFuelFraction = useSetAtom(fuelFractionAtom);
+  const setCruiseFraction = useSetAtom(cruiseFractionAtom);
+  const setDesignRange = useSetAtom(designRangeKmAtom);
+  const setCruisePropEfficiency = useSetAtom(propEfficiencyCruiseAtom);
+  const setPassengerCount = useSetAtom(passengerCountAtom);
+  const setPilotCount = useSetAtom(pilotCountAtom);
+  const quantityStatuses = useAtomValue(quantityStatusesAtom);
 
   const methods = METHODS.map((method) => ({
     name: method.name,
@@ -80,6 +100,18 @@ export default function VariantsRail(props: Props) {
   // A pound either way is rounding, not a disagreement.
   const diverged =
     primaryValue !== undefined && Math.abs(primaryValue - carried) > 1;
+  const linkedMissionUnconfirmed = [
+    "emptyWeightFraction",
+    "fuelFraction",
+    "cruiseFraction",
+    "designRangeKm",
+    "passengerCount",
+    "pilotCount",
+    "propEfficiencyCruise",
+  ].some(
+    (key) =>
+      sharedNumericQuantity(quantityStatuses, key, 0).status !== "confirmed"
+  );
 
   return (
     <div className="flex min-h-0 flex-col border-l border-rule-mid bg-panel">
@@ -125,12 +157,14 @@ export default function VariantsRail(props: Props) {
 
       {/* Carrying forward sits with the methods, not at the foot of a tall
           rail where it scrolled out of sight. */}
-      {primaryValue !== undefined && diverged ? (
+      {primaryValue !== undefined && (diverged || linkedMissionUnconfirmed) ? (
         <div className="flex flex-col gap-[9px] border-t border-rule-mid px-[18px] py-[14px]">
-          <p className="text-note leading-5 text-accent-dark">
-            Sheet 02 is sizing against {formatValue(carried)} lbf, not the{" "}
-            {formatValue(primaryValue)} lbf solved here.
-          </p>
+          {diverged ? (
+            <p className="text-note leading-5 text-accent-dark">
+              Sheet 02 is sizing against {formatValue(carried)} lbf, not the{" "}
+              {formatValue(primaryValue)} lbf solved here.
+            </p>
+          ) : null}
           <button
             className="border border-accent bg-accent px-3 py-[8px] font-mono text-[10.5px] font-medium tracking-band text-white transition-colors hover:bg-accent-dark"
             onClick={() => {
@@ -145,6 +179,15 @@ export default function VariantsRail(props: Props) {
                 setEmptyWeightFraction(emptyFraction);
               }
               if (fuel !== undefined) setFuelFraction(fuel);
+              if (props.data.cruiseFraction !== undefined) {
+                setCruiseFraction(props.data.cruiseFraction);
+              }
+              if (props.mission) {
+                setDesignRange(props.mission.designRangeKm);
+                setPassengerCount(props.mission.passengerCount);
+                setPilotCount(props.mission.pilotCount);
+                setCruisePropEfficiency(props.mission.propEfficiencyCruise);
+              }
               setCommitted((current) => ({ ...current, mtow: true }));
             }}
             type="button"
