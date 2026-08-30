@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "The smallest set the window needs. No shell, process or filesystem access: those arrive with the commands that need them, one permission at a time.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}
