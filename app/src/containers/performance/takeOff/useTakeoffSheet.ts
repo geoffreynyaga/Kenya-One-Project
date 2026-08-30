@@ -26,6 +26,7 @@ import {
   wingAreaM2Atom,
 } from "../../../domain/atoms";
 import { SEA_LEVEL_DENSITY_SLUG_FT3 } from "../../../domain/constants";
+import { QUANTITY_OWNERS, STAGE_LABELS } from "../../../domain/stages";
 import { usePersistentState } from "../../../hooks/usePersistentState";
 import {
   estimatePropellerDiameter,
@@ -190,16 +191,18 @@ export function useTakeoffSheet(): TakeoffSheet {
         ["vmaxKnots", "Maximum speed"],
         ["cruiseSpeedKnots", "Cruise speed"],
         ["propEfficiencyCruise", "Cruise propeller efficiency"],
+        ["propEfficiencyTakeoff", "Propeller efficiency on the run"],
         ["engineCount", "Engine count"],
         ["oswaldEfficiency", "Span efficiency"],
         ["cd0", "Minimum drag coefficient"],
         ["rollingFriction", "Rolling friction"],
         ["takeoffGearDrag", "Take-off gear drag"],
-      ] as const).flatMap(([key, label]) =>
-        sharedNumericQuantity(quantityStatuses, key, 0).status === "confirmed"
-          ? []
-          : [`Confirm ${label} in its owning stage`]
-      ),
+      ] as const).flatMap(([key, label]) => {
+        if (sharedNumericQuantity(quantityStatuses, key, 0).status === "confirmed")
+          return [];
+        const owner = QUANTITY_OWNERS[key];
+        return [`Confirm ${label} in ${STAGE_LABELS[owner]}`];
+      }),
     ],
     entryText: (field) => {
       if (drafts[field] !== undefined) return drafts[field] ?? "";

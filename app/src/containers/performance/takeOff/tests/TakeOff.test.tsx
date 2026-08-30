@@ -127,6 +127,21 @@ describe("TakeOff", () => {
     ).toHaveAttribute("aria-invalid", "true");
   });
 
+  it("sends the reader to the stage that owns each missing quantity", () => {
+    renderFreshTakeoff();
+
+    // The run efficiency is carried from Sref and starts unresolved, so the
+    // sheet has to name it and say where it is entered. Naming Take-off, where
+    // the row is read-only, is what sent readers looking on the wrong sheet.
+    expect(
+      screen.getByText("Confirm Propeller efficiency on the run in SREF & POWER")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("Confirm Maximum take-off weight in MTOW & WEIGHTS")
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/in its owning stage/)).toBeNull();
+  });
+
   it("marks unresolved carried inputs as provisional", () => {
     renderFreshTakeoff();
 
