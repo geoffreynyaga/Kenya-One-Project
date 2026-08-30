@@ -27,7 +27,7 @@ export const takeoffInputsSchema = z
     maxSpeedKcas: positive("Maximum speed"),
     propEfficiencyCruise: efficiency("Cruise propeller efficiency"),
     propEfficiencyMax: efficiency("Maximum-speed propeller efficiency"),
-    propEfficiencyTakeoff: efficiency("Take-off propeller efficiency"),
+    propEfficiencyTakeoff: efficiency("Propeller efficiency on the run"),
     propEfficiencyRapid: efficiency("Rapid-estimate propeller efficiency"),
     obstacleHeightFt: positive("Obstacle height"),
     engineCount: positive("Engine count").int(

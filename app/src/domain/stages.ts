@@ -32,3 +32,28 @@ export const SINK_STAGES: readonly Stage[] = [
   "performance",
   "wingStructural",
 ];
+
+// Where a shared quantity is entered, so a sheet blocked on one can say which
+// stage to open rather than only that an owner exists somewhere. This lists
+// the quantities Take-off guards; extend it as each other sheet's owners are
+// checked against that stage's own field list, because naming the wrong stage
+// is worse than naming none.
+//
+// `cd0` and `oswaldEfficiency` sit in design loops that Drag and Wing &
+// Airfoil will eventually close, but Sref is where a reader changes them
+// today, which is what this map answers.
+export const QUANTITY_OWNERS: Record<string, Stage> = {
+  mtowLb: "mtow",
+  aspectRatio: "sref",
+  cd0: "sref",
+  clMax: "sref",
+  cruiseSpeedKnots: "sref",
+  engineCount: "sref",
+  oswaldEfficiency: "sref",
+  propEfficiencyCruise: "sref",
+  propEfficiencyTakeoff: "sref",
+  rollingFriction: "sref",
+  stallSpeedKcas: "sref",
+  takeoffGearDrag: "sref",
+  vmaxKnots: "sref",
+};
