@@ -125,3 +125,6 @@ backlog.md
 
 # Excel lock files
 ~$*
+
+# JS dependencies, restored with `bun install`
+node_modules/

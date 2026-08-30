@@ -97,7 +97,7 @@ a) Install python packages
 b) Install npm packages
 
 ```bash
-cd Frontend-Electron
+cd app
 
 npm install
 ```
@@ -114,7 +114,7 @@ npm install
 │   ├── jupyter
 │   ├── machine_learning
 │   └── weissinger
-├── Frontend-Electron #GUI
+├── app #GUI
 │   ├── node_modules
 │   ├── public
 │   └── src
@@ -146,7 +146,7 @@ b) `create superuser`
 6. Running the app
 
 ```bash
-cd Frontend-Electron
+cd app
 
 npm run electron-dev
 ```
@@ -169,7 +169,7 @@ The testing results will be displayed and there will also be a `htmlcov` folder 
 .
 ├── CORE
 │   ├── API
-├── Frontend-Electron
+├── app
 ├── Kenya_One
 ├── accounts
 ├── docs #documentation
