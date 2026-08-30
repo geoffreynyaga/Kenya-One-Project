@@ -12,7 +12,6 @@
     "@types/node": "^20.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "electron-is-dev": "^1.1.0",
     "jotai": "^2.20.3",
     "plotly.js-basic-dist": "^4",
     "prop-types": "^15.8.1",
@@ -20,7 +19,6 @@
     "react-dom": "^19.0.0",
     "react-plotly.js": "^2.4.0",
     "react-router-dom": "^7",
-    "request-promise": "^4.2.5",
     "zod": "^4.5.4"
   },
   "scripts": {
@@ -31,12 +29,10 @@
     "test:run": "vitest run",
     "lint": "eslint src",
     "typecheck": "tsc --noEmit",
-    "electron-dev": "concurrently \"bun run start\" \"wait-on http://localhost:3000 && electron .\"",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
   },
-  "main": "public/electron.js",
   "browserslist": {
     "production": [
       ">0.2%",
@@ -54,9 +50,6 @@
     "@tauri-apps/cli": "^2.11.4",
     "@vitejs/plugin-react": "^6.1.0",
     "autoprefixer": "^10.5.4",
-    "concurrently": "^5.0.2",
-    "electron": "^44.0.0",
-    "electron-builder": "^21.2.0",
     "eslint": "^10",
     "eslint-plugin-jsx-a11y": "^6",
     "eslint-plugin-react": "^7",
@@ -68,7 +61,6 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8",
     "vite": "^8.2.2",
-    "vitest": "^4.1.11",
-    "wait-on": "^3.3.0"
+    "vitest": "^4.1.11"
   }
 }

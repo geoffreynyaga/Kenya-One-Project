@@ -9,7 +9,7 @@
 
 [Online Demo](https://kenya-one.netlify.com/)
 
-> This is an opensource project (implemented in a python/Django backend and an Electron Frontend for GUI) that was conceived in the `Aerospace Department at the Technical University of Kenya`. This project was initially used for the conceptual and detailed design of the aircraft shown below.
+> This is an opensource project (implemented in a python/Django backend and a React GUI in a Tauri desktop shell) that was conceived in the `Aerospace Department at the Technical University of Kenya`. This project was initially used for the conceptual and detailed design of the aircraft shown below.
 
 <div style="text-align:center"><img src="https://d2t1xqejof9utc.cloudfront.net/screenshots/pics/142095da28472cc6409d4e2ec85673cc/large.jpg" alt="drawing" height="200"  padding="200px"/>
 </div>
@@ -44,8 +44,9 @@ However, now it is being modified to be used for other types of General Aviation
 
 ### Work in progress
 
-- [❌] Integrating Electron Framework to build GUI for Windows, MacOS and Linux environments
-- [❌] Sharing the React Code with Electron and Web frontend.
+- [✔️] Tauri shell to build the GUI for Windows, MacOS and Linux environments
+- [❌] Bundling the calculations as a worker, so the app needs no server
+- [❌] Local `.kenyaone` project files, so a design is portable
 - [❌] Django backend to store the data.
 - [❌] Deploy the backend so that values can be synce across devices.
 
@@ -145,11 +146,23 @@ b) `create superuser`
 
 6. Running the app
 
+The desktop shell is Tauri, so you also need Rust 1.85 or newer
+(`rustup update stable`). Start the backend in one terminal:
+
+```bash
+python manage.py runserver
+```
+
+and the app in another:
+
 ```bash
 cd app
 
-npm run electron-dev
+bun run tauri:dev
 ```
+
+The calculations still reach Django over HTTP while the bundled worker is
+being built, so the backend has to be running.
 
 ## Testing 🧪🧪
 
