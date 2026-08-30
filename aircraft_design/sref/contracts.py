@@ -62,7 +62,7 @@ class WeightsAndCruise:
     design_weight_lb: float = 5850.0
     taxi_fraction: float = 0.98
     climb_fraction: float = 0.97
-    cruise_weight_ratio: float = 0.8560332551941533
+    cruise_fraction: float = 0.9247094817834837
     cruise_speed_knots: float = 140.0
 
 

@@ -1,5 +1,6 @@
 import { range, rangeWarnings } from "../rangeCompute";
 import {
+  ENGINEERING_INPUTS,
   WORKBOOK_INPUTS,
   WORKBOOK_TYPED_FLIGHT_TEST as TYPED,
 } from "./fixture";
@@ -26,7 +27,7 @@ const DENSITY_TOLERANCE = 1e-4;
 const CONVERSION_TOLERANCE = 1e-4;
 
 describe("rangeCompute parity with the range and endurance sheet", () => {
-  const result = range(WORKBOOK_INPUTS);
+  const result = range(WORKBOOK_INPUTS, { mode: "workbook" });
 
   it("sets the cruise condition on B2:B4", () => {
     expect(close(result.cruiseSpeedFps, 236.32)).toBe(true);
@@ -227,7 +228,11 @@ describe("a different aeroplane", () => {
 
 describe("rangeWarnings", () => {
   const inputs = WORKBOOK_INPUTS;
-  const warnings = rangeWarnings(inputs, range(inputs));
+  const warnings = rangeWarnings(
+    inputs,
+    range(inputs, { mode: "workbook" }),
+    { mode: "workbook" }
+  );
   const keys = warnings.map((warning) => warning.key);
 
   it("names the double-counted mission fractions", () => {
@@ -250,5 +255,42 @@ describe("rangeWarnings", () => {
     warnings.forEach((warning) =>
       expect(warning.message).not.toMatch(/\b[A-Z]{1,2}\d{1,3}\b/)
     );
+  });
+});
+
+describe("engineering mission integration", () => {
+  const result = range(ENGINEERING_INPUTS);
+
+  it("applies the cruise-only Breguet fraction once", () => {
+    expect(result.finalWeightLb).toBeCloseTo(
+      result.initialWeightLb * ENGINEERING_INPUTS.cruiseFraction,
+      10
+    );
+  });
+
+  it("derives the speed sweep from the level-flight power boundary", () => {
+    const last = result.rangeBySpeed.at(-1)!;
+    expect(last.speedKtas).toBeGreaterThan(ENGINEERING_INPUTS.cruiseSpeedKtas);
+    expect(last.speedKtas).not.toBeCloseTo(
+      ENGINEERING_INPUTS.cruiseSpeedKtas * 1.35,
+      4
+    );
+  });
+
+  it("checks the calculated cruise against the design requirement", () => {
+    const keys = rangeWarnings(ENGINEERING_INPUTS, result).map(
+      (warning) => warning.key
+    );
+    expect(keys).toContain("design-range-check");
+    expect(keys).not.toContain("mission-fraction-double-counted");
+  });
+
+  it("returns an explicit no-solution error when cruise power cannot hold height", () => {
+    expect(() =>
+      range({
+        ...ENGINEERING_INPUTS,
+        maxRatedPowerBhp: 20,
+      })
+    ).toThrow(/No level-flight speed range exists/);
   });
 });

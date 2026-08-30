@@ -1,146 +1,263 @@
 /**
- * Bridges the landing sheet to the shared design quantities.
+ * Bridges Landing to the shared design graph.
  *
- * What landing decides for itself is the runway it is stopping on, the path it
- * is flown down, and the obstacle it has to clear. The weight, the wing and
- * the propeller belong upstream.
- *
- * Idle shaft power and idle propeller efficiency start empty rather than at a
- * number, because there is no neutral value for them: a hundred horsepower at
- * idle is a fifth of a light twin's rated power and more than half a trainer's,
- * and left standing it pushes harder than the brakes hold. Empty means the
- * braking thrust is taken as a fraction of static thrust instead.
+ * Landing owns the runway, approach path and temporary landing-configuration
+ * coefficients. The configuration starts from visible provisional upstream
+ * seeds, but no result is calculated until the user confirms or replaces all
+ * three. Landing weight and stall speed remain derived consequences.
  */
 
 import { useAtomValue } from "jotai";
-import { useMemo } from "react";
+import { useState } from "react";
 
 import {
   approachSpeedRatioAtom,
   cdTakeoffAtom,
   clMaxAtom,
-  cruiseWeightRatioAtom,
+  committedStagesAtom,
+  fuelFractionAtom,
   hubDiameterRatioAtom,
   installedPowerBhpAtom,
   mtowLbAtom,
   propellerDiameterFtAtom,
+  quantityStatusesAtom,
+  QuantityStatus,
   SelectedEngine,
   selectedEngineAtom,
+  sharedNumericQuantity,
   takeoffLiftCoefficientAtom,
   wingAreaFt2Atom,
 } from "../../../domain/atoms";
 import { usePersistentState } from "../../../hooks/usePersistentState";
 import { landingStallSpeedKcas, landingWeightLb } from "./landingCompute";
+import {
+  landingEntryError,
+  LandingRequiredEntry,
+  optionalLandingEntryError,
+} from "./landingSchema";
 import { LandingInputs } from "./utils";
 
-/** The runway and the path down to it. */
 export type RunwayField =
-  "brakingFriction" | "approachAngleDeg" | "obstacleHeightFt";
-
-/** What the propeller is doing at idle, when anyone knows. */
+  | "brakingFriction"
+  | "approachAngleDeg"
+  | "obstacleHeightFt";
+export type ConfigurationField =
+  | "clMaxLanding"
+  | "landingLiftCoefficient"
+  | "landingDragCoefficient";
 export type IdleField = "idlePropEfficiency" | "idlePowerBhp";
+export type EntryField = RunwayField | ConfigurationField | IdleField;
+type RequiredField = RunwayField | ConfigurationField;
 
-export type EntryField = RunwayField | IdleField;
-
-const RUNWAY_DEFAULTS: Record<RunwayField, number> = {
-  brakingFriction: 0.3,
-  approachAngleDeg: 3,
-  obstacleHeightFt: 50,
+const REQUIRED_DEFAULTS: Record<RequiredField, number | null> = {
+  brakingFriction: null,
+  approachAngleDeg: null,
+  obstacleHeightFt: null,
+  clMaxLanding: null,
+  landingLiftCoefficient: null,
+  landingDragCoefficient: null,
 };
-
 const IDLE_DEFAULTS: Record<IdleField, number | null> = {
   idlePropEfficiency: null,
   idlePowerBhp: null,
 };
-
 const SECTION_DEFAULTS = {
   runway: true,
+  configuration: true,
   idle: false,
   carried: false,
 };
 
 export type SectionKey = keyof typeof SECTION_DEFAULTS;
 
-const RUNWAY_KEY = "kenya-one:landing:runway:v1";
+const REQUIRED_KEY = "kenya-one:landing:required:v2";
 const IDLE_KEY = "kenya-one:landing:idle:v1";
-const SECTIONS_KEY = "kenya-one:landing:sections:v1";
+const SECTIONS_KEY = "kenya-one:landing:sections:v2";
+
+const CONFIGURATION_FIELDS: ConfigurationField[] = [
+  "clMaxLanding",
+  "landingLiftCoefficient",
+  "landingDragCoefficient",
+];
+const IDLE_FIELDS: IdleField[] = ["idlePropEfficiency", "idlePowerBhp"];
 
 export interface LandingSheet {
   inputs: LandingInputs;
   engine: SelectedEngine | null;
-  setEntry: (field: EntryField, value: number | null) => void;
+  unresolvedUpstream: string[];
+  quantityStatus: (key: string) => QuantityStatus;
+  entryText: (field: EntryField) => string;
+  entryError: (field: EntryField) => string | null;
+  entryStatus: (field: EntryField) => QuantityStatus | null;
+  setEntry: (field: EntryField, raw: string) => void;
   openSections: Record<SectionKey, boolean>;
   toggleSection: (key: SectionKey, open: boolean) => void;
   reset: () => void;
 }
 
-const IDLE_FIELDS: IdleField[] = ["idlePropEfficiency", "idlePowerBhp"];
-
 export function useLandingSheet(): LandingSheet {
   const mtowLb = useAtomValue(mtowLbAtom);
+  const fuelFraction = useAtomValue(fuelFractionAtom);
   const approachSpeedRatio = useAtomValue(approachSpeedRatioAtom);
-  const cruiseWeightRatio = useAtomValue(cruiseWeightRatioAtom);
   const wingAreaFt2 = useAtomValue(wingAreaFt2Atom);
-  const clMax = useAtomValue(clMaxAtom);
-  const landingLiftCoefficient = useAtomValue(takeoffLiftCoefficientAtom);
-  const landingDragCoefficient = useAtomValue(cdTakeoffAtom);
+  const cleanClMax = useAtomValue(clMaxAtom);
+  const takeoffLiftCoefficient = useAtomValue(takeoffLiftCoefficientAtom);
+  const takeoffDragCoefficient = useAtomValue(cdTakeoffAtom);
   const propellerDiameterFt = useAtomValue(propellerDiameterFtAtom);
   const hubDiameterRatio = useAtomValue(hubDiameterRatioAtom);
   const maxRatedPowerBhp = useAtomValue(installedPowerBhpAtom);
   const engine = useAtomValue(selectedEngineAtom);
+  const committedStages = useAtomValue(committedStagesAtom);
+  const quantityStatuses = useAtomValue(quantityStatusesAtom);
 
-  const [runway, setRunway, resetRunway] = usePersistentState<
-    Record<RunwayField, number>
-  >(RUNWAY_KEY, RUNWAY_DEFAULTS);
+  const [required, setRequired, resetRequired] = usePersistentState<
+    Record<RequiredField, number | null>
+  >(REQUIRED_KEY, REQUIRED_DEFAULTS);
   const [idle, setIdle, resetIdle] = usePersistentState<
     Record<IdleField, number | null>
   >(IDLE_KEY, IDLE_DEFAULTS);
   const [openSections, setOpenSections, resetSections] = usePersistentState<
     Record<SectionKey, boolean>
   >(SECTIONS_KEY, SECTION_DEFAULTS);
+  const [drafts, setDrafts] = useState<Partial<Record<EntryField, string>>>({});
 
-  const inputs = useMemo<LandingInputs>(() => {
-    const weight = landingWeightLb(mtowLb, cruiseWeightRatio);
-    return {
-      ...runway,
-      ...idle,
-      mtowLb,
-      cruiseWeightRatio,
-      approachSpeedRatio,
-      stallSpeedLandingKcas: landingStallSpeedKcas(weight, wingAreaFt2, clMax),
-      landingLiftCoefficient,
-      landingDragCoefficient,
-      wingAreaFt2,
-      clMax,
-      propellerDiameterFt,
-      hubDiameterRatio,
-      maxRatedPowerBhp,
-    };
-  }, [
-    runway,
-    idle,
+  const configurationSeeds: Record<ConfigurationField, number> = {
+    clMaxLanding: cleanClMax,
+    landingLiftCoefficient: takeoffLiftCoefficient,
+    landingDragCoefficient: takeoffDragCoefficient,
+  };
+  const resolvedRequired = (field: RequiredField) =>
+    required[field] ??
+    (CONFIGURATION_FIELDS.includes(field as ConfigurationField)
+      ? configurationSeeds[field as ConfigurationField]
+      : Number.NaN);
+
+  const clMaxLanding = resolvedRequired("clMaxLanding");
+  const weight = landingWeightLb(mtowLb, fuelFraction);
+  const inputs: LandingInputs = {
     mtowLb,
+    fuelFraction,
+    brakingFriction: resolvedRequired("brakingFriction"),
+    approachAngleDeg: resolvedRequired("approachAngleDeg"),
+    obstacleHeightFt: resolvedRequired("obstacleHeightFt"),
+    ...idle,
     approachSpeedRatio,
-    cruiseWeightRatio,
+    stallSpeedLandingKcas: landingStallSpeedKcas(
+      weight,
+      wingAreaFt2,
+      clMaxLanding
+    ),
+    landingLiftCoefficient: resolvedRequired("landingLiftCoefficient"),
+    landingDragCoefficient: resolvedRequired("landingDragCoefficient"),
     wingAreaFt2,
-    clMax,
-    landingLiftCoefficient,
-    landingDragCoefficient,
+    clMaxLanding,
     propellerDiameterFt,
     hubDiameterRatio,
     maxRatedPowerBhp,
-  ]);
+  };
+
+  const entryText = (field: EntryField) => {
+    if (drafts[field] !== undefined) return drafts[field] ?? "";
+    if (IDLE_FIELDS.includes(field as IdleField)) {
+      return idle[field as IdleField]?.toString() ?? "";
+    }
+    const value = required[field as RequiredField];
+    if (value !== null) return String(value);
+    return CONFIGURATION_FIELDS.includes(field as ConfigurationField)
+      ? String(configurationSeeds[field as ConfigurationField])
+      : "";
+  };
+
+  const individualEntryError = (field: EntryField) => {
+    const raw = entryText(field);
+    if (IDLE_FIELDS.includes(field as IdleField)) {
+      return optionalLandingEntryError(field as IdleField, raw);
+    }
+    const validation = landingEntryError(field as LandingRequiredEntry, raw);
+    if (validation) return validation;
+    if (
+      CONFIGURATION_FIELDS.includes(field as ConfigurationField) &&
+      required[field as RequiredField] === null
+    ) {
+      return "Confirm or replace this provisional value.";
+    }
+    return null;
+  };
+
+  const entryError = (field: EntryField) => {
+    const individual = individualEntryError(field);
+    if (individual) return individual;
+    if (IDLE_FIELDS.includes(field as IdleField)) {
+      const partner: IdleField =
+        field === "idlePowerBhp" ? "idlePropEfficiency" : "idlePowerBhp";
+      if ((entryText(field) === "") !== (entryText(partner) === "")) {
+        return "Enter both idle values, or leave both empty.";
+      }
+    }
+    return null;
+  };
+
+  const requiredShared = [
+    ["mtowLb", "maximum take-off weight"],
+    ["fuelFraction", "mission fuel fraction"],
+    ["approachSpeedRatio", "approach speed ratio"],
+    ["propellerDiameterFt", "propeller diameter"],
+    ["hubDiameterRatio", "spinner ratio"],
+  ] as const;
 
   return {
     inputs,
     engine,
-    setEntry: (field, value) => {
+    unresolvedUpstream: [
+      ...(!committedStages.mtow ? ["Confirm MTOW & WEIGHTS"] : []),
+      ...(!committedStages.sref ? ["Confirm SREF & POWER"] : []),
+      ...(engine === null ? ["Select an engine in SREF & POWER"] : []),
+      ...requiredShared.flatMap(([key, label]) =>
+        sharedNumericQuantity(quantityStatuses, key, 0).status === "confirmed"
+          ? []
+          : [`Confirm ${label} in its owning stage`]
+      ),
+    ],
+    quantityStatus: (key) => {
+      if (key === "installedPowerBhp") {
+        return engine === null ? "unresolved" : "confirmed";
+      }
+      if (key === "wingArea") {
+        return committedStages.sref ? "confirmed" : "unresolved";
+      }
+      return sharedNumericQuantity(quantityStatuses, key, 0).status;
+    },
+    entryText,
+    entryError,
+    entryStatus: (field) => {
       if (IDLE_FIELDS.includes(field as IdleField)) {
-        setIdle((current) => ({ ...current, [field]: value }));
+        return entryText(field) === "" ? null : "confirmed";
+      }
+      if (CONFIGURATION_FIELDS.includes(field as ConfigurationField)) {
+        return required[field as RequiredField] === null
+          ? "provisional"
+          : "confirmed";
+      }
+      return required[field as RequiredField] === null
+        ? "unresolved"
+        : "confirmed";
+    },
+    setEntry: (field, raw) => {
+      setDrafts((current) => ({ ...current, [field]: raw }));
+      if (IDLE_FIELDS.includes(field as IdleField)) {
+        if (optionalLandingEntryError(field as IdleField, raw)) return;
+        setIdle((current) => ({
+          ...current,
+          [field]: raw.trim() === "" ? null : Number(raw),
+        }));
         return;
       }
-      if (value === null) return;
-      setRunway((current) => ({ ...current, [field]: value }));
+      if (raw.trim() === "") {
+        setRequired((current) => ({ ...current, [field]: null }));
+        return;
+      }
+      if (landingEntryError(field as LandingRequiredEntry, raw)) return;
+      setRequired((current) => ({ ...current, [field]: Number(raw) }));
     },
     openSections,
     toggleSection: (key, open) =>
@@ -148,9 +265,10 @@ export function useLandingSheet(): LandingSheet {
         current[key] === open ? current : { ...current, [key]: open }
       ),
     reset: () => {
-      resetRunway();
+      resetRequired();
       resetIdle();
       resetSections();
+      setDrafts({});
     },
   };
 }

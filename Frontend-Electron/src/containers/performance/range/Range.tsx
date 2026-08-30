@@ -4,14 +4,22 @@
  * and what each mile costs in fuel.
  */
 import { ReactNode, useMemo } from "react";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
 import { Hint, HintSpec } from "../../../components/sheet/Hint";
+import { FigureExplainer } from "../../../components/sheet/FigureExplainer";
 import { InputSection } from "../../../components/sheet/InputSection";
 import { ValueRow } from "../../../components/sheet/ValueRow";
 import tokens from "../../../design-tokens";
 import { range, rangeWarnings } from "./rangeCompute";
+import { rangeInputIssues } from "./rangeSchema";
 import { useRangeSheet } from "./useRangeSheet";
 import { Distance, RangeMethodKey } from "./utils";
 
@@ -28,6 +36,80 @@ const nf = (value: number, digits = 2) => {
 
 const q = (value: number, unit: string, digits = 0) =>
   Number.isFinite(value) ? `${nf(value, digits)} ${unit}` : "—";
+
+interface DisplayColumn {
+  id: string;
+  header: ReactNode;
+  align?: "left" | "right";
+}
+
+interface DisplayRow {
+  id: string;
+  cells: Record<string, ReactNode>;
+  className?: string;
+}
+
+function DataTable({
+  columns,
+  rows,
+  compact = false,
+}: {
+  columns: DisplayColumn[];
+  rows: DisplayRow[];
+  compact?: boolean;
+}) {
+  const definitions = useMemo<ColumnDef<DisplayRow>[]>(
+    () =>
+      columns.map((column) => ({
+        id: column.id,
+        header: () => column.header,
+        cell: ({ row }) => row.original.cells[column.id],
+      })),
+    [columns]
+  );
+  const table = useReactTable({
+    columns: definitions,
+    data: rows,
+    getCoreRowModel: getCoreRowModel(),
+    getRowId: (row) => row.id,
+  });
+
+  return (
+    <table className="w-full border-collapse text-right font-mono text-note">
+      <thead>
+        {table.getHeaderGroups().map((headerGroup) => (
+          <tr
+            className="text-label tracking-label text-ink-label"
+            key={headerGroup.id}
+          >
+            {headerGroup.headers.map((header, index) => (
+              <th
+                className={`${index === 0 ? "text-left" : "text-right"} px-4 py-2 font-medium`}
+                key={header.id}
+              >
+                {flexRender(header.column.columnDef.header, header.getContext())}
+              </th>
+            ))}
+          </tr>
+        ))}
+      </thead>
+      <tbody className="text-ink-body">
+        {table.getRowModel().rows.map((row) => (
+          <tr className={row.original.className} key={row.id}>
+            {row.getVisibleCells().map((cell, index) => (
+              <td
+                className={`${index === 0 ? "text-left text-ink" : "text-right"} border-t ${compact ? "border-rule-hair px-3 py-[5px]" : "border-rule-hair px-4 py-[7px]"}`}
+                key={cell.id}
+              >
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
 
 const axis = (text: string) => ({
   title: { text },
@@ -50,27 +132,27 @@ const figureLayout = (x: string, y: string, left = 62) => ({
 
 function Figure({
   title,
-  caption,
+  body,
+  id,
   children,
 }: {
   title: string;
-  caption: string;
+  body: string;
+  id: string;
   children: ReactNode;
 }) {
   return (
     <figure className="m-0 border border-rule-mid bg-field">
-      <figcaption className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
-        {title}
+      <figcaption>
+        <FigureExplainer body={body} id={id} label={title} />
       </figcaption>
       <div className="p-3">{children}</div>
-      <p className="border-t border-rule-hair px-4 py-3 font-mono text-meta leading-[1.6] text-ink-muted">
-        {caption}
-      </p>
     </figure>
   );
 }
 
 interface CarriedSpec extends HintSpec {
+  key: string;
   value: number;
   unit?: string;
   digits?: number;
@@ -113,14 +195,29 @@ export default function Range() {
   const sheet = useRangeSheet();
   const { inputs } = sheet;
 
-  const result = useMemo(() => range(inputs), [inputs]);
+  const issues = useMemo(() => rangeInputIssues(inputs), [inputs]);
+  const computation = useMemo(() => {
+    if (sheet.unresolvedUpstream.length > 0 || issues.length > 0) {
+      return { result: null, error: null };
+    }
+    try {
+      return { result: range(inputs), error: null };
+    } catch (error) {
+      return {
+        result: null,
+        error: error instanceof Error ? error.message : "No range solution exists.",
+      };
+    }
+  }, [inputs, issues, sheet.unresolvedUpstream]);
+  const { result } = computation;
   const warnings = useMemo(
-    () => rangeWarnings(inputs, result),
+    () => (result ? rangeWarnings(inputs, result) : []),
     [inputs, result]
   );
 
   const carried: CarriedSpec[] = [
     {
+      key: "cruiseSpeedKnots",
       label: "Cruise speed",
       unit: "kt",
       value: inputs.cruiseSpeedKtas,
@@ -130,6 +227,7 @@ export default function Range() {
       body: "The speed the design cruises at. Three of the four ranges are flown at it.",
     },
     {
+      key: "cruiseAltitudeFt",
       label: "Cruise altitude",
       unit: "ft",
       value: inputs.cruiseAltitudeFt,
@@ -139,15 +237,7 @@ export default function Range() {
       body: "Sets the density every lift coefficient here is worked at.",
     },
     {
-      label: "SFC",
-      unit: "lb/bhp/h",
-      value: inputs.cruiseSfc,
-      digits: 3,
-      cell: "B3",
-      origin: "SHEET 01",
-      body: "What the engine burns per horsepower per hour. Range is inversely proportional to it.",
-    },
-    {
+      key: "propEfficiencyCruise",
       label: "ηp in the cruise",
       value: inputs.propEfficiencyCruise,
       digits: 3,
@@ -156,6 +246,7 @@ export default function Range() {
       body: "Propeller efficiency at cruise speed. It converts the engine's fuel-per-horsepower into fuel-per-pound-of-thrust, which is what the range integrals are written against.",
     },
     {
+      key: "cruisePowerFraction",
       label: "Cruise power",
       unit: "%",
       value: 100 * inputs.cruisePowerFraction,
@@ -165,6 +256,7 @@ export default function Range() {
       body: "Fraction of rated power held in the cruise. It sets the fuel flow, which is what the rough time check is built on.",
     },
     {
+      key: "installedPowerBhp",
       label: "Installed power",
       unit: "bhp",
       value: inputs.maxRatedPowerBhp,
@@ -176,6 +268,7 @@ export default function Range() {
         : "No engine has been selected on Sheet 02 yet, so the power the sizing curves asked for is standing in for it.",
     },
     {
+      key: "mtowLb",
       label: "Design weight",
       unit: "lb",
       value: inputs.mtowLb,
@@ -185,6 +278,7 @@ export default function Range() {
       body: "Maximum take-off weight. The cruise weights below are what is left of it once taxi and the climb are paid for.",
     },
     {
+      key: "wingArea",
       label: "Wing area",
       unit: "ft²",
       value: inputs.wingAreaFt2,
@@ -194,6 +288,7 @@ export default function Range() {
       body: "Reference area. With the weight it fixes the lift coefficient the cruise is flown at.",
     },
     {
+      key: "cd0",
       label: "CD min",
       value: inputs.cdMin,
       digits: 5,
@@ -202,6 +297,7 @@ export default function Range() {
       body: "Parasite drag, clean. With k it sets the best lift-to-drag the airframe can reach.",
     },
     {
+      key: "inducedDragFactor",
       label: "k",
       value: inputs.inducedDragFactor,
       digits: 5,
@@ -210,6 +306,7 @@ export default function Range() {
       body: "Induced drag factor.",
     },
     {
+      key: "clMax",
       label: "CL max",
       value: inputs.clMax,
       digits: 2,
@@ -218,6 +315,7 @@ export default function Range() {
       body: "Maximum lift coefficient. It bounds the polar plotted below and the slow end of the speed sweep.",
     },
     {
+      key: "taxiFraction",
       label: "Taxi fraction",
       value: inputs.taxiFraction,
       digits: 3,
@@ -226,6 +324,7 @@ export default function Range() {
       body: "Weight left after start, taxi and take-off.",
     },
     {
+      key: "climbFraction",
       label: "Climb fraction",
       value: inputs.climbFraction,
       digits: 3,
@@ -234,14 +333,16 @@ export default function Range() {
       body: "Weight left after the climb to cruise altitude.",
     },
     {
-      label: "Mission fraction",
-      value: inputs.cruiseWeightRatio,
+      key: "cruiseFraction",
+      label: "Cruise fraction",
+      value: inputs.cruiseFraction,
       digits: 4,
-      cell: "MTOW!B28",
+      cell: "MTOW!B23",
       origin: "SHEET 01",
-      body: "Weight left at the end of the whole mission, taxi through landing. The end-of-cruise weight is taken off it, which is where taxi and climb come to be counted twice.",
+      body: "Weight left after the cruise segment alone, derived during mission sizing from the selected design range.",
     },
     {
+      key: "passengerCount",
       label: "Passengers",
       value: inputs.passengerCount,
       digits: 0,
@@ -249,12 +350,22 @@ export default function Range() {
       origin: "SHEET 01",
       body: "How many people the aeroplane carries. Efficiency is measured in passenger-miles per pound of fuel, so it scales with this.",
     },
+    {
+      key: "designRangeKm",
+      label: "Design range",
+      unit: "km",
+      value: inputs.designRangeKm,
+      digits: 0,
+      cell: "MTOW!B8",
+      origin: "SHEET 01",
+      body: "Mission range selected during weight sizing. The calculated cruise range is checked against it below.",
+    },
   ];
 
   const carriedRow = (spec: CarriedSpec) => (
     <div
       className="flex items-baseline gap-2 py-[5px] pl-[16px] pr-[18px] shadow-carried"
-      key={spec.label}
+      key={spec.key}
     >
       <span className="min-w-0 flex-1 truncate text-note text-ink-body">
         {spec.label}
@@ -264,12 +375,129 @@ export default function Range() {
           </span>
         ) : null}
       </span>
-      <Hint inputId={`rg-carried-${spec.cell}`} spec={spec} />
-      <span className="w-[104px] shrink-0 text-right font-mono text-value text-ink-muted">
-        {nf(spec.value, spec.digits ?? 4)}
+      <Hint inputId={`rg-carried-${spec.key}`} spec={spec} />
+      <span
+        className={`w-[104px] shrink-0 text-right font-mono ${
+          sheet.quantityStatus(spec.key) === "confirmed"
+            ? "text-value text-ink-muted"
+            : "text-tag tracking-band text-accent"
+        }`}
+      >
+        {sheet.quantityStatus(spec.key) === "confirmed"
+          ? nf(spec.value, spec.digits ?? 4)
+          : sheet.quantityStatus(spec.key).toUpperCase()}
       </span>
     </div>
   );
+
+  const rail = (
+    <>
+      <div className="px-[18px] pb-[11px] pt-[15px] font-mono text-label font-medium tracking-label text-ink-label">
+        RANGE DEFINITION
+      </div>
+      <InputSection
+        count={1}
+        open={sheet.openSections.propulsion}
+        title="ENTRY · PROPULSION"
+        onToggle={(open) => sheet.toggleSection("propulsion", open)}
+      >
+        <label
+          className="flex flex-wrap items-baseline gap-2 px-[18px] py-[5px]"
+          htmlFor="rg-cruiseSfc"
+        >
+          <span className="min-w-0 flex-1 text-note text-ink-body">
+            Cruise SFC
+            <span className="ml-[5px] font-mono text-label text-ink-faint">
+              [lb/bhp/h]
+            </span>
+          </span>
+          <Hint
+            inputId="rg-cruiseSfc"
+            spec={{
+              label: "Cruise specific fuel consumption",
+              body: "Fuel burned per shaft horsepower-hour at the selected cruise condition. This remains an editable provisional propulsion value until an engine performance stage owns it.",
+              cell: "B3",
+              typical: "Use the selected engine's cruise performance data at the chosen power and altitude.",
+            }}
+          />
+          <input
+            aria-invalid={sheet.cruiseSfcError !== null}
+            className={`w-[104px] shrink-0 border-b border-dashed bg-transparent pb-[2px] text-right font-mono text-value outline-none focus:border-solid ${
+              sheet.cruiseSfcError
+                ? "border-accent text-accent"
+                : "border-rule text-ink focus:border-accent"
+            }`}
+            id="rg-cruiseSfc"
+            inputMode="decimal"
+            onChange={(event) => sheet.setCruiseSfc(event.target.value)}
+            value={sheet.cruiseSfcText}
+          />
+          {sheet.cruiseSfcError ? (
+            <span className="w-full text-right font-mono text-tag text-accent">
+              {sheet.cruiseSfcError}
+            </span>
+          ) : null}
+        </label>
+      </InputSection>
+      <InputSection
+        count={carried.length}
+        open={sheet.openSections.carried}
+        title="CARRIED · UPSTREAM"
+        onToggle={(open) => sheet.toggleSection("carried", open)}
+      >
+        {carried.map(carriedRow)}
+      </InputSection>
+      <button
+        className="mt-4 w-full border border-rule bg-panel px-4 py-3 font-mono text-meta tracking-tab text-ink-faint hover:text-ink"
+        onClick={sheet.reset}
+        type="button"
+      >
+        RESET RANGE
+      </button>
+    </>
+  );
+
+  if (result === null) {
+    const blockers = Array.from(
+      new Set([
+        ...sheet.unresolvedUpstream,
+        ...issues.map((issue) => issue.message),
+        ...(sheet.cruiseSfcError ? [`Cruise SFC: ${sheet.cruiseSfcError}`] : []),
+        ...(computation.error ? [computation.error] : []),
+      ])
+    );
+    return (
+      <main className="min-h-0 flex-1 overflow-auto bg-paper font-sans text-ink">
+        <h1 className="sr-only">Range and endurance</h1>
+        <div className="grid border-b border-rule-mid bg-rule-cell sm:grid-cols-4 sm:gap-px">
+          {["BEST RANGE", "AT CRUISE SPEED", "ENDURANCE", "L/D MAX"].map((label) => (
+            <div className="flex flex-col gap-[7px] bg-paper px-[18px] py-[11px]" key={label}>
+              <span className="font-mono text-label tracking-tab text-ink-label">{label}</span>
+              <span className="font-mono text-readout font-medium leading-none text-ink">—</span>
+            </div>
+          ))}
+        </div>
+        <div className="grid min-h-0 xl:grid-cols-[296px_minmax(560px,1fr)]">
+          <form className="bg-panel pb-5 xl:border-r xl:border-rule-mid" onSubmit={(event) => event.preventDefault()}>
+            {rail}
+          </form>
+          <div aria-live="polite" className="min-w-0 px-[22px] pb-8 pt-[18px]">
+            <div className="mb-[14px]">
+              <div className="font-mono text-label tracking-label text-ink-faint">PERFORMANCE 04 / RANGE AND ENDURANCE</div>
+              <h2 className="text-sheet">How far the fuel goes</h2>
+            </div>
+            <section className="border border-accent bg-accent-wash px-4 py-3 text-accent" role="alert">
+              <h3 className="font-mono text-label font-medium tracking-label">CALCULATION UNAVAILABLE</h3>
+              <p className="mt-2 font-mono text-note">Resolve these quantities before Range draws figures:</p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 font-mono text-note">
+                {blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}
+              </ul>
+            </section>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   const summary: Array<[string, string]> = [
     ["BEST RANGE", q(result.ranges.bestLiftToDrag.nm, "nm", 0)],
@@ -410,6 +638,69 @@ export default function Range() {
   const bestMethod = METHODS.reduce((best, method) =>
     result.ranges[method.key].nm > result.ranges[best.key].nm ? method : best
   );
+  const rangeColumns: DisplayColumn[] = [
+    { id: "method", header: "Cruise held at" },
+    { id: "nm", header: <>Range <span className="ml-1 text-ink-faint">[nm]</span></> },
+    { id: "km", header: <span className="text-ink-faint">[km]</span> },
+    { id: "ft", header: <span className="text-ink-faint">[ft]</span> },
+  ];
+  const rangeRows: DisplayRow[] = [
+    ...METHODS.map((method) => {
+      const [nm, km, ft] = distanceCells(result.ranges[method.key]);
+      return {
+        id: method.key,
+        className: method.key === bestMethod.key ? "bg-accent-wash" : "",
+        cells: {
+          method: (
+            <span className="inline-flex items-baseline gap-2">
+              {method.label}
+              <Hint
+                inputId={`rg-method-${method.key}`}
+                spec={{ label: method.label, body: method.body, cell: method.cell }}
+              />
+            </span>
+          ),
+          nm,
+          km,
+          ft,
+        },
+      };
+    }),
+    {
+      id: "sanity",
+      cells: {
+        method: (
+          <span className="inline-flex items-baseline gap-2">
+            Rough check: fuel aboard ÷ fuel flow
+            <Hint
+              inputId="rg-sanity"
+              spec={{
+                label: "Rough check",
+                body: "The cruise speed times how long the fuel lasts at the cruise power setting. It takes no account of the weight coming off as fuel burns, so it should land somewhat short of the integrated ranges — near enough to catch a mistake, not near enough to replace them.",
+                cell: "K5",
+              }}
+            />
+          </span>
+        ),
+        nm: distanceCells(result.sanity.distance)[0],
+        km: distanceCells(result.sanity.distance)[1],
+        ft: distanceCells(result.sanity.distance)[2],
+      },
+    },
+  ];
+  const polarColumns: DisplayColumn[] = [
+    { id: "cl", header: "CL" },
+    { id: "cd", header: "CD" },
+    { id: "ld", header: "L/D" },
+  ];
+  const polarRows: DisplayRow[] = result.polar.map((point) => ({
+    id: String(point.cl),
+    cells: {
+      cl: nf(point.cl, 2),
+      cd: nf(point.cd, 5),
+      ld: nf(point.liftToDrag, 3),
+    },
+  }));
 
   return (
     <main className="min-h-0 flex-1 overflow-auto bg-paper font-sans text-ink">
@@ -438,22 +729,7 @@ export default function Range() {
           className="bg-panel pb-5 xl:border-r xl:border-rule-mid"
           onSubmit={(event) => event.preventDefault()}
         >
-          <div className="px-[18px] pb-[11px] pt-[15px] font-mono text-label font-medium tracking-label text-ink-label">
-            WHAT THE RANGE RESTS ON
-          </div>
-          <p className="px-[18px] pb-3 font-mono text-meta leading-[1.6] text-ink-muted">
-            This sheet decides nothing of its own. Range follows from the
-            cruise, the drag polar and the mission&apos;s weight fractions, so
-            everything below is read from the stage that owns it.
-          </p>
-          <InputSection
-            count={carried.length}
-            open={sheet.openSections.carried}
-            title="CARRIED · UPSTREAM"
-            onToggle={(open) => sheet.toggleSection("carried", open)}
-          >
-            {carried.map(carriedRow)}
-          </InputSection>
+          {rail}
         </form>
 
         <div aria-live="polite" className="min-w-0 px-[22px] pb-8 pt-[18px]">
@@ -466,7 +742,8 @@ export default function Range() {
 
           <div className="grid gap-4 xl:grid-cols-2">
             <Figure
-              caption="Drag rises either side of the lift coefficient where the induced and parasite terms are equal, so lift-to-drag peaks there and falls away on both sides. The negative half is the wing inverted, which is why the ratio changes sign through zero."
+              body="Drag rises either side of the lift coefficient where the induced and parasite terms are equal, so lift-to-drag peaks there and falls away on both sides. The negative half is the wing inverted, which is why the ratio changes sign through zero."
+              id="rg-polar"
               title="DRAG AND LIFT-TO-DRAG · AGAINST CL"
             >
               <Plot
@@ -508,7 +785,8 @@ export default function Range() {
             </Figure>
 
             <Figure
-              caption="Flying faster does not buy range: fuel burnt per foot rises exactly as fast as the feet covered per hour, so what is left is lift-to-drag, and that peaks well below the speed anyone wants to cruise at. The gap between the two marks is what the design pays in fuel to arrive sooner."
+              body="Flying faster does not buy range: fuel burnt per foot rises exactly as fast as the feet covered per hour, so what is left is lift-to-drag. The speed domain ends where available cruise power can no longer hold altitude."
+              id="rg-speed-range"
               title="RANGE · AGAINST CRUISE SPEED"
             >
               <Plot
@@ -560,87 +838,7 @@ export default function Range() {
             <h3 className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
               FOUR WAYS TO FLY THE SAME CRUISE
             </h3>
-            <table className="w-full border-collapse text-left font-mono text-note">
-              <thead>
-                <tr className="text-label tracking-label text-ink-label">
-                  <th className="px-4 py-2 font-medium">Cruise held at</th>
-                  {[
-                    ["Range", "nm"],
-                    ["", "km"],
-                    ["", "ft"],
-                  ].map(([label, unit]) => (
-                    <th className="px-4 py-2 text-right font-medium" key={unit}>
-                      {label}
-                      <span className="ml-1 text-ink-faint">[{unit}]</span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="text-ink-body">
-                {METHODS.map((method) => {
-                  const best = method.key === bestMethod.key;
-                  return (
-                    <tr
-                      className={best ? "bg-accent-wash" : ""}
-                      key={method.key}
-                    >
-                      <td className="border-t border-rule-hair px-4 py-[7px] text-ink">
-                        <span className="inline-flex items-baseline gap-2">
-                          {method.label}
-                          <Hint
-                            inputId={`rg-method-${method.key}`}
-                            spec={{
-                              label: method.label,
-                              body: method.body,
-                              cell: method.cell,
-                            }}
-                          />
-                        </span>
-                      </td>
-                      {distanceCells(result.ranges[method.key]).map(
-                        (cell, index) => (
-                          <td
-                            className={`border-t border-rule-hair px-4 py-[7px] text-right ${
-                              best && index === 0
-                                ? "font-medium text-accent-dark"
-                                : ""
-                            }`}
-                            // eslint-disable-next-line react/no-array-index-key
-                            key={index}
-                          >
-                            {cell}
-                          </td>
-                        )
-                      )}
-                    </tr>
-                  );
-                })}
-                <tr>
-                  <td className="border-t border-rule-mid px-4 py-[7px] text-ink">
-                    <span className="inline-flex items-baseline gap-2">
-                      Rough check: fuel aboard ÷ fuel flow
-                      <Hint
-                        inputId="rg-sanity"
-                        spec={{
-                          label: "Rough check",
-                          body: "The cruise speed times how long the fuel lasts at the cruise power setting. It takes no account of the weight coming off as fuel burns, so it should land somewhat short of the integrated ranges — near enough to catch a mistake, not near enough to replace them.",
-                          cell: "K5",
-                        }}
-                      />
-                    </span>
-                  </td>
-                  {distanceCells(result.sanity.distance).map((cell, index) => (
-                    <td
-                      className="border-t border-rule-mid px-4 py-[7px] text-right text-ink-muted"
-                      // eslint-disable-next-line react/no-array-index-key
-                      key={index}
-                    >
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
+            <DataTable columns={rangeColumns} rows={rangeRows} />
             <p className="border-t border-rule-hair px-4 py-3 font-mono text-meta leading-[1.6] text-ink-muted">
               The marked row is the longest. It is also the slowest, and no
               schedule is flown on it — the design cruise buys hours back at a
@@ -720,36 +918,7 @@ export default function Range() {
               </span>
             </summary>
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-right font-mono text-meta">
-                <thead>
-                  <tr className="text-label tracking-label text-ink-label">
-                    {["CL", "CD", "L/D"].map((label) => (
-                      <th className="px-3 py-2 font-medium" key={label}>
-                        {label}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="text-ink-body">
-                  {result.polar.map((point) => (
-                    <tr key={point.cl}>
-                      {[
-                        nf(point.cl, 2),
-                        nf(point.cd, 5),
-                        nf(point.liftToDrag, 3),
-                      ].map((cell, index) => (
-                        <td
-                          className="whitespace-nowrap border-t border-rule-hair px-3 py-[5px]"
-                          // eslint-disable-next-line react/no-array-index-key
-                          key={index}
-                        >
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <DataTable compact columns={polarColumns} rows={polarRows} />
             </div>
           </details>
 

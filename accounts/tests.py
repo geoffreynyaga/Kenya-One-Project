@@ -35,6 +35,7 @@
 ##################################################################################
 
 import numpy as np  # type: ignore
+from math import isclose
 from rest_framework.test import APIClient  # type: ignore
 
 
@@ -61,6 +62,7 @@ def test_mtow_solve_is_independent_of_requested_plot_range():
 
     assert response.status_code == 200
     assert response.data["Status"] == "Success"
+    assert isclose(response.data["cruiseFraction"], 0.9245599454856899)
 
     method_results = [
         response.data["raymerIntersect"][0],

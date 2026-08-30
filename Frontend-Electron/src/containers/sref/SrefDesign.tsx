@@ -100,7 +100,7 @@ const SREF_FIELD_QUANTITY_KEYS: Partial<Record<FormField, string>> = {
   designWeight: "mtowLb",
   taxiFraction: "taxiFraction",
   climbFraction: "climbFraction",
-  cruiseWeightRatio: "cruiseWeightRatio",
+  cruiseFraction: "cruiseFraction",
   cruiseSpeed: "cruiseSpeedKnots",
   powerLoading: "powerLoading",
   engineCount: "engineCount",
@@ -685,6 +685,10 @@ export default function SrefDesign() {
   const committedStages = useAtomValue(committedStagesAtom);
   const quantityStatuses = useAtomValue(quantityStatusesAtom);
   const errors = useMemo(() => srefFormErrors(values), [values]);
+  const cruiseFractionReady =
+    isOverridden("cruiseFraction") ||
+    sharedNumericQuantity(quantityStatuses, "cruiseFraction", 0).status ===
+      "confirmed";
 
   const wingAreaM2 = useAtomValue(wingAreaM2Atom);
   const powerRequiredHp = useAtomValue(powerRequiredHpAtom);
@@ -699,7 +703,7 @@ export default function SrefDesign() {
         designWeightLb: Number(values.designWeight),
         taxiFraction: Number(values.taxiFraction),
         climbFraction: Number(values.climbFraction),
-        cruiseWeightRatio: Number(values.cruiseWeightRatio),
+        cruiseFraction: Number(values.cruiseFraction),
         cruiseSpeedKnots: Number(values.cruiseSpeed),
         wingAreaM2,
       }),
@@ -770,7 +774,7 @@ export default function SrefDesign() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (Object.keys(errors).length > 0) return;
+    if (Object.keys(errors).length > 0 || !cruiseFractionReady) return;
     const request = toSrefRequest(values);
     confirmQuantities([...SREF_QUANTITY_KEYS]);
     setCommittedStages((current) => ({ ...current, sref: true }));
@@ -1333,7 +1337,7 @@ export default function SrefDesign() {
           <div className="sticky bottom-0 mt-4 flex border-t border-rule-mid bg-panel">
             <button
               className="flex-1 border border-accent bg-accent px-4 py-3 font-mono text-meta font-medium tracking-tab text-white transition-colors hover:bg-accent-dark focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 disabled:cursor-wait disabled:border-rule disabled:bg-panel disabled:text-ink-faint"
-              disabled={query.isFetching}
+              disabled={query.isFetching || !cruiseFractionReady}
               type="submit"
             >
               {query.isFetching ? "SOLVING…" : "SOLVE & CONFIRM"}

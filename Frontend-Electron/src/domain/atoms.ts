@@ -35,6 +35,8 @@ const INITIAL_QUANTITY_STATUSES: Record<string, QuantityStatus> = {
   hubDiameterRatio: "unresolved",
   propEfficiencyTakeoff: "unresolved",
   cruisePowerFraction: "unresolved",
+  cruiseFraction: "unresolved",
+  designRangeKm: "unresolved",
 };
 
 export const quantityStatusesAtom = persisted<Record<string, QuantityStatus>>(
@@ -101,6 +103,13 @@ export const emptyWeightFractionAtom = provisional(
 export const fuelFractionAtom = provisional(
   "fuelFraction",
   0.1439667448143937
+);
+
+// MTOW owns the requested mission range and the Breguet cruise-only fraction.
+export const designRangeKmAtom = provisional("designRangeKm", 1200);
+export const cruiseFractionAtom = provisional(
+  "cruiseFraction",
+  0.9247094817834837
 );
 
 // @link spreadsheets/1. initial sizing.xlsx, MTOW!D65
@@ -345,12 +354,6 @@ export const taxiFractionAtom = provisional("taxiFraction", 0.98);
 
 // @link MTOW!B20
 export const climbFractionAtom = provisional("climbFraction", 0.97);
-
-// TODO: derive from the live mission. @link MTOW!B28
-export const cruiseWeightRatioAtom = provisional(
-  "cruiseWeightRatio",
-  0.8560332551941533
-);
 
 // @link Sref!G6
 export const cruiseSpeedKnotsAtom = provisional("cruiseSpeedKnots", 140);

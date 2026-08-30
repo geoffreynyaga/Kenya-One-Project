@@ -31,7 +31,7 @@ export interface SrefWeightsAndCruise {
   design_weight_lb: number;
   taxi_fraction: number;
   climb_fraction: number;
-  cruise_weight_ratio: number;
+  cruise_fraction: number;
   cruise_speed_knots: number;
 }
 

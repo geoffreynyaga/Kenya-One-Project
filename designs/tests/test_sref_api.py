@@ -3,7 +3,7 @@ from math import isclose
 from rest_framework.test import APIClient
 
 
-def test_sref_sizing_defaults_match_workbook_reference():
+def test_sref_sizing_defaults_use_the_cruise_only_fraction():
     response = APIClient().post("/api/designs/sref-sizing/", {}, format="json")
 
     assert response.status_code == 200
@@ -12,7 +12,7 @@ def test_sref_sizing_defaults_match_workbook_reference():
     assert isclose(data["stall_limit_wing_loading"], 22.691275793164802)
     assert isclose(data["sizing"]["wing_area_m2"], 23.951178858082848)
     assert isclose(data["sizing"]["power_required_hp"], 508.69565217391306)
-    assert isclose(data["sizing"]["cruise_cl"], 0.40822440553839295)
+    assert isclose(data["sizing"]["cruise_cl"], 0.4233293675295599)
     assert len(data["curves"]) == 19
     assert data["curves"][0]["wp_vmax"] == 5.965230373322869
 

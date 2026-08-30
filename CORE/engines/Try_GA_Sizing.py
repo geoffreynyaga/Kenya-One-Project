@@ -295,6 +295,7 @@ def MTOW_estimate(
 
     return {
         "finalMTOW": finalMTOW,
+        "cruiseFraction": float(w4w3),
         "emptyWeightFraction": empty_weight_fraction,
         "fuelFraction": fuel_fraction,
         "suggestedAxisLimits": suggested_axis_limits,
