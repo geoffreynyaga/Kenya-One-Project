@@ -33,14 +33,13 @@ export type SharedNumericQuantity =
 const INITIAL_QUANTITY_STATUSES: Record<string, QuantityStatus> = {
   propellerDiameterFt: "unresolved",
   hubDiameterRatio: "unresolved",
-  propEfficiencyTakeoff: "unresolved",
   cruisePowerFraction: "unresolved",
   cruiseFraction: "unresolved",
   designRangeKm: "unresolved",
 };
 
 export const quantityStatusesAtom = persisted<Record<string, QuantityStatus>>(
-  "quantityStatuses:v1",
+  "quantityStatuses:v2",
   INITIAL_QUANTITY_STATUSES
 );
 
@@ -306,10 +305,13 @@ export const propellerDiameterFtAtom = provisional("propellerDiameterFt", 0);
 // @link spreadsheets/2. Performance.xlsx, take-off!C11
 export const hubDiameterRatioAtom = provisional("hubDiameterRatio", 0);
 
-// Sref owns the low-speed sizing estimate used by Take-off. @link Sref!B28
+// Sref owns the low-speed sizing estimate used by Take-off. Seeded at the
+// middle of Gudmundsson's §17.3.2 band: a zero here is not a missing number,
+// it is a propeller that does no work, and the sheet could only report it as
+// an arithmetic complaint. @link Sref!B28
 export const propEfficiencyTakeoffAtom = provisional(
   "propEfficiencyTakeoff",
-  0
+  0.45
 );
 
 // Owned by Cruise. @link cruise!B8
