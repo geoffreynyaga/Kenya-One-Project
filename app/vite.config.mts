@@ -2,17 +2,17 @@ import react from "@vitejs/plugin-react";
 import { defineConfig } from "vitest/config";
 
 export default defineConfig({
-  // The packaged Electron app loads the bundle over file://, where absolute
-  // asset paths do not resolve.
+  // Relative asset paths, so the bundle also resolves when it is not served
+  // from a domain root.
   base: "./",
   plugins: [react()],
   server: {
-    // The Electron shell waits on this port before opening its window.
+    // tauri.conf.json names this port as devUrl.
     port: 3000,
     strictPort: true,
   },
   build: {
-    // public/electron.js loads ../build/index.html in a packaged app.
+    // tauri.conf.json names this directory as frontendDist.
     outDir: "build",
   },
   test: {
