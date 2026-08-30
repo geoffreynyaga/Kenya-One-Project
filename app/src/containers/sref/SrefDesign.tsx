@@ -105,6 +105,27 @@ const SREF_FIELD_QUANTITY_KEYS: Partial<Record<FormField, string>> = {
   engineCount: "engineCount",
 };
 
+const SECTIONS = {
+  REQUIREMENTS: {
+    title: "PERFORMANCE REQUIREMENTS",
+    specs: requirementFields,
+  },
+  AERODYNAMICS: { title: "AERODYNAMICS", specs: aerodynamicFields },
+  WEIGHTS: { title: "WEIGHTS & CRUISE", specs: weightFields },
+  "DESIGN POINT": { title: "DESIGN POINT", specs: pointFields },
+} as const;
+
+type SectionKey = keyof typeof SECTIONS;
+
+// Where a reader has to go to fix a field, worded the way the input column
+// labels it. A bare "Must be greater than zero." named no field and no band,
+// so the only way to find the offending row was to open every section.
+const FIELD_LOCATION: Partial<Record<FormField, string>> = Object.fromEntries(
+  Object.values(SECTIONS).flatMap(({ title, specs }) =>
+    specs.map((spec) => [spec.field, `${title} → ${spec.label}`])
+  )
+);
+
 const SENSE_VALUES: Record<
   ConstraintKey | "stall",
   (values: FormValues) => string
@@ -123,7 +144,7 @@ interface ViewState {
 }
 
 const DEFAULT_VIEW: ViewState = {
-  openSections: ["REQUIREMENTS", "DESIGN POINT"],
+  openSections: [],
   engineNumber: null,
   senses: DEFAULT_SENSE_STATE,
 };
@@ -699,7 +720,12 @@ export default function SrefDesign() {
           "Cruise fraction is unresolved. Carry a method forward on 01 MTOW, " +
             "or override it under WEIGHTS & CRUISE to size against your own figure.",
         ]),
-    ...Object.values(errors),
+    ...(Object.entries(errors) as Array<[FormField, string]>).map(
+      ([field, message]) => {
+        const where = FIELD_LOCATION[field];
+        return where ? `${where} — ${message}` : message;
+      }
+    ),
   ];
 
   const wingAreaM2 = useAtomValue(wingAreaM2Atom);
@@ -878,14 +904,21 @@ export default function SrefDesign() {
   };
 
   const fieldStatus = (spec: FieldSpec): QuantityStatus | null => {
+    const key = SREF_FIELD_QUANTITY_KEYS[spec.field] ?? spec.quantity;
     if (spec.source === "consequence" && !isOverridden(spec.field)) {
-      const key = SREF_FIELD_QUANTITY_KEYS[spec.field] ?? spec.quantity;
       return key
         ? sharedNumericQuantity(quantityStatuses, key, 0).status
         : null;
     }
+    if (errors[spec.field]) return "unresolved";
     if (committedStages.sref) return "confirmed";
-    return errors[spec.field] ? "unresolved" : "provisional";
+    if (
+      key &&
+      sharedNumericQuantity(quantityStatuses, key, 0).status === "confirmed"
+    ) {
+      return "confirmed";
+    }
+    return "provisional";
   };
 
   const toggleSection = (key: string, open: boolean) => {
@@ -901,25 +934,31 @@ export default function SrefDesign() {
     });
   };
 
-  const renderSection = (key: string, title: string, specs: FieldSpec[]) => (
-    <InputSection
-      count={specs.length}
-      onToggle={(open) => toggleSection(key, open)}
-      open={view.openSections.includes(key)}
-      title={title}
-    >
-      {specs.map((spec) => (
-        <ValueCell
-          key={spec.field}
-          overridden={isOverridden(spec.field)}
-          spec={spec}
-          status={fieldStatus(spec)}
-          upstream={upstreamValue(spec.field)}
-          {...cellProps}
-        />
-      ))}
-    </InputSection>
-  );
+  const renderSection = (key: SectionKey) => {
+    const { title, specs } = SECTIONS[key];
+    const statuses = specs.map(fieldStatus);
+    return (
+      <InputSection
+        count={specs.length}
+        onToggle={(open) => toggleSection(key, open)}
+        open={view.openSections.includes(key)}
+        provisional={statuses.filter((s) => s === "provisional").length}
+        title={title}
+        unresolved={statuses.filter((s) => s === "unresolved").length}
+      >
+        {specs.map((spec) => (
+          <ValueCell
+            key={spec.field}
+            overridden={isOverridden(spec.field)}
+            spec={spec}
+            status={fieldStatus(spec)}
+            upstream={upstreamValue(spec.field)}
+            {...cellProps}
+          />
+        ))}
+      </InputSection>
+    );
+  };
 
   const summaryItems: Array<[string, string]> = [
     ["WING AREA SREF", submitted ? `${formatNumber(wingAreaM2)} m²` : "—"],
@@ -1270,7 +1309,7 @@ export default function SrefDesign() {
             </dl>
           </div>
 
-          {renderSection("REQUIREMENTS", "PERFORMANCE REQUIREMENTS", requirementFields)}
+          {renderSection("REQUIREMENTS")}
 
           <section className="border-t border-rule-soft">
             <h2 className="px-[18px] pb-[4px] pt-4 font-mono text-label font-medium tracking-label text-ink-label">
@@ -1357,9 +1396,9 @@ export default function SrefDesign() {
               );
             })}
           </section>
-          {renderSection("AERODYNAMICS", "AERODYNAMICS", aerodynamicFields)}
-          {renderSection("WEIGHTS", "WEIGHTS & CRUISE", weightFields)}
-          {renderSection("DESIGN POINT", "DESIGN POINT", pointFields)}
+          {renderSection("AERODYNAMICS")}
+          {renderSection("WEIGHTS")}
+          {renderSection("DESIGN POINT")}
 
           <div className="sticky bottom-0 mt-4 flex border-t border-rule-mid bg-panel">
             <button

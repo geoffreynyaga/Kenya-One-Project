@@ -157,12 +157,14 @@ describe("TakeOff", () => {
     expect(screen.getAllByText("PROVISIONAL").length).toBeGreaterThan(0);
   });
 
-  it("never displays a numeric zero for unresolved take-off efficiency", () => {
+  it("never displays a numeric zero for take-off efficiency", () => {
     renderFreshTakeoff();
     fireEvent.click(screen.getByText("CARRIED · UPSTREAM"));
 
+    // Sref seeds this one, so it is a provisional estimate rather than a
+    // missing number — but it stays a dash here until Sref is confirmed.
     const row = screen.getByText("ηp on the run").closest("div")!;
-    expect(within(row).getByText("UNRESOLVED")).toBeInTheDocument();
+    expect(within(row).getByText("PROVISIONAL")).toBeInTheDocument();
     expect(within(row).getByText("—")).toBeInTheDocument();
     expect(within(row).queryByText("0.0000")).toBeNull();
   });

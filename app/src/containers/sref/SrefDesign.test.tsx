@@ -151,11 +151,46 @@ test("withholds results until the provisional inputs are confirmed", () => {
   expect(fetchSrefSizingMock).not.toHaveBeenCalled();
   expect(screen.queryByText("Constraint diagram — power loading vs wing loading")).toBeNull();
   expect(screen.getAllByText("PROVISIONAL").length).toBeGreaterThan(0);
-  expect(screen.getByLabelText("Prop efficiency · take-off estimate")).toHaveAttribute(
-    "aria-invalid",
-    "true"
-  );
   expect(screen.getAllByText("UNRESOLVED").length).toBeGreaterThan(0);
+});
+
+test("seeds the take-off efficiency rather than blocking on a zero", () => {
+  renderPage(false);
+
+  // A zero is not a missing number, it is a propeller that does no work, and
+  // the only thing the sheet could say about it was "Must be greater than
+  // zero." The tooltip already carried the band, so the sheet now starts in it.
+  const field = screen.getByLabelText("Prop efficiency · take-off estimate");
+  expect(field).toHaveValue(0.45);
+  expect(field).toHaveAttribute("aria-invalid", "false");
+});
+
+test("names the band and the row a blocking entry sits in", () => {
+  renderPage(false);
+
+  fireEvent.change(screen.getByLabelText("Aspect ratio"), {
+    target: { value: "0" },
+  });
+
+  expect(
+    screen.getByText(
+      "AERODYNAMICS → Aspect ratio — Must be greater than zero."
+    )
+  ).toBeInTheDocument();
+});
+
+test("says what a collapsed band is holding", () => {
+  renderPage(false);
+
+  // Every band starts closed, so the counts are the only way to tell a band
+  // that wants attention from one that is settled.
+  fireEvent.change(screen.getByLabelText("Aspect ratio"), {
+    target: { value: "0" },
+  });
+
+  const band = screen.getByText("AERODYNAMICS").closest("summary");
+  expect(band).toHaveTextContent("1 TO FIX");
+  expect(band).toHaveTextContent("PROVISIONAL");
 });
 
 test("names the quantity that blocks the solve and the sheet that owns it", () => {
@@ -173,18 +208,27 @@ test("names the quantity that blocks the solve and the sheet that owns it", () =
   ).toBeDisabled();
 });
 
-test("clears a provisional tag when the reader replaces the value", () => {
+test("keeps every seeded value provisional until the reader changes it", () => {
   const { store } = renderPage(false);
 
+  // Provisional is the default, not something an edit switches on.
   expect(store.get(quantityStatusesAtom).clMax).not.toBe("confirmed");
+  expect(store.get(quantityStatusesAtom).stallSpeedKcas).not.toBe("confirmed");
+  const before = screen.getAllByText("PROVISIONAL").length;
+  expect(before).toBeGreaterThan(0);
 
   fireEvent.change(screen.getByLabelText("Max lift coefficient"), {
     target: { value: "1.6" },
   });
 
-  // The atom write confirms the quantity. Resetting every Sref key on the same
-  // keystroke used to undo that, so the tag could never be cleared by editing.
+  // The one the reader replaced is theirs now. Writing the atom already
+  // recorded that; changeField reset every Sref key on the same keystroke and
+  // undid it, so no tag could ever be cleared by typing.
   expect(store.get(quantityStatusesAtom).clMax).toBe("confirmed");
+
+  // Everything untouched is still a guess, and still says so.
+  expect(store.get(quantityStatusesAtom).stallSpeedKcas).not.toBe("confirmed");
+  expect(screen.getAllByText("PROVISIONAL").length).toBe(before - 1);
 });
 
 test("publishes the Sref-owned take-off efficiency on confirmation", () => {
