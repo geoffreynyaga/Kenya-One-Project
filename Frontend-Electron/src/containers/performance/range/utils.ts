@@ -19,27 +19,15 @@ export const POLAR_POINT_COUNT = 16;
  * so its bounds follow the aeroplane rather than a window chosen for one.
  */
 export const SPEED_SWEEP_POINT_COUNT = 25;
-export const SPEED_SWEEP_MARGIN = 1.35;
 
-/**
- * The end-of-cruise weight is the start-of-cruise weight times the whole
- * mission's weight fraction, and the start-of-cruise weight has already had
- * taxi and climb taken off it. Both phases are therefore counted twice, so the
- * aeroplane sheds more weight across the cruise than the mission allows and
- * every range below is longer than it should be.
- *
- * False reproduces the sheet. True takes the cruise fraction alone, which is
- * what the Breguet range these formulas come from is written against.
- */
-export const CORRECT_MISSION_FRACTION_DOUBLE_COUNTS = false;
-
+/** Historical parity substitutes the whole-mission ratio for cruise fraction. */
+export const WORKBOOK_DOUBLE_COUNTS_MISSION_FRACTIONS = true;
 /**
  * The rough time-to-burn-fuel check converts its answer to kilometres with
  * 3280.4 where every other conversion on the sheet uses 3280.84. It moves the
  * check by a tenth of a percent, which is nothing against what the check is
  * for, but it is the only place on the sheet the two disagree.
  */
-export const CORRECT_SANITY_KM_CONVERSION = false;
 export const SANITY_FT_PER_KM_AS_WRITTEN = 3280.4;
 
 export interface RangeInputs {
@@ -71,11 +59,13 @@ export interface RangeInputs {
   taxiFraction: number;
   /** Workbook MTOW!B20 — weight fraction left after the climb. */
   climbFraction: number;
-  /** Workbook MTOW!B28 — w6/w1, the whole mission's weight fraction. */
-  cruiseWeightRatio: number;
+  /** Workbook MTOW!B23 — Breguet cruise-only weight fraction. */
+  cruiseFraction: number;
 
   /** Workbook MTOW!B7 — passengers carried, for the efficiency figure. */
   passengerCount: number;
+  /** Design mission range selected on MTOW, km. */
+  designRangeKm: number;
 }
 
 /** One distance, in the three units the sheet quotes every range in. */

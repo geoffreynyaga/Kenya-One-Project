@@ -10,7 +10,10 @@ import {
   fetchSrefSizing,
 } from "../../api/srefDesign";
 import SrefDesign from "./SrefDesign";
-import { propEfficiencyTakeoffAtom } from "../../domain/atoms";
+import {
+  cruiseFractionAtom,
+  propEfficiencyTakeoffAtom,
+} from "../../domain/atoms";
 
 vi.mock("plotly.js-basic-dist", () => ({ default: {} }));
 vi.mock("react-plotly.js/factory", () => ({
@@ -31,8 +34,8 @@ const result: SrefSizingResult = {
   },
   stall_limit_wing_loading: 22.691275793164802,
   weight_start_cruise_lb: 5561.01,
-  weight_end_cruise_lb: 4760.409492467239,
-  weight_average_cruise_lb: 5160.70974623362,
+  weight_end_cruise_lb: 5142.31867529277,
+  weight_average_cruise_lb: 5351.664337646385,
   induced_drag_factor: 0.054006965223581664,
   // The workbook's own sweep either side of the stall limit, so the binding
   // constraint in these tests is the one the real sheet reports.
@@ -47,7 +50,7 @@ const result: SrefSizingResult = {
     power_required_hp: 508.69565217391306,
     power_per_engine_hp: 254.34782608695653,
     total_horsepower_hp: 508.69565217391306,
-    cruise_cl: 0.40822440553839295,
+    cruise_cl: 0.4233293675295598,
   },
 };
 
@@ -119,6 +122,7 @@ function renderPage(solve = true) {
     defaultOptions: { queries: { retry: false } },
   });
   const store = createStore();
+  if (solve) store.set(cruiseFractionAtom, 0.9247094817834837);
   const view = render(
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>

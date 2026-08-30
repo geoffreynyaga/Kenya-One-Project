@@ -306,7 +306,7 @@ def _validate(inputs: SrefInputs) -> None:
     _require_positive("design_weight_lb", weights.design_weight_lb)
     _require_fraction("taxi_fraction", weights.taxi_fraction)
     _require_fraction("climb_fraction", weights.climb_fraction)
-    _require_fraction("cruise_weight_ratio", weights.cruise_weight_ratio)
+    _require_fraction("cruise_fraction", weights.cruise_fraction)
     _require_positive("cruise_speed_knots", weights.cruise_speed_knots)
 
     _require_positive(
@@ -446,7 +446,7 @@ def calculate_sref(inputs: SrefInputs = SrefInputs()) -> SrefResult:
     k = _induced_drag_factor(aero)
 
     weight_start = weights.taxi_fraction * weights.climb_fraction * weights.design_weight_lb
-    weight_end = weight_start * weights.cruise_weight_ratio
+    weight_end = weight_start * weights.cruise_fraction
     weight_average = (weight_start + weight_end) / 2.0
 
     curves = tuple(

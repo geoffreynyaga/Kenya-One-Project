@@ -10,6 +10,7 @@
  */
 
 import { minimumDragSpeedKtas } from "../../../domain/dragPolar";
+import { solvePowerLimitedSpeedRange } from "../../../domain/levelFlight";
 import {
   densityAt,
   HP_TO_FT_LB_PER_S,
@@ -79,37 +80,6 @@ function stallSpeed(inputs: CruiseInputs, density: number): number {
   );
 }
 
-function dragAt(
-  inputs: CruiseInputs,
-  density: number,
-  speedKtas: number,
-  clAtMinimumDrag: number
-) {
-  const speedFps = speedKtas * KNOT_TO_FPS;
-  const q = 0.5 * density * speedFps ** 2;
-  const cl = inputs.mtowLb / (q * inputs.wingAreaFt2);
-  const cd =
-    inputs.cdMin +
-    inputs.inducedDragFactor * (cl - clAtMinimumDrag) ** 2;
-  return q * inputs.wingAreaFt2 * cd;
-}
-
-function bisect(
-  valueAt: (speedKtas: number) => number,
-  start: number,
-  end: number
-) {
-  let low = start;
-  let high = end;
-  const lowPositive = valueAt(low) > 0;
-  for (let pass = 0; pass < 80; pass += 1) {
-    const middle = (low + high) / 2;
-    if ((valueAt(middle) > 0) === lowPositive) low = middle;
-    else high = middle;
-  }
-  return (low + high) / 2;
-}
-
 function powerSpeedLimits(
   inputs: CruiseInputs,
   density: number,
@@ -117,32 +87,18 @@ function powerSpeedLimits(
   clAtMinimumDrag: number,
   stallKtas: number
 ): SpeedLimits {
-  const excess = (speedKtas: number) =>
-    powerAvailable -
-    dragAt(inputs, density, speedKtas, clAtMinimumDrag) *
-      speedKtas *
-      KNOT_TO_FPS;
-  let previous = stallKtas;
-  let previousExcess = excess(previous);
-  let minimum = previousExcess >= 0 ? stallKtas : Number.NaN;
-
-  for (let pass = 0; pass < 240; pass += 1) {
-    const next = previous * 1.03;
-    const nextExcess = excess(next);
-    if (!Number.isFinite(minimum) && previousExcess < 0 && nextExcess >= 0) {
-      minimum = bisect(excess, previous, next);
-    }
-    if (Number.isFinite(minimum) && previousExcess >= 0 && nextExcess < 0) {
-      return {
-        minKtas: minimum,
-        maxKtas: bisect(excess, previous, next),
-        holdsHeight: true,
-      };
-    }
-    previous = next;
-    previousExcess = nextExcess;
-  }
-  return { minKtas: Number.NaN, maxKtas: Number.NaN, holdsHeight: false };
+  return solvePowerLimitedSpeedRange(
+    {
+      weightLb: inputs.mtowLb,
+      wingAreaFt2: inputs.wingAreaFt2,
+      cdMin: inputs.cdMin,
+      inducedDragFactor: inputs.inducedDragFactor,
+      clAtMinimumDrag,
+    },
+    density,
+    powerAvailable,
+    stallKtas
+  );
 }
 
 function anchoredSpan(start: number, end: number, anchors: number[]) {

@@ -22,7 +22,7 @@ export type FormField =
   | "designWeight"
   | "taxiFraction"
   | "climbFraction"
-  | "cruiseWeightRatio"
+  | "cruiseFraction"
   | "cruiseSpeed"
   | "wingLoading"
   | "powerLoading"
@@ -303,13 +303,13 @@ export const weightFields: FieldSpec[] = [
     cite: "Raymer Table 3.2",
   },
   {
-    field: "cruiseWeightRatio",
-    label: "Cruise weight ratio w6/w1",
+    field: "cruiseFraction",
+    label: "Cruise fraction",
     source: "consequence",
     cell: "MTOW & WEIGHTS · B28",
     origin: "MTOW & WEIGHTS · B28",
-    body: "End-of-mission over start-of-mission weight: taxi × climb × cruise × descent × approach. The cruise term is the Breguet range fraction.",
-    typical: "≈ 0.86 for this mission.",
+    body: "Weight remaining after the cruise segment alone. MTOW derives it from the selected design range with the Breguet propeller-aircraft relation.",
+    typical: "Longer missions and higher fuel consumption reduce this fraction.",
     cite: "Raymer ch. 3",
   },
   {

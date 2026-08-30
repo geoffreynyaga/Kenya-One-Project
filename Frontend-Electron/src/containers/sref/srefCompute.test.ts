@@ -14,12 +14,12 @@ const WORKBOOK_INPUTS = {
   designWeightLb: 5850,
   taxiFraction: 0.98,
   climbFraction: 0.97,
-  cruiseWeightRatio: 0.8560332551941533,
+  cruiseFraction: 0.9247094817834837,
   cruiseSpeedKnots: 140,
   wingAreaM2: 23.951178858082848,
 };
 
-test("the atmosphere and cruise mission reproduce the workbook", () => {
+test("the atmosphere and corrected cruise mission agree", () => {
   const local = computeLocal(WORKBOOK_INPUTS);
 
   expect(local.rhoAltitude).toBeCloseTo(0.001756074594414648, 12);
@@ -27,9 +27,9 @@ test("the atmosphere and cruise mission reproduce the workbook", () => {
   expect(local.rhoCeiling).toBeCloseTo(0.0013552150962194316, 12);
   expect(local.sigmaCeiling).toBeCloseTo(0.5698970127079191, 12);
   expect(local.weightStartCruise).toBeCloseTo(5561.01, 9);
-  expect(local.weightEndCruise).toBeCloseTo(4760.409492467239, 9);
-  expect(local.weightAverageCruise).toBeCloseTo(5160.70974623362, 9);
-  expect(local.cruiseCl).toBeCloseTo(0.40822440553839295, 12);
+  expect(local.weightEndCruise).toBeCloseTo(5142.31867529277, 9);
+  expect(local.weightAverageCruise).toBeCloseTo(5351.664337646385, 9);
+  expect(local.cruiseCl).toBeCloseTo(0.4233293675295598, 12);
 });
 
 const engine = (
