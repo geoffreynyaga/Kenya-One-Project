@@ -11,6 +11,7 @@ import {
   powerLoadingAtom,
   powerPerEngineHpAtom,
   powerRequiredHpAtom,
+  propellerDiameterFtAtom,
   quantityStatusesAtom,
   sharedNumericQuantity,
   engineCountAtom,
@@ -60,7 +61,7 @@ describe("the shared quantities reproduce the workbook", () => {
     const s = store();
 
     expect(s.get(selectedEngineAtom)).toBeNull();
-    expect(s.get(installedPowerBhpAtom)).toBe(s.get(powerRequiredHpAtom));
+    expect(s.get(installedPowerBhpAtom)).toBe(0);
 
     s.set(engineCountAtom, 1);
     s.set(selectedEngineAtom, {
@@ -85,13 +86,23 @@ describe("the shared quantities reproduce the workbook", () => {
   });
 
   it("represents an unresolved shared quantity without a numeric value", () => {
+    const s = store();
     const initial = sharedNumericQuantity(
-      { propellerDiameterFt: "unresolved" },
+      s.get(quantityStatusesAtom),
       "propellerDiameterFt",
-      6.25
+      s.get(propellerDiameterFtAtom)
     );
 
     expect(initial).toEqual({ status: "unresolved", value: null });
+
+    s.set(propellerDiameterFtAtom, 6.5);
+    expect(
+      sharedNumericQuantity(
+        s.get(quantityStatusesAtom),
+        "propellerDiameterFt",
+        s.get(propellerDiameterFtAtom)
+      )
+    ).toEqual({ status: "confirmed", value: 6.5 });
   });
 
   it("migrates saved values without a status as provisional", () => {

@@ -10,6 +10,7 @@
  */
 
 import { minimumDragSpeedKtas } from "../../../domain/dragPolar";
+import { solvePowerLimitedSpeedRange } from "../../../domain/levelFlight";
 import {
   densityAt,
   HP_TO_FT_LB_PER_S,
@@ -26,8 +27,12 @@ import {
   span,
   STALL_TABLE_POINT_COUNT,
   POLAR_POINT_COUNT,
-  POLAR_SPEED_MARGIN,
 } from "./utils";
+import { cruiseInputsSchema } from "./cruiseSchema";
+
+export interface CruiseOptions {
+  mode?: "engineering" | "workbook";
+}
 
 /**
  * Fastest and slowest level flight at a given thrust, from the drag polar.
@@ -75,7 +80,48 @@ function stallSpeed(inputs: CruiseInputs, density: number): number {
   );
 }
 
-export function cruise(inputs: CruiseInputs): CruiseResult {
+function powerSpeedLimits(
+  inputs: CruiseInputs,
+  density: number,
+  powerAvailable: number,
+  clAtMinimumDrag: number,
+  stallKtas: number
+): SpeedLimits {
+  return solvePowerLimitedSpeedRange(
+    {
+      weightLb: inputs.mtowLb,
+      wingAreaFt2: inputs.wingAreaFt2,
+      cdMin: inputs.cdMin,
+      inducedDragFactor: inputs.inducedDragFactor,
+      clAtMinimumDrag,
+    },
+    density,
+    powerAvailable,
+    stallKtas
+  );
+}
+
+function anchoredSpan(start: number, end: number, anchors: number[]) {
+  const values = span(start, end, POLAR_POINT_COUNT);
+  anchors.forEach((anchor) => {
+    if (!(anchor > start && anchor < end)) return;
+    let nearest = 1;
+    for (let index = 2; index < values.length - 1; index += 1) {
+      if (Math.abs(values[index] - anchor) < Math.abs(values[nearest] - anchor)) {
+        nearest = index;
+      }
+    }
+    values[nearest] = anchor;
+  });
+  return values.sort((a, b) => a - b);
+}
+
+export function cruise(
+  uncheckedInputs: CruiseInputs,
+  options: CruiseOptions = {}
+): CruiseResult {
+  const inputs = cruiseInputsSchema.parse(uncheckedInputs);
+  const mode = options.mode ?? "engineering";
   const {
     mtowLb: weight,
     wingAreaFt2: area,
@@ -95,25 +141,45 @@ export function cruise(inputs: CruiseInputs): CruiseResult {
     HP_TO_FT_LB_PER_S * inputs.propEfficiencyCruise * cruisePowerBhp;
   const thrustSettingLbf = thrustPower / cruiseSpeedFps;
 
-  const computedSimple = speedLimits(thrustSettingLbf, inputs, density, 0);
-  const computedAdjusted = speedLimits(
-    thrustSettingLbf,
-    inputs,
-    density,
-    clAtMinimumDrag
-  );
-
-  // The polar spans the envelope this aeroplane actually has: from its stall
-  // at the cruise altitude up past the fastest it can hold height there.
   const stallKtasAtAltitude = stallSpeed(inputs, density);
-  const topOfEnvelope = Number.isFinite(computedSimple.maxKtas)
-    ? computedSimple.maxKtas
-    : inputs.cruiseSpeedKtas * 1.5;
-  const polarSpeeds = span(
-    Math.floor(stallKtasAtAltitude / 10) * 10,
-    Math.ceil((topOfEnvelope * POLAR_SPEED_MARGIN) / 10) * 10,
-    POLAR_POINT_COUNT
-  );
+  const computedSimple =
+    mode === "workbook"
+      ? speedLimits(thrustSettingLbf, inputs, density, 0)
+      : powerSpeedLimits(
+          inputs,
+          density,
+          thrustPower,
+          0,
+          stallKtasAtAltitude
+        );
+  const computedAdjusted =
+    mode === "workbook"
+      ? speedLimits(thrustSettingLbf, inputs, density, clAtMinimumDrag)
+      : powerSpeedLimits(
+          inputs,
+          density,
+          thrustPower,
+          clAtMinimumDrag,
+          stallKtasAtAltitude
+        );
+  const holdsHeight =
+    computedSimple.holdsHeight && computedAdjusted.holdsHeight;
+  const topOfEnvelope = holdsHeight
+    ? Math.max(computedSimple.maxKtas, computedAdjusted.maxKtas)
+    : Number.NaN;
+  let polarSpeeds: number[] = [];
+  if (mode === "workbook") {
+    polarSpeeds = span(
+      Math.floor(stallKtasAtAltitude / 10) * 10,
+      Math.ceil((computedSimple.maxKtas * 1.2) / 10) * 10,
+      POLAR_POINT_COUNT
+    );
+  } else if (holdsHeight) {
+    polarSpeeds = anchoredSpan(stallKtasAtAltitude, topOfEnvelope, [
+      inputs.cruiseSpeedKtas,
+      minimumDragSpeedKtas(weight, density, area, k, cdMin),
+    ]);
+  }
 
   const polar: PolarPoint[] = polarSpeeds.map((speedKtas) => {
     const speedKcas = speedKtas * Math.sqrt(densityRatio);
@@ -125,16 +191,17 @@ export function cruise(inputs: CruiseInputs): CruiseResult {
     const cdInducedAdjusted = k * (cl - clAtMinimumDrag) ** 2;
     const cdAdjusted = cdMin + cdInducedAdjusted;
 
-    // Thrust available is taken at the calibrated speed, as the sheet writes
-    // it, so the limits below are indexed by the same speed the table is.
-    const thrustAvailableLbf = thrustPower / (speedKcas * KNOT_TO_FPS);
-    const simple = speedLimits(thrustAvailableLbf, inputs, density, 0);
-    const adjusted = speedLimits(
-      thrustAvailableLbf,
-      inputs,
-      density,
-      clAtMinimumDrag
-    );
+    const thrustAvailableLbf =
+      thrustPower /
+      ((mode === "workbook" ? speedKcas : speedKtas) * KNOT_TO_FPS);
+    const simple =
+      mode === "workbook"
+        ? speedLimits(thrustAvailableLbf, inputs, density, 0)
+        : computedSimple;
+    const adjusted =
+      mode === "workbook"
+        ? speedLimits(thrustAvailableLbf, inputs, density, clAtMinimumDrag)
+        : computedAdjusted;
 
     return {
       speedKcas,
@@ -229,6 +296,14 @@ export function cruise(inputs: CruiseInputs): CruiseResult {
   ];
 
   return {
+    mode,
+    cruiseConditionSupported:
+      holdsHeight &&
+      inputs.cruiseSpeedKtas >= computedAdjusted.minKtas &&
+      inputs.cruiseSpeedKtas <= computedAdjusted.maxKtas,
+    noSolutionReason: holdsHeight
+      ? null
+      : "Available cruise power never exceeds the power required at this altitude.",
     cruisePowerBhp,
     density,
     densityRatio,
@@ -299,15 +374,23 @@ export function cruiseWarnings(
   }
 
   warnings.push({
-    key: "level-limits-read-by-hand",
+    key: "level-flight-model",
     severity: "check",
     cell: "B32 · E32",
     message:
-      "The sheet asks for the fastest and slowest level flight to be looked " +
-      "up in the table and typed back in by hand. They are worked out here " +
-      "from the same drag polar, at the cruise thrust setting, so they follow " +
-      "the weight and the wing instead of going stale against them.",
+      result.mode === "workbook"
+        ? "Parity mode freezes thrust at the selected cruise condition when it finds the two level-flight limits."
+        : "Level-flight limits solve power required against constant-efficiency shaft power at each true airspeed.",
   });
+
+  if (result.simpleLimits.holdsHeight && !result.cruiseConditionSupported) {
+    warnings.push({
+      key: "cruise-outside-envelope",
+      severity: "defect",
+      message:
+        "The requested cruise speed lies outside the adjusted-polar level-flight envelope at this power and altitude.",
+    });
+  }
 
   warnings.push({
     key: "cg-stall-parenthesis",

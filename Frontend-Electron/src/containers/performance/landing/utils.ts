@@ -37,16 +37,15 @@ export const IDLE_THRUST_FRACTION = 0.05;
  * approach it has burnt the mission's fuel, and every distance below scales
  * with the weight it is stopping.
  *
- * False reproduces the sheet. True lands it at the weight the mission's own
- * fractions leave it at.
+ * The engineering path corrects it; workbook mode reproduces it for parity.
  */
-export const CORRECT_LANDING_WEIGHT_IS_MISSION_END = false;
+export const WORKBOOK_LANDS_AT_MTOW = true;
 
 export interface LandingInputs {
   /** Workbook take-off!P9, from Sheet 01 — maximum take-off weight, lb. */
   mtowLb: number;
-  /** Workbook MTOW!B28 — weight fraction left at the end of the mission. */
-  cruiseWeightRatio: number;
+  /** Mission fuel as a fraction of MTOW, owned by MTOW & WEIGHTS. */
+  fuelFraction: number;
 
   /** Workbook B3 — braking friction between tyre and runway. */
   brakingFriction: number;
@@ -76,7 +75,7 @@ export interface LandingInputs {
   /** Workbook take-off!R10, from Sheet 02 — reference area, ft². */
   wingAreaFt2: number;
   /** Workbook Sref!B10 — maximum lift coefficient, clean. */
-  clMax: number;
+  clMaxLanding: number;
 
   /** Workbook take-off!C8 — propeller diameter, ft. */
   propellerDiameterFt: number;

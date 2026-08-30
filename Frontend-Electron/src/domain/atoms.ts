@@ -30,7 +30,14 @@ export type SharedNumericQuantity =
   | { status: "unresolved"; value: null }
   | { status: "provisional" | "confirmed"; value: number };
 
-const INITIAL_QUANTITY_STATUSES: Record<string, QuantityStatus> = {};
+const INITIAL_QUANTITY_STATUSES: Record<string, QuantityStatus> = {
+  propellerDiameterFt: "unresolved",
+  hubDiameterRatio: "unresolved",
+  propEfficiencyTakeoff: "unresolved",
+  cruisePowerFraction: "unresolved",
+  cruiseFraction: "unresolved",
+  designRangeKm: "unresolved",
+};
 
 export const quantityStatusesAtom = persisted<Record<string, QuantityStatus>>(
   "quantityStatuses:v1",
@@ -96,6 +103,13 @@ export const emptyWeightFractionAtom = provisional(
 export const fuelFractionAtom = provisional(
   "fuelFraction",
   0.1439667448143937
+);
+
+// MTOW owns the requested mission range and the Breguet cruise-only fraction.
+export const designRangeKmAtom = provisional("designRangeKm", 1200);
+export const cruiseFractionAtom = provisional(
+  "cruiseFraction",
+  0.9247094817834837
 );
 
 // @link spreadsheets/1. initial sizing.xlsx, MTOW!D65
@@ -287,10 +301,16 @@ export const selectedEngineAtom = persisted<SelectedEngine | null>(
 );
 
 // @link spreadsheets/2. Performance.xlsx, take-off!C8
-export const propellerDiameterFtAtom = provisional("propellerDiameterFt", 6.25);
+export const propellerDiameterFtAtom = provisional("propellerDiameterFt", 0);
 
 // @link spreadsheets/2. Performance.xlsx, take-off!C11
-export const hubDiameterRatioAtom = provisional("hubDiameterRatio", 0.2);
+export const hubDiameterRatioAtom = provisional("hubDiameterRatio", 0);
+
+// Sref owns the low-speed sizing estimate used by Take-off. @link Sref!B28
+export const propEfficiencyTakeoffAtom = provisional(
+  "propEfficiencyTakeoff",
+  0
+);
 
 // Owned by Cruise. @link cruise!B8
 export const cruisePowerFractionAtom = provisional("cruisePowerFraction", 0.73);
@@ -334,12 +354,6 @@ export const taxiFractionAtom = provisional("taxiFraction", 0.98);
 
 // @link MTOW!B20
 export const climbFractionAtom = provisional("climbFraction", 0.97);
-
-// TODO: derive from the live mission. @link MTOW!B28
-export const cruiseWeightRatioAtom = provisional(
-  "cruiseWeightRatio",
-  0.8560332551941533
-);
 
 // @link Sref!G6
 export const cruiseSpeedKnotsAtom = provisional("cruiseSpeedKnots", 140);
@@ -457,9 +471,10 @@ export const powerPerEngineHpAtom = atom(
   (get) => get(powerRequiredHpAtom) / get(engineCountAtom)
 );
 
+// Zero means no engine is installed; it is not a power requirement fallback.
 export const installedPowerBhpAtom = atom((get) => {
   const engine = get(selectedEngineAtom);
-  if (engine === null) return get(powerRequiredHpAtom);
+  if (engine === null) return 0;
   return engine.ratedHp * get(engineCountAtom);
 });
 

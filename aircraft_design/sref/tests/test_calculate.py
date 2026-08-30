@@ -38,12 +38,12 @@ class CalculateSrefParityTests(TestCase):
         assert_close(self, result.stall_limit_wing_loading, 22.691275793164802)
         assert_close(self, result.induced_drag_factor, 0.054006965223581664)
 
-    def test_cruise_weights_match_workbook(self):
+    def test_cruise_weights_use_the_cruise_only_fraction(self):
         result = calculate_sref()
 
         assert_close(self, result.weight_start_cruise_lb, 5561.01)
-        assert_close(self, result.weight_end_cruise_lb, 4760.409492467239)
-        assert_close(self, result.weight_average_cruise_lb, 5160.70974623362)
+        assert_close(self, result.weight_end_cruise_lb, 5142.31867529277)
+        assert_close(self, result.weight_average_cruise_lb, 5351.664337646385)
 
     def test_constraint_curves_reproduce_workbook_table(self):
         # Workbook J3:P21 — x from 10 to 46 step 2, four W/P curves per row.
@@ -71,7 +71,7 @@ class CalculateSrefParityTests(TestCase):
         assert_close(self, last.wp_climb, workbook_last_row[2])
         assert_close(self, last.wp_ceiling, workbook_last_row[3])
 
-    def test_sizing_from_default_design_point_matches_workbook(self):
+    def test_sizing_from_default_design_point_uses_corrected_cruise_weight(self):
         result = calculate_sref()
 
         assert_close(self, result.sizing.wing_area_ft2, 5850.0 / 22.691275793164802)
@@ -79,7 +79,7 @@ class CalculateSrefParityTests(TestCase):
         assert_close(self, result.sizing.power_required_hp, 508.69565217391306)
         assert_close(self, result.sizing.power_per_engine_hp, 254.34782608695653)
         assert_close(self, result.sizing.total_horsepower_hp, 508.69565217391306)
-        assert_close(self, result.sizing.cruise_cl, 0.40822440553839295)
+        assert_close(self, result.sizing.cruise_cl, 0.4233293675295599)
 
     def test_catalog_covers_all_propulsion_families(self):
         types = {engine.engine_type.value for engine in ENGINE_CATALOG}

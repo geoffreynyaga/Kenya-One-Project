@@ -1,6 +1,5 @@
 import { TakeoffInputs } from "../takeoffCompute";
 
-/** The cached workbook values this sheet's parity test asserts against. */
 export const WORKBOOK_INPUTS: TakeoffInputs = {
   maxRatedPowerBhp: 520,
   propellerDiameterFt: 6.25,
@@ -12,7 +11,6 @@ export const WORKBOOK_INPUTS: TakeoffInputs = {
   propEfficiencyTakeoff: 0.45,
   propEfficiencyRapid: 0.4,
   obstacleHeightFt: 50,
-  liftOffDistanceFt: 1011,
 
   engineCount: 2,
   oswaldEfficiency: 0.7555260492234778,
