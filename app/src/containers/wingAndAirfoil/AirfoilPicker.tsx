@@ -13,11 +13,8 @@
 import { useDeferredValue, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import {
-  airfoilKeys,
-  fetchAirfoilCatalog,
-  TunnelSection,
-} from "../../api/airfoils";
+import { airfoilKeys, TunnelSection } from "../../api/airfoils";
+import { getCalculationClient } from "../../api/client";
 import { Hint } from "../../components/sheet/Hint";
 import { ValueRow } from "../../components/sheet/ValueRow";
 import {
@@ -117,7 +114,7 @@ export default function AirfoilPicker({
   /** Which sections have tunnel data. Optional: the picker works without it. */
   const catalog = useQuery({
     queryKey: airfoilKeys.catalog,
-    queryFn: fetchAirfoilCatalog,
+    queryFn: () => getCalculationClient().airfoilCatalog(),
     staleTime: Infinity,
     retry: false,
   });

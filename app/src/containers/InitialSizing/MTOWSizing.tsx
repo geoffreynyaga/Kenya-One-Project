@@ -36,7 +36,8 @@ import { useState } from "react";
 
 import { useQuery } from "@tanstack/react-query";
 
-import { MtowSizingError, fetchMtowSizing } from "../../api/mtowSizing";
+import { MtowSizingError } from "../../api/mtowSizing";
+import { getCalculationClient } from "../../api/client";
 import { usePersistentValue } from "../../hooks/usePersistentState";
 
 import { DEFAULT_METHOD, MethodName, isMethodName } from "./methods";
@@ -63,7 +64,7 @@ export default function MTOWSizing() {
 
   const query = useQuery({
     queryKey: ["mtow-sizing", request],
-    queryFn: () => fetchMtowSizing(request),
+    queryFn: () => getCalculationClient().mtowSizing(request),
     staleTime: 5 * 60 * 1000,
     retry: 1,
     refetchOnWindowFocus: false,

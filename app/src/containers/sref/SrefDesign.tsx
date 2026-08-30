@@ -14,9 +14,8 @@ import {
   SrefEngineSpec,
   SrefSizingRequest,
   SrefSizingResult,
-  fetchSrefEngines,
-  fetchSrefSizing,
 } from "../../api/srefDesign";
+import { getCalculationClient } from "../../api/client";
 import { usePersistentState } from "../../hooks/usePersistentState";
 import tokens from "../../design-tokens";
 import { InputSection } from "../../components/sheet/InputSection";
@@ -714,7 +713,7 @@ export default function SrefDesign() {
 
   const query = useQuery({
     queryKey: ["sref-sizing", submitted],
-    queryFn: () => fetchSrefSizing(submitted!),
+    queryFn: () => getCalculationClient().srefSizing(submitted!),
     enabled: submitted !== null,
     staleTime: 5 * 60 * 1000,
     retry: 1,
@@ -724,7 +723,7 @@ export default function SrefDesign() {
   // Engine specifications are immutable reference data.
   const catalog = useQuery({
     queryKey: ["sref-engines"],
-    queryFn: fetchSrefEngines,
+    queryFn: () => getCalculationClient().srefEngines(),
     staleTime: Infinity,
     gcTime: Infinity,
     refetchOnWindowFocus: false,

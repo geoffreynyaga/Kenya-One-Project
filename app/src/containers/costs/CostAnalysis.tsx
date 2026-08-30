@@ -12,8 +12,8 @@ import createPlotlyComponent from "react-plotly.js/factory";
 import {
   CostAnalysisRequest,
   CostAnalysisResult,
-  fetchCostAnalysis,
 } from "../../api/costAnalysis";
+import { getCalculationClient } from "../../api/client";
 import { InputSection } from "../../components/sheet/InputSection";
 import { usePersistentState } from "../../hooks/usePersistentState";
 import tokens from "../../design-tokens";
@@ -771,7 +771,7 @@ export default function CostAnalysis() {
 
   const query = useQuery({
     queryKey: ["cost-analysis", submitted],
-    queryFn: () => fetchCostAnalysis(submitted),
+    queryFn: () => getCalculationClient().costAnalysis(submitted),
     staleTime: 5 * 60 * 1000,
     retry: 1,
     refetchOnWindowFocus: false,
