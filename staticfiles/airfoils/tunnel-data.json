@@ -1,5 +1,5 @@
 {
-  "$comment": "Wind-tunnel section data. Only what cannot be derived lives here: thin-airfoil theory is inviscid, so it has no stall and therefore no CL max, and no amount of geometry gives you one. Section shape and the theoretical coefficients are generated in the browser from the designation (Frontend-Electron/src/domain/naca.ts) rather than stored, so this file never duplicates them. Add a section only with a named source. The `note` field is shown to the user, so it describes the measurements themselves and never mentions where they were transcribed from; that belongs in `source`, which is only ever shown on hover.",
+  "$comment": "Wind-tunnel section data. Only what cannot be derived lives here: thin-airfoil theory is inviscid, so it has no stall and therefore no CL max, and no amount of geometry gives you one. Section shape and the theoretical coefficients are generated in the browser from the designation (app/src/domain/naca.ts) rather than stored, so this file never duplicates them. Add a section only with a named source. The `note` field is shown to the user, so it describes the measurements themselves and never mentions where they were transcribed from; that belongs in `source`, which is only ever shown on hover.",
   "sections": [
     {
       "designation": "4412",
