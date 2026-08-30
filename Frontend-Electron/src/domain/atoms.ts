@@ -355,13 +355,6 @@ export const taxiFractionAtom = provisional("taxiFraction", 0.98);
 // @link MTOW!B20
 export const climbFractionAtom = provisional("climbFraction", 0.97);
 
-// Whole-mission fraction retained for the empty-weight solve and landing state.
-// @link MTOW!B28
-export const cruiseWeightRatioAtom = provisional(
-  "cruiseWeightRatio",
-  0.8560332551941533
-);
-
 // @link Sref!G6
 export const cruiseSpeedKnotsAtom = provisional("cruiseSpeedKnots", 140);
 

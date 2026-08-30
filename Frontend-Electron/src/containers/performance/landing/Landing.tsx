@@ -1,16 +1,24 @@
 /*
- * Performance 05 — Landing. Fifty feet to a standstill, in four segments: the
+ * Performance 05 — Landing. Obstacle to standstill, in four segments: the
  * glide down, the flare, the roll before the brakes bite, and the brake run.
  */
 import { ReactNode, useMemo } from "react";
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
 import { Hint, HintSpec } from "../../../components/sheet/Hint";
+import { FigureExplainer } from "../../../components/sheet/FigureExplainer";
 import { InputSection } from "../../../components/sheet/InputSection";
 import { ValueRow } from "../../../components/sheet/ValueRow";
 import tokens from "../../../design-tokens";
 import { landing, landingWarnings } from "./landingCompute";
+import { landingInputIssues } from "./landingSchema";
 import { EntryField, useLandingSheet } from "./useLandingSheet";
 import { LandingResult } from "./utils";
 
@@ -52,23 +60,93 @@ const figureLayout = (x: string, y: string, left = 62) => ({
 
 function Figure({
   title,
-  caption,
+  body,
+  id,
   children,
 }: {
   title: string;
-  caption: string;
+  body: string;
+  id: string;
   children: ReactNode;
 }) {
   return (
     <figure className="m-0 border border-rule-mid bg-field">
-      <figcaption className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
-        {title}
+      <figcaption>
+        <FigureExplainer body={body} id={id} label={title} />
       </figcaption>
       <div className="p-3">{children}</div>
-      <p className="border-t border-rule-hair px-4 py-3 font-mono text-meta leading-[1.6] text-ink-muted">
-        {caption}
-      </p>
     </figure>
+  );
+}
+
+interface DisplayColumn {
+  id: string;
+  header: ReactNode;
+}
+
+interface DisplayRow {
+  id: string;
+  cells: Record<string, ReactNode>;
+  className?: string;
+}
+
+function DataTable({
+  columns,
+  rows,
+}: {
+  columns: DisplayColumn[];
+  rows: DisplayRow[];
+}) {
+  const definitions = useMemo<ColumnDef<DisplayRow>[]>(
+    () =>
+      columns.map((column) => ({
+        id: column.id,
+        header: () => column.header,
+        cell: ({ row }) => row.original.cells[column.id],
+      })),
+    [columns]
+  );
+  const table = useReactTable({
+    columns: definitions,
+    data: rows,
+    getCoreRowModel: getCoreRowModel(),
+    getRowId: (row) => row.id,
+  });
+
+  return (
+    <table className="w-full border-collapse text-right font-mono text-note">
+      <thead>
+        {table.getHeaderGroups().map((headerGroup) => (
+          <tr
+            className="text-label tracking-label text-ink-label"
+            key={headerGroup.id}
+          >
+            {headerGroup.headers.map((header, index) => (
+              <th
+                className={`${index === 0 ? "text-left" : "text-right"} px-4 py-2 font-medium`}
+                key={header.id}
+              >
+                {flexRender(header.column.columnDef.header, header.getContext())}
+              </th>
+            ))}
+          </tr>
+        ))}
+      </thead>
+      <tbody className="text-ink-body">
+        {table.getRowModel().rows.map((row) => (
+          <tr className={row.original.className} key={row.id}>
+            {row.getVisibleCells().map((cell, index) => (
+              <td
+                className={`${index === 0 ? "text-left text-ink" : "text-right"} border-t border-rule-hair px-4 py-[7px]`}
+                key={cell.id}
+              >
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
@@ -105,6 +183,28 @@ const RUNWAY_FIELDS: EntrySpec[] = [
   },
 ];
 
+const CONFIGURATION_FIELDS: EntrySpec[] = [
+  {
+    field: "clMaxLanding",
+    label: "CL max, landing",
+    cell: "B9",
+    body: "Maximum lift coefficient in the landing configuration. It sets the landing stall speed, so every approach and touchdown speed depends on it.",
+    typical: "Confirm from the selected high-lift configuration and its aerodynamic evidence.",
+  },
+  {
+    field: "landingLiftCoefficient",
+    label: "CL, landing roll",
+    cell: "B8",
+    body: "Lift coefficient held through the landing roll. Lift reduces the normal force available to the brakes; spoilers or flap retraction reduce it after touchdown.",
+  },
+  {
+    field: "landingDragCoefficient",
+    label: "CD, landing",
+    cell: "B7",
+    body: "Drag coefficient in the landing configuration. Aerodynamic drag assists the brakes during the ground roll.",
+  },
+];
+
 const IDLE_FIELDS: EntrySpec[] = [
   {
     field: "idlePowerBhp",
@@ -125,6 +225,7 @@ const IDLE_FIELDS: EntrySpec[] = [
 ];
 
 interface CarriedSpec extends HintSpec {
+  key: string;
   value: number;
   unit?: string;
   digits?: number;
@@ -133,7 +234,7 @@ interface CarriedSpec extends HintSpec {
 const SPEED_LABELS: Record<string, [string, string]> = {
   reference: [
     "V REF",
-    "Approach speed, 1.3 times the landing stall. What is flown down the glideslope.",
+    "Approach speed at the confirmed multiple of landing stall speed. What is flown down the glideslope.",
   ],
   flare: [
     "V FLARE",
@@ -180,48 +281,71 @@ export default function Landing() {
   const sheet = useLandingSheet();
   const { inputs } = sheet;
 
-  const result = useMemo(() => landing(inputs), [inputs]);
-  const warnings = useMemo(
-    () => landingWarnings(inputs, result),
-    [inputs, result]
-  );
+  const allEntryFields = [
+    ...RUNWAY_FIELDS,
+    ...CONFIGURATION_FIELDS,
+    ...IDLE_FIELDS,
+  ];
+  const issues = landingInputIssues(inputs);
+  const localErrors = allEntryFields.flatMap((spec) => {
+    const error = sheet.entryError(spec.field);
+    return error ? [`${spec.label}: ${error}`] : [];
+  });
+  let computation: {
+    result: LandingResult | null;
+    error: string | null;
+  } = { result: null, error: null };
+  if (
+    sheet.unresolvedUpstream.length === 0 &&
+    issues.length === 0 &&
+    localErrors.length === 0
+  ) {
+    try {
+      computation = { result: landing(inputs), error: null };
+    } catch (error) {
+      computation = {
+        result: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : "No physical landing solution exists.",
+      };
+    }
+  }
+  const { result } = computation;
 
   const carried: CarriedSpec[] = [
     {
-      label: "Landing weight",
+      key: "mtowLb",
+      label: "Maximum take-off weight",
       unit: "lb",
-      value: result.landingWeightLb,
+      value: inputs.mtowLb,
       digits: 0,
-      cell: "B2",
+      cell: "take-off!P9",
       origin: "SHEET 01",
-      body: "The weight the brakes are stopping. Taken as maximum take-off weight, which is the overweight-landing case rather than the normal one.",
+      body: "The mission's maximum take-off weight. Landing weight is derived from it after subtracting the confirmed mission fuel fraction.",
     },
     {
-      label: "Stall, landing",
-      unit: "kt",
-      value: inputs.stallSpeedLandingKcas,
+      key: "fuelFraction",
+      label: "Mission fuel fraction",
+      unit: "% MTOW",
+      value: 100 * inputs.fuelFraction,
       digits: 2,
-      cell: "B9",
-      origin: "SHEET 02",
-      body: "Stall speed in the landing configuration. Every speed on this sheet is a multiple of it, so every distance scales with its square.",
+      cell: "MTOW!B17",
+      origin: "SHEET 01",
+      body: "Fuel carried for the selected mission as a fraction of maximum take-off weight. Landing derives the post-burn weight from this choice.",
     },
     {
-      label: "CL, landing roll",
-      value: inputs.landingLiftCoefficient,
-      digits: 4,
-      cell: "B8",
-      origin: "SHEET 02",
-      body: "Lift the wing is still making on the ground. It is weight the brakes cannot use, which is why spoilers exist.",
+      key: "approachSpeedRatio",
+      label: "Approach speed ratio",
+      value: inputs.approachSpeedRatio,
+      digits: 2,
+      cell: "G2",
+      origin: "AILERON",
+      body: "Approach speed divided by landing stall speed. The same shared rule is used by the aileron control check.",
     },
     {
-      label: "CD, landing roll",
-      value: inputs.landingDragCoefficient,
-      digits: 4,
-      cell: "B7",
-      origin: "SHEET 02",
-      body: "Drag in the landing configuration. It helps here, unlike everywhere else in the design.",
-    },
-    {
+      key: "wingArea",
       label: "Wing area",
       unit: "ft²",
       value: inputs.wingAreaFt2,
@@ -231,14 +355,7 @@ export default function Landing() {
       body: "Reference area, for the lift and drag on the roll.",
     },
     {
-      label: "CL max",
-      value: inputs.clMax,
-      digits: 2,
-      cell: "Sref!B10",
-      origin: "SHEET 02",
-      body: "Maximum lift coefficient, clean. It fixes the stall speed above.",
-    },
-    {
+      key: "propellerDiameterFt",
       label: "Propeller diameter",
       unit: "ft",
       value: inputs.propellerDiameterFt,
@@ -248,6 +365,7 @@ export default function Landing() {
       body: "Sets the disc the static thrust is worked over, which is what the idle thrust is a fraction of.",
     },
     {
+      key: "hubDiameterRatio",
       label: "Spinner ratio",
       value: inputs.hubDiameterRatio,
       digits: 2,
@@ -256,6 +374,7 @@ export default function Landing() {
       body: "Spinner diameter over propeller diameter. It blanks off the middle of the disc.",
     },
     {
+      key: "installedPowerBhp",
       label: "Installed power",
       unit: "bhp",
       value: inputs.maxRatedPowerBhp,
@@ -264,15 +383,19 @@ export default function Landing() {
       origin: "SHEET 02",
       body: sheet.engine
         ? `${sheet.engine.name} at ${sheet.engine.ratedHp} hp, times the engine count.`
-        : "No engine has been selected on Sheet 02 yet, so the power the sizing curves asked for is standing in for it.",
+        : "No engine has been selected in SREF & POWER, so installed power is unresolved.",
     },
   ];
 
   const entryRow = (spec: EntrySpec) => {
-    const value = inputs[spec.field];
+    const error = sheet.entryError(spec.field);
+    const status = sheet.entryStatus(spec.field);
+    let statusLabel: string | null = null;
+    if (status === "provisional") statusLabel = "PROVISIONAL";
+    if (status === "unresolved") statusLabel = "UNRESOLVED";
     return (
       <label
-        className="flex items-baseline gap-2 py-[5px] pl-[18px] pr-[18px]"
+        className="flex flex-wrap items-baseline gap-2 py-[5px] pl-[18px] pr-[18px]"
         htmlFor={`ld-${spec.field}`}
         key={spec.field}
         title={spec.label}
@@ -286,44 +409,179 @@ export default function Landing() {
           ) : null}
         </span>
         <Hint inputId={`ld-${spec.field}`} spec={spec} />
+        {statusLabel ? (
+          <span className="font-mono text-tag tracking-band text-accent">
+            {statusLabel}
+          </span>
+        ) : null}
         <input
-          className="w-[104px] shrink-0 border-b border-dashed border-rule bg-transparent pb-[2px] text-right font-mono text-value text-ink outline-none placeholder:text-ink-faint focus:border-solid focus:border-accent"
+          aria-invalid={error !== null}
+          className={`w-[104px] shrink-0 border-b border-dashed bg-transparent pb-[2px] text-right font-mono text-value outline-none placeholder:text-ink-faint focus:border-solid ${
+            error
+              ? "border-accent text-accent"
+              : "border-rule text-ink focus:border-accent"
+          }`}
           id={`ld-${spec.field}`}
           inputMode="decimal"
-          onChange={(event) =>
-            sheet.setEntry(
-              spec.field,
-              event.target.value.trim() === ""
-                ? null
-                : Number(event.target.value)
-            )
-          }
+          onChange={(event) => sheet.setEntry(spec.field, event.target.value)}
+          onBlur={(event) => sheet.setEntry(spec.field, event.target.value)}
           placeholder={spec.optional ? "not known" : undefined}
-          value={value === null ? "" : value}
+          value={sheet.entryText(spec.field)}
         />
+        {error ? (
+          <span className="w-full text-right font-mono text-tag text-accent">
+            {error}
+          </span>
+        ) : null}
       </label>
     );
   };
 
-  const carriedRow = (spec: CarriedSpec) => (
-    <div
-      className="flex items-baseline gap-2 py-[5px] pl-[16px] pr-[18px] shadow-carried"
-      key={spec.label}
-    >
-      <span className="min-w-0 flex-1 truncate text-note text-ink-body">
-        {spec.label}
-        {spec.unit ? (
-          <span className="ml-[5px] font-mono text-label text-ink-faint">
-            [{spec.unit}]
+  const carriedRow = (spec: CarriedSpec) => {
+    const status = sheet.quantityStatus(spec.key);
+    return (
+      <div
+        className="flex flex-wrap items-baseline gap-2 py-[5px] pl-[16px] pr-[18px] shadow-carried"
+        key={spec.key}
+      >
+        <span className="min-w-0 flex-1 truncate text-note text-ink-body">
+          {spec.label}
+          {spec.unit ? (
+            <span className="ml-[5px] font-mono text-label text-ink-faint">
+              [{spec.unit}]
+            </span>
+          ) : null}
+        </span>
+        <Hint inputId={`ld-carried-${spec.key}`} spec={spec} />
+        {status !== "confirmed" ? (
+          <span className="font-mono text-tag tracking-band text-accent">
+            {status === "provisional" ? "PROVISIONAL" : "UNRESOLVED"}
           </span>
         ) : null}
-      </span>
-      <Hint inputId={`ld-carried-${spec.cell}`} spec={spec} />
-      <span className="w-[104px] shrink-0 text-right font-mono text-value text-ink-muted">
-        {nf(spec.value, spec.digits ?? 4)}
-      </span>
-    </div>
+        <span className="w-[104px] shrink-0 text-right font-mono text-value text-ink-muted">
+          {status === "confirmed" ? nf(spec.value, spec.digits ?? 4) : "—"}
+        </span>
+      </div>
+    );
+  };
+
+  const rail = (
+    <>
+      <div className="px-[18px] pb-[11px] pt-[15px] font-mono text-label font-medium tracking-label text-ink-label">
+        LANDING DEFINITION
+      </div>
+      <InputSection
+        count={RUNWAY_FIELDS.length}
+        open={sheet.openSections.runway}
+        title="ENTRY · RUNWAY AND PATH"
+        onToggle={(open) => sheet.toggleSection("runway", open)}
+      >
+        {RUNWAY_FIELDS.map(entryRow)}
+      </InputSection>
+      <InputSection
+        count={CONFIGURATION_FIELDS.length}
+        open={sheet.openSections.configuration}
+        title="ENTRY · LANDING CONFIGURATION"
+        onToggle={(open) => sheet.toggleSection("configuration", open)}
+      >
+        {CONFIGURATION_FIELDS.map(entryRow)}
+      </InputSection>
+      <InputSection
+        count={IDLE_FIELDS.length}
+        open={sheet.openSections.idle}
+        title="ENTRY · IDLE THRUST, IF KNOWN"
+        onToggle={(open) => sheet.toggleSection("idle", open)}
+      >
+        {IDLE_FIELDS.map(entryRow)}
+        <p className="px-[18px] pb-2 pt-1 font-mono text-meta leading-[1.6] text-ink-muted">
+          Leave both empty to use one twentieth of static thrust. Enter both
+          only when the selected propulsion installation supports them.
+        </p>
+      </InputSection>
+      <InputSection
+        count={carried.length}
+        open={sheet.openSections.carried}
+        title="CARRIED · UPSTREAM"
+        onToggle={(open) => sheet.toggleSection("carried", open)}
+      >
+        {carried.map(carriedRow)}
+      </InputSection>
+      <button
+        className="mt-4 w-full border border-rule bg-panel px-4 py-3 font-mono text-meta tracking-tab text-ink-faint hover:text-ink"
+        onClick={sheet.reset}
+        type="button"
+      >
+        RESET LANDING
+      </button>
+    </>
   );
+
+  if (result === null) {
+    const blockers = Array.from(
+      new Set([
+        ...sheet.unresolvedUpstream,
+        ...localErrors,
+        ...issues.map((issue) => issue.message),
+        ...(computation.error ? [computation.error] : []),
+      ])
+    );
+    return (
+      <main className="min-h-0 flex-1 overflow-auto bg-paper font-sans text-ink">
+        <h1 className="sr-only">Landing performance</h1>
+        <div className="grid border-b border-rule-mid bg-rule-cell sm:grid-cols-4 sm:gap-px">
+          {["LANDING DISTANCE", "GROUND ROLL", "V REF", "TOUCHDOWN"].map(
+            (label) => (
+              <div
+                className="flex flex-col gap-[7px] bg-paper px-[18px] py-[11px]"
+                key={label}
+              >
+                <span className="font-mono text-label tracking-tab text-ink-label">
+                  {label}
+                </span>
+                <span className="font-mono text-readout font-medium leading-none text-ink">
+                  —
+                </span>
+              </div>
+            )
+          )}
+        </div>
+        <div className="grid min-h-0 xl:grid-cols-[296px_minmax(560px,1fr)]">
+          <form
+            className="bg-panel pb-5 xl:border-r xl:border-rule-mid"
+            onSubmit={(event) => event.preventDefault()}
+          >
+            {rail}
+          </form>
+          <div aria-live="polite" className="min-w-0 px-[22px] pb-8 pt-[18px]">
+            <div className="mb-[14px]">
+              <div className="font-mono text-label tracking-label text-ink-faint">
+                PERFORMANCE 05 / LANDING
+              </div>
+              <h2 className="text-sheet">Obstacle to standstill</h2>
+            </div>
+            <section
+              className="border border-accent bg-accent-wash px-4 py-3 text-accent"
+              role="alert"
+            >
+              <h3 className="font-mono text-label font-medium tracking-label">
+                CALCULATION UNAVAILABLE
+              </h3>
+              <p className="mt-2 font-mono text-note">
+                Resolve these quantities before Landing draws figures:
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 font-mono text-note">
+                {blockers.map((blocker) => (
+                  <li key={blocker}>{blocker}</li>
+                ))}
+              </ul>
+            </section>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  const warnings = landingWarnings(inputs, result);
 
   const touchdown = result.speeds.find((speed) => speed.key === "touchdown")!;
   const reference = result.speeds.find((speed) => speed.key === "reference")!;
@@ -385,6 +643,12 @@ export default function Landing() {
 
   const forces: Array<[string, string, string, string]> = [
     [
+      "Landing weight",
+      q(result.landingWeightLb, "lb", 0),
+      "B2",
+      "Weight at touchdown after the confirmed mission fuel fraction is removed from maximum take-off weight.",
+    ],
+    [
       "Lift on the brake run",
       q(result.liftLbf, "lbf", 0),
       "M2",
@@ -429,6 +693,61 @@ export default function Landing() {
     ["BRAKE RUN", result.brakingUsed.distanceFt, tokens.colors.accent.DEFAULT],
   ];
 
+  const segmentColumns: DisplayColumn[] = [
+    { id: "segment", header: "Segment" },
+    {
+      id: "distance",
+      header: (
+        <>
+          Distance <span className="text-ink-faint">[ft]</span>
+        </>
+      ),
+    },
+    {
+      id: "share",
+      header: (
+        <>
+          Share <span className="text-ink-faint">[%]</span>
+        </>
+      ),
+    },
+  ];
+  const segmentRows: DisplayRow[] = [
+    ...segments.map(([label, value, cell, body]) => ({
+      id: cell,
+      cells: {
+        segment: (
+          <span className="inline-flex items-baseline gap-2">
+            {label}
+            <Hint
+              inputId={`ld-seg-${cell}`}
+              spec={{ label, body, cell }}
+            />
+          </span>
+        ),
+        distance: nf(value, 0),
+        share: nf((100 * value) / result.totalDistanceFt, 1),
+      },
+    })),
+    {
+      id: "total",
+      className: "font-medium",
+      cells: {
+        segment: "Total, from the obstacle",
+        distance: nf(result.totalDistanceFt, 0),
+        share: "100.0",
+      },
+    },
+    {
+      id: "ground-roll",
+      cells: {
+        segment: "Ground roll, from touchdown",
+        distance: nf(result.groundRollFt, 0),
+        share: nf((100 * result.groundRollFt) / result.totalDistanceFt, 1),
+      },
+    },
+  ];
+
   return (
     <main className="min-h-0 flex-1 overflow-auto bg-paper font-sans text-ink">
       <h1 className="sr-only">Landing performance</h1>
@@ -456,45 +775,7 @@ export default function Landing() {
           className="bg-panel pb-5 xl:border-r xl:border-rule-mid"
           onSubmit={(event) => event.preventDefault()}
         >
-          <div className="px-[18px] pb-[11px] pt-[15px] font-mono text-label font-medium tracking-label text-ink-label">
-            LANDING DEFINITION
-          </div>
-          <InputSection
-            count={RUNWAY_FIELDS.length}
-            open={sheet.openSections.runway}
-            title="ENTRY · RUNWAY AND PATH"
-            onToggle={(open) => sheet.toggleSection("runway", open)}
-          >
-            {RUNWAY_FIELDS.map(entryRow)}
-          </InputSection>
-          <InputSection
-            count={IDLE_FIELDS.length}
-            open={sheet.openSections.idle}
-            title="ENTRY · IDLE THRUST, IF KNOWN"
-            onToggle={(open) => sheet.toggleSection("idle", open)}
-          >
-            {IDLE_FIELDS.map(entryRow)}
-            <p className="px-[18px] pb-2 pt-1 font-mono text-meta leading-[1.6] text-ink-muted">
-              Leave both empty and the thrust the brakes work against is taken
-              as a twentieth of static thrust, which is what a fixed-pitch
-              cruise propeller windmills at.
-            </p>
-          </InputSection>
-          <InputSection
-            count={carried.length}
-            open={sheet.openSections.carried}
-            title="CARRIED · UPSTREAM"
-            onToggle={(open) => sheet.toggleSection("carried", open)}
-          >
-            {carried.map(carriedRow)}
-          </InputSection>
-          <button
-            className="mt-4 w-full border border-rule bg-panel px-4 py-3 font-mono text-meta tracking-tab text-ink-faint hover:text-ink"
-            onClick={sheet.reset}
-            type="button"
-          >
-            RESET LANDING
-          </button>
+          {rail}
         </form>
 
         <div aria-live="polite" className="min-w-0 px-[22px] pb-8 pt-[18px]">
@@ -502,12 +783,13 @@ export default function Landing() {
             <div className="font-mono text-label tracking-label text-ink-faint">
               PERFORMANCE 05 / LANDING
             </div>
-            <h2 className="text-sheet">Fifty feet to a standstill</h2>
+            <h2 className="text-sheet">Obstacle to standstill</h2>
           </div>
 
           <div className="grid gap-4 xl:grid-cols-2">
             <Figure
-              caption="The glide is straight until the round-out, which is a circular arc sized by the load factor the pilot pulls. Almost half the distance from the obstacle is flown before the wheels touch, which is why an approach flown high or fast runs off the end."
+              body="The glide is straight until the round-out, which is a circular arc sized by the load factor the pilot pulls. The plot separates airborne distance from the ground roll to show where runway demand comes from."
+              id="ld-profile-explainer"
               title="THE LANDING PROFILE"
             >
               <Plot
@@ -542,7 +824,8 @@ export default function Landing() {
             </Figure>
 
             <Figure
-              caption="The brake run is the only segment any design decision moves. The approach and the flare are fixed by the stall speed and the path angle, and the free roll is a second of reaction time — so a shorter field comes from stopping harder, not from flying the approach differently."
+              body="The stacked distance shows the approach, flare, pilot reaction and brake run separately. Braking friction and residual thrust primarily move the last segment."
+              id="ld-segments-explainer"
               title="WHERE THE RUNWAY GOES"
             >
               <Plot
@@ -570,65 +853,7 @@ export default function Landing() {
             <h3 className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
               THE FOUR SEGMENTS
             </h3>
-            <table className="w-full border-collapse text-left font-mono text-note">
-              <thead>
-                <tr className="text-label tracking-label text-ink-label">
-                  <th className="px-4 py-2 font-medium">Segment</th>
-                  <th className="px-4 py-2 text-right font-medium">
-                    Distance <span className="text-ink-faint">[ft]</span>
-                  </th>
-                  <th className="px-4 py-2 text-right font-medium">
-                    Share <span className="text-ink-faint">[%]</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="text-ink-body">
-                {segments.map(([label, value, cell, body]) => (
-                  <tr key={cell}>
-                    <td className="border-t border-rule-hair px-4 py-[7px] text-ink">
-                      <span className="inline-flex items-baseline gap-2">
-                        {label}
-                        <Hint
-                          inputId={`ld-seg-${cell}`}
-                          spec={{ label, body, cell }}
-                        />
-                      </span>
-                    </td>
-                    <td className="border-t border-rule-hair px-4 py-[7px] text-right">
-                      {nf(value, 0)}
-                    </td>
-                    <td className="border-t border-rule-hair px-4 py-[7px] text-right text-ink-muted">
-                      {nf((100 * value) / result.totalDistanceFt, 1)}
-                    </td>
-                  </tr>
-                ))}
-                <tr>
-                  <td className="border-t border-rule-mid px-4 py-[7px] font-medium text-ink">
-                    Total, from the obstacle
-                  </td>
-                  <td className="border-t border-rule-mid px-4 py-[7px] text-right font-medium text-accent-dark">
-                    {nf(result.totalDistanceFt, 0)}
-                  </td>
-                  <td className="border-t border-rule-mid px-4 py-[7px] text-right text-ink-muted">
-                    100.0
-                  </td>
-                </tr>
-                <tr>
-                  <td className="border-t border-rule-hair px-4 py-[7px] text-ink">
-                    Ground roll, from touchdown
-                  </td>
-                  <td className="border-t border-rule-hair px-4 py-[7px] text-right">
-                    {nf(result.groundRollFt, 0)}
-                  </td>
-                  <td className="border-t border-rule-hair px-4 py-[7px] text-right text-ink-muted">
-                    {nf(
-                      (100 * result.groundRollFt) / result.totalDistanceFt,
-                      1
-                    )}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <DataTable columns={segmentColumns} rows={segmentRows} />
           </section>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -637,6 +862,16 @@ export default function Landing() {
                 SPEEDS
               </h3>
               <dl className="px-4 py-2 font-mono text-note">
+                <ValueRow
+                  hint={{
+                    body: "Stall speed at the post-burn landing weight and confirmed landing maximum lift coefficient. Every landing speed is derived from it.",
+                    cell: "B9",
+                    formula: "√(2·Wlanding ÷ (ρ₀·S·CLmax,landing))",
+                  }}
+                  id="ld-speed-stall"
+                  label="V SO"
+                  value={q(inputs.stallSpeedLandingKcas, "kt", 2)}
+                />
                 {result.speeds.map((entry) => {
                   const [label, body] = SPEED_LABELS[entry.key];
                   return (
@@ -674,7 +909,14 @@ export default function Landing() {
               <dl className="px-4 py-2 font-mono text-note">
                 {forces.map(([label, value, cell, body], index) => (
                   <ValueRow
-                    hint={{ cell, body }}
+                    hint={{
+                      cell,
+                      body,
+                      formula:
+                        label === "Landing weight"
+                          ? "MTOW · (1 − fuel fraction)"
+                          : undefined,
+                    }}
                     id={`ld-force-${index}`}
                     key={label}
                     label={label}
