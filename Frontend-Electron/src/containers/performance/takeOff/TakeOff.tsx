@@ -42,8 +42,8 @@ const PROPELLER_FIELDS: EntrySpec[] = [
     cell: "C8",
     body: "Diameter of the disc the blades sweep. Static thrust goes up with it, because a bigger disc accelerates more air by less.",
     typical: "Validate from power, rpm, blade count, tip speed and clearance.",
-    cite: "Gudmundsson §14.4",
-    formula: "A₂ = πDₚ²/4",
+    cite: "Gudmundsson §14.3.2, Eq. 14-22 and Table 14-2; Raymer §10.4",
+    formula: "D = Kp·P¼; Kp = 18.0–20.4 in/BHP¼",
   },
   {
     field: "hubDiameterRatio",
@@ -182,7 +182,25 @@ export default function TakeOff() {
   const sheet = useTakeoffSheet();
   const { inputs } = sheet;
 
-  const entrySpecs = [...PROPELLER_FIELDS, ...RUN_FIELDS];
+  const diameterEstimate = sheet.propellerDiameterEstimate;
+  const propellerFields = PROPELLER_FIELDS.map((spec) =>
+    spec.field === "propellerDiameterFt" && diameterEstimate
+      ? {
+          ...spec,
+          body:
+            `${spec.body} The selected engine's rated power gives a ` +
+            `${nf(diameterEstimate.threeBladeFt, 2)} ft three-blade starting point. ` +
+            `At rated rpm its rotational tip speed is Mach ${nf(diameterEstimate.threeBladeTipMach, 2)}; forward speed raises the helical value and must be checked with clearance before catalogue selection.`,
+          typical:
+            `Selected-engine power estimate: ${nf(diameterEstimate.powerRangeFt.minimum, 2)}–` +
+            `${nf(diameterEstimate.powerRangeFt.maximum, 2)} ft for four-plus to two blades. ` +
+            `Metal/composite Mach 0.75–0.80 at rated rpm corresponds to ` +
+            `${nf(diameterEstimate.metalCompositeTipDiameterFt.atMach075, 2)}–` +
+            `${nf(diameterEstimate.metalCompositeTipDiameterFt.atMach080, 2)} ft before forward speed.`,
+        }
+      : spec
+  );
+  const entrySpecs = [...propellerFields, ...RUN_FIELDS];
   const hasEntryErrors = entrySpecs.some((spec) =>
     Boolean(sheet.entryError(spec.field))
   );
@@ -388,6 +406,7 @@ export default function TakeOff() {
             id={`to-${spec.field}`}
             inputMode="decimal"
             onChange={(event) => sheet.setEntry(spec.field, event.target.value)}
+            onBlur={(event) => sheet.setEntry(spec.field, event.target.value)}
             value={sheet.entryText(spec.field)}
           />
           {error ? (
@@ -436,7 +455,7 @@ export default function TakeOff() {
             unresolved ? "text-accent" : "text-ink-muted"
           }`}
         >
-          {nf(spec.value, 4)}
+          {unresolved ? "—" : nf(spec.value, 4)}
         </span>
       </div>
     );
@@ -459,7 +478,7 @@ export default function TakeOff() {
       <div className="px-[18px] pb-[11px] pt-[15px] font-mono text-label font-medium tracking-label text-ink-label">
         TAKE-OFF DEFINITION
       </div>
-      {section("propeller", "ENTRY · PROPELLER", PROPELLER_FIELDS)}
+      {section("propeller", "ENTRY · PROPELLER", propellerFields)}
       {section("run", "ENTRY · THE RUN", RUN_FIELDS)}
       <InputSection
         count={carried.length}

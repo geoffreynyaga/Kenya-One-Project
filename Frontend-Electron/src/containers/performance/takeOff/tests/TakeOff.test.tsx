@@ -42,6 +42,21 @@ function renderFreshTakeoff() {
   );
 }
 
+function renderTakeoffWithSelectedEngine() {
+  const store = createStore();
+  store.set(selectedEngineAtom, {
+    number: 1,
+    name: "Example 180",
+    ratedHp: 180,
+    rpm: 2700,
+  });
+  return render(
+    <Provider store={store}>
+      <TakeOff />
+    </Provider>
+  );
+}
+
 function renderValidTakeoff() {
   window.localStorage.setItem(
     ENTRY_KEY,
@@ -125,6 +140,31 @@ describe("TakeOff", () => {
     expect(document.querySelector("#to-propEfficiencyCruise")).toBeNull();
     expect(document.querySelector("#to-propEfficiencyTakeoff")).toBeNull();
     expect(screen.getAllByText("PROVISIONAL").length).toBeGreaterThan(0);
+  });
+
+  it("never displays a numeric zero for unresolved take-off efficiency", () => {
+    renderFreshTakeoff();
+    fireEvent.click(screen.getByText("CARRIED · UPSTREAM"));
+
+    const row = screen.getByText("ηp on the run").closest("div")!;
+    expect(within(row).getByText("UNRESOLVED")).toBeInTheDocument();
+    expect(within(row).getByText("—")).toBeInTheDocument();
+    expect(within(row).queryByText("0.0000")).toBeNull();
+  });
+
+  it("offers a selected-engine diameter estimate as provisional", () => {
+    const { container } = renderTakeoffWithSelectedEngine();
+    const input = container.querySelector<HTMLInputElement>(
+      "#to-propellerDiameterFt"
+    )!;
+    const row = input.closest("label")!;
+
+    expect(Number(input.value)).toBeCloseTo(5.86, 2);
+    expect(within(row).getByText("PROVISIONAL")).toBeInTheDocument();
+    expect(within(row).getByRole("tooltip")).toHaveTextContent("5.49–6.23 ft");
+
+    fireEvent.blur(input);
+    expect(within(row).queryByText("PROVISIONAL")).toBeNull();
   });
 
   it("shows the three ground runs, integration first", () => {

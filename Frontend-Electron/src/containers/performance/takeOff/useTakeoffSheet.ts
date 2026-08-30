@@ -27,6 +27,10 @@ import {
 } from "../../../domain/atoms";
 import { SEA_LEVEL_DENSITY_SLUG_FT3 } from "../../../domain/constants";
 import { usePersistentState } from "../../../hooks/usePersistentState";
+import {
+  estimatePropellerDiameter,
+  PropellerDiameterEstimate,
+} from "./propellerSizing";
 import { TakeoffInputs, takeoffEntrySchemas } from "./takeoffSchema";
 
 export type EntryField =
@@ -62,6 +66,7 @@ export type SectionKey = keyof typeof SECTION_DEFAULTS;
 export interface TakeoffSheet {
   inputs: TakeoffInputs;
   engine: SelectedEngine | null;
+  propellerDiameterEstimate: PropellerDiameterEstimate | null;
   upstreamResolved: { mtow: boolean; sref: boolean };
   unresolvedUpstream: string[];
   entryText: (field: EntryField) => string;
@@ -104,10 +109,27 @@ export function useTakeoffSheet(): TakeoffSheet {
     Record<SectionKey, boolean>
   >(SECTIONS_KEY, SECTION_DEFAULTS);
 
+  const propellerDiameterEstimate = engine
+    ? estimatePropellerDiameter({
+        ratedPowerBhp: engine.ratedHp,
+        ratedRpm: engine.rpm,
+      })
+    : null;
+  const diameterStatus = sharedNumericQuantity(
+    quantityStatuses,
+    "propellerDiameterFt",
+    propellerDiameterFt
+  ).status;
+  const effectivePropellerDiameterFt =
+    diameterStatus === "confirmed" ||
+    (diameterStatus === "provisional" && propellerDiameterFt > 0)
+      ? propellerDiameterFt
+      : (propellerDiameterEstimate?.threeBladeFt ?? propellerDiameterFt);
+
   const inputs = useMemo<TakeoffInputs>(
     () => ({
       ...entry,
-      propellerDiameterFt,
+      propellerDiameterFt: effectivePropellerDiameterFt,
       hubDiameterRatio,
       propEfficiencyCruise,
       propEfficiencyTakeoff,
@@ -128,7 +150,7 @@ export function useTakeoffSheet(): TakeoffSheet {
     }),
     [
       entry,
-      propellerDiameterFt,
+      effectivePropellerDiameterFt,
       hubDiameterRatio,
       propEfficiencyCruise,
       propEfficiencyTakeoff,
@@ -151,6 +173,7 @@ export function useTakeoffSheet(): TakeoffSheet {
   return {
     inputs,
     engine,
+    propellerDiameterEstimate,
     upstreamResolved: {
       mtow: committedStages.mtow,
       sref: committedStages.sref && engine !== null,
@@ -178,7 +201,15 @@ export function useTakeoffSheet(): TakeoffSheet {
           : [`Confirm ${label} in its owning stage`]
       ),
     ],
-    entryText: (field) => drafts[field] ?? String(inputs[field]),
+    entryText: (field) => {
+      if (drafts[field] !== undefined) return drafts[field] ?? "";
+      if (field === "propellerDiameterFt" && diameterStatus !== "confirmed") {
+        return propellerDiameterEstimate
+          ? String(propellerDiameterEstimate.threeBladeFt)
+          : "";
+      }
+      return String(inputs[field]);
+    },
     entryError: (field) => {
       const error = validateEntry(field, drafts[field] ?? String(inputs[field]));
       if (error) return error;
@@ -189,6 +220,9 @@ export function useTakeoffSheet(): TakeoffSheet {
           inputs[field]
         );
         if (quantity.status === "confirmed") return null;
+        if (field === "propellerDiameterFt" && propellerDiameterEstimate) {
+          return "Confirm or replace this provisional estimate.";
+        }
         if (quantity.status === "unresolved") return "Enter a value.";
         return "Confirm or replace this provisional value.";
       }
