@@ -183,15 +183,6 @@ HTML = f"""<title>Ostrich Identity, Revision A</title>
 
   footer {{ margin-top:80px; font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:.1em; }}
 
-  /* geometry shared by every inlined copy of the mark */
-  svg .hv, svg .md, svg .lt, svg .pin {{
-    fill:none; stroke:currentColor; stroke-linejoin:round; stroke-linecap:round;
-  }}
-  svg .hv {{ stroke-width:2.4; }}
-  svg .md {{ stroke-width:1.7; }}
-  svg .lt {{ stroke-width:.95; }}
-  svg .pin {{ stroke-width:1.2; fill:var(--ground); }}
-
   .sizes figure:nth-child(1) .mk {{ width:16px; }}
   .sizes figure:nth-child(2) .mk {{ width:24px; }}
   .sizes figure:nth-child(3) .mk {{ width:32px; }}
@@ -211,8 +202,8 @@ HTML = f"""<title>Ostrich Identity, Revision A</title>
 
   <h1>The ostrich is right.<br>Its packaging is not.</h1>
   <p class="deck">The mascot survives this revision with its concept intact. What gets rebuilt is
-  everything that frames it, plus the parts of the bird that were decorative where they should
-  have been structural.</p>
+  everything that frames it: the ground it sits on, the props bolted to it, the lockup under it,
+  and an icon set that never survived its own smallest size.</p>
 
   <h2><span>Redlines</span><span>Fig. 1 &ndash; 2</span></h2>
 
@@ -246,30 +237,26 @@ HTML = f"""<title>Ostrich Identity, Revision A</title>
     ])}</div>
   </div>
 
-  <h2><span>The mark</span><span>Rev. A</span></h2>
+  <h2><span>The mark</span><span>Vectorised, not redrawn</span></h2>
   <div class="markwrap">
     {svg('ostrich-mark.svg', 'mark')}
     <dl class="notes">
-      <div><dt>The facets became structure</dt>
-      <dd>Every internal line now runs from a wing vertex out to the body outline, the way
-      formers radiate off a spar. The mesh is no longer decorative faceting; it is the
-      airframe, and nothing is cut at a random angle.</dd></div>
+      <div><dt>It is your bird, at full resolution</dt>
+      <dd>The banner ostrich traced back to vector with polygonal corners forced, so every
+      facet edge is a straight line again rather than a rounded approximation of one. The
+      drawing is unchanged. What changes is that it now scales, recolours and ships.</dd></div>
 
-      <div><dt>The wing is an aerofoil, not a shape</dt>
-      <dd>It sits inside the mesh as one facet carrying three ribs, so the aeroplane is
-      built into the bird rather than bolted onto it. This is what replaces the stuck-on fin.</dd></div>
+      <div><dt>Why it was not redrawn</dt>
+      <dd>Two attempts at a rebuilt bird were worse than this one. The mascot was never the
+      problem, so the honest fix is to keep the artwork and repair everything around it.</dd></div>
 
-      <div><dt>Every joint is a pin</dt>
-      <dd>Knees and ankles are hinge circles filled with the ground colour, so the limb
-      outline passes behind them. That is the entire mechanised idea, and it costs four circles.</dd></div>
+      <div><dt>It inherits the page's ink</dt>
+      <dd>The path fills with <code>currentColor</code>, so the same file works navy on light
+      and pale on dark without a second asset. The old PNG could do neither.</dd></div>
 
-      <div><dt>The neck is a truss boom</dt>
-      <dd>Two chords and three braces, which reads as structure at poster size and collapses
-      to a clean tapered neck at icon size.</dd></div>
-
-      <div><dt>The pose is a take-off run</dt>
-      <dd>One leg extended and driving back, one folded and swung forward. An ostrich cannot
-      fly, which is the joke the mark should be making and the old pose was not.</dd></div>
+      <div><dt>The bolted-on fin and the runway line are simply gone</dt>
+      <dd>Neither existed in this artwork. They were added by the identity sheet, and dropping
+      them costs nothing the mark was using.</dd></div>
     </dl>
   </div>
 
@@ -285,26 +272,27 @@ HTML = f"""<title>Ostrich Identity, Revision A</title>
   <p class="measure">One drawing cannot serve 512&nbsp;px and 16&nbsp;px. The supplied sheet tried
   to solve the small end by cropping to the head and neck, which is the most fragile part of the
   bird: at 16&nbsp;px a thin neck is a single grey pixel column and the beak disappears entirely.
-  The fix is to keep the whole bird and shed detail instead of anatomy.</p>
+  The fix is optical sizing. Keep the whole bird in all three tiers and vary the stroke weight, so
+  the facet cells close into a solid mass as the raster gets coarser.</p>
 
   <div class="ladder">
     <div class="tier">
       <div class="stage">{svg('ostrich-mark.svg', 'mk')}</div>
-      <h4>Full mark</h4>
+      <h4>Regular</h4>
       <p class="px">512 &middot; 256 &middot; 128 PX</p>
-      <p>Mesh, ribs and hinge pins all present. Installer art, splash, about box, README.</p>
+      <p>The drawing at its own weight. Installer art, splash, about box, README.</p>
     </div>
     <div class="tier">
       <div class="stage">{svg('ostrich-solid.svg', 'mk')}</div>
-      <h4>Silhouette</h4>
+      <h4>Medium</h4>
       <p class="px">64 &middot; 48 &middot; 32 PX</p>
-      <p>Same geometry, interior lines dropped, outline lightly fattened so the neck holds.</p>
+      <p>Same path, stroked so the thinner facet edges stop dropping out of the raster.</p>
     </div>
     <div class="tier">
       <div class="stage">{svg('ostrich-glyph.svg', 'mk')}</div>
-      <h4>Glyph</h4>
+      <h4>Bold</h4>
       <p class="px">16 PX</p>
-      <p>Fattened harder still. Head, neck, body and legs all survive as distinct forms.</p>
+      <p>Stroked until the cells close into one mass. Head, neck, body and legs still read.</p>
     </div>
   </div>
 
@@ -337,7 +325,7 @@ HTML = f"""<title>Ostrich Identity, Revision A</title>
 
   <dl class="block" style="margin-top:56px">
     <div><dt>Files</dt><dd>brand/ostrich-*.svg</dd></div>
-    <div><dt>Generator</dt><dd>brand/gen.py</dd></div>
+    <div><dt>Pipeline</dt><dd>brand/tiers.py</dd></div>
     <div><dt>Next</dt><dd>tauri icon</dd></div>
     <div><dt>Stack position</dt><dd>PR 5</dd></div>
   </dl>
