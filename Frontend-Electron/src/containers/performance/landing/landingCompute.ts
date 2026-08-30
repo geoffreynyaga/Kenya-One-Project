@@ -21,7 +21,6 @@ import {
 import { staticThrustLbf as propellerStaticThrust } from "../../../domain/propeller";
 import {
   BrakingSolution,
-  CORRECT_LANDING_WEIGHT_IS_MISSION_END,
   FLARE_LIFT_FRACTION,
   FLARE_MEAN_SPEED_COEFFICIENT,
   FREE_ROLL_SECONDS,
@@ -31,14 +30,26 @@ import {
   LandingSpeed,
   LandingWarning,
   TOUCHDOWN_SPEED_MARGIN,
+  WORKBOOK_LANDS_AT_MTOW,
 } from "./utils";
+import { landingInputsSchema } from "./landingSchema";
+
+export interface LandingOptions {
+  mode?: "engineering" | "workbook";
+}
+
+export class LandingNoSolutionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LandingNoSolutionError";
+  }
+}
 
 /**
  * Stall speed in the landing configuration, KCAS.
  *
- * Taken at the clean maximum lift coefficient, because no stage owns the
- * flapped one yet. With flaps down it will be higher and this speed lower, so
- * every distance built on it is on the conservative side.
+ * The landing maximum lift coefficient is a resolved configuration choice on
+ * this stage until a live high-lift stage owns it.
  */
 export function landingStallSpeedKcas(
   landingWeightLb: number,
@@ -55,15 +66,24 @@ export function landingStallSpeedKcas(
 /** The weight actually being stopped. */
 export function landingWeightLb(
   mtowLb: number,
-  cruiseWeightRatio: number
+  fuelFraction: number,
+  options: LandingOptions = {}
 ): number {
-  return CORRECT_LANDING_WEIGHT_IS_MISSION_END
-    ? mtowLb * cruiseWeightRatio
-    : mtowLb;
+  return options.mode === "workbook" && WORKBOOK_LANDS_AT_MTOW
+    ? mtowLb
+    : mtowLb * (1 - fuelFraction);
 }
 
-export function landing(inputs: LandingInputs): LandingResult {
-  const weight = landingWeightLb(inputs.mtowLb, inputs.cruiseWeightRatio);
+export function landing(
+  uncheckedInputs: LandingInputs,
+  options: LandingOptions = {}
+): LandingResult {
+  const inputs = landingInputsSchema.parse(uncheckedInputs);
+  const weight = landingWeightLb(
+    inputs.mtowLb,
+    inputs.fuelFraction,
+    options
+  );
   const approachAngleRad = (inputs.approachAngleDeg * Math.PI) / 180;
 
   const stallFps = inputs.stallSpeedLandingKcas * KNOT_TO_FPS;
@@ -157,6 +177,17 @@ export function landing(inputs: LandingInputs): LandingResult {
 
   const brakingUsed = braking[0];
 
+  if (!Number.isFinite(brakingUsed.distanceFt)) {
+    throw new LandingNoSolutionError(
+      "The selected braking friction and idle thrust do not produce a stopping solution."
+    );
+  }
+  if (flareHeightFt >= inputs.obstacleHeightFt) {
+    throw new LandingNoSolutionError(
+      "The flare begins above the selected obstacle height, so no straight approach segment exists."
+    );
+  }
+
   return {
     landingWeightLb: weight,
     speeds,
@@ -186,25 +217,13 @@ export function landing(inputs: LandingInputs): LandingResult {
 
 export function landingWarnings(
   inputs: LandingInputs,
-  result: LandingResult
+  result: LandingResult,
+  options: LandingOptions = {}
 ): LandingWarning[] {
   const warnings: LandingWarning[] = [];
 
-  if (!Number.isFinite(result.brakingUsed.distanceFt)) {
-    warnings.push({
-      key: "never-stops",
-      severity: "defect",
-      message:
-        "At the braking speed the propeller is pushing harder than the brakes, " +
-        "the tyres and the airframe hold back, so this aeroplane does not stop " +
-        "on any length of runway. The distances are left blank rather than " +
-        "reported as a negative number. Either the idle thrust is too high or " +
-        "the braking friction is too low.",
-    });
-  }
-
-  if (!CORRECT_LANDING_WEIGHT_IS_MISSION_END) {
-    const lighter = inputs.mtowLb * inputs.cruiseWeightRatio;
+  if (options.mode === "workbook" && WORKBOOK_LANDS_AT_MTOW) {
+    const lighter = inputs.mtowLb * (1 - inputs.fuelFraction);
     const shorter = 100 * (1 - lighter / inputs.mtowLb);
     warnings.push({
       key: "lands-at-mtow",
@@ -218,28 +237,6 @@ export function landingWarnings(
         "The distances here are the overweight-landing case.",
     });
   }
-
-  warnings.push({
-    key: "stall-at-clean-clmax",
-    severity: "check",
-    cell: "B9",
-    message:
-      "The landing stall speed is taken at the clean maximum lift coefficient, " +
-      "because no stage sets the flapped one yet. Flaps down it will be lower, " +
-      "and every speed and distance here scales with its square — so this is " +
-      "the conservative end, not the certificated one.",
-  });
-
-  warnings.push({
-    key: "landing-config-from-takeoff",
-    severity: "check",
-    cell: "B7 · B8",
-    message:
-      "The lift and drag coefficients through the landing roll are the " +
-      "take-off ground attitude's, since nothing owns the landing " +
-      "configuration yet. Full flap raises both and spoilers dump the lift " +
-      "into the brakes, which is exactly what shortens the roll.",
-  });
 
   const idle = result.braking.find(
     (solution) => solution.source === "idlePower"
@@ -274,19 +271,6 @@ export function landingWarnings(
         "static thrust — the figure for a fixed-pitch cruise propeller. A " +
         "climb or constant-speed propeller makes nearer a fourteenth, and a " +
         "reversing one takes thrust off instead of adding it.",
-    });
-  }
-
-  if (result.flareHeightFt >= inputs.obstacleHeightFt) {
-    warnings.push({
-      key: "flare-above-obstacle",
-      severity: "defect",
-      cell: "G8",
-      message:
-        "The flare is begun above the obstacle the approach is measured from, " +
-        "so there is no straight glide between the two and the approach " +
-        "distance comes out negative. Either the approach is too shallow or " +
-        "the stall speed is too high for this obstacle height.",
     });
   }
 

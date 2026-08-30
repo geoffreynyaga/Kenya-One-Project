@@ -7,8 +7,8 @@ import {
   climbFractionAtom,
   clMaxAtom,
   cruiseAltitudeFtAtom,
+  cruiseFractionAtom,
   cruiseSpeedKnotsAtom,
-  cruiseWeightRatioAtom,
   engineCountAtom,
   inducedDragFactorAtom,
   ldMaxAtom,
@@ -72,7 +72,7 @@ export function useSrefSheet(): SrefSheet {
   const [designWeight, setDesignWeight] = useAtom(mtowLbAtom);
   const [taxiFraction, setTaxiFraction] = useAtom(taxiFractionAtom);
   const [climbFraction, setClimbFraction] = useAtom(climbFractionAtom);
-  const [cruiseRatio, setCruiseRatio] = useAtom(cruiseWeightRatioAtom);
+  const [cruiseFraction, setCruiseFraction] = useAtom(cruiseFractionAtom);
   const [cruiseSpeed, setCruiseSpeed] = useAtom(cruiseSpeedKnotsAtom);
   const [altitude, setAltitude] = useAtom(cruiseAltitudeFtAtom);
   const [powerLoading, setPowerLoading] = useAtom(powerLoadingAtom);
@@ -113,7 +113,7 @@ export function useSrefSheet(): SrefSheet {
         designWeight: setDesignWeight,
         taxiFraction: setTaxiFraction,
         climbFraction: setClimbFraction,
-        cruiseWeightRatio: setCruiseRatio,
+        cruiseFraction: setCruiseFraction,
         cruiseSpeed: setCruiseSpeed,
         altitude: setAltitude,
         powerLoading: setPowerLoading,
@@ -126,7 +126,7 @@ export function useSrefSheet(): SrefSheet {
       setClMax, setStallSpeed, setVmax, setAspectRatio, setCd0, setOswald,
       setPropCruise, setPropClimb, setPropTakeoff, setDesignWeight,
       setTaxiFraction, setClimbFraction,
-      setCruiseRatio, setCruiseSpeed, setAltitude, setPowerLoading,
+      setCruiseFraction, setCruiseSpeed, setAltitude, setPowerLoading,
       setEngineCount, setWingLoadingOverride, setGearDrag, setRollingFriction,
     ]
   );
@@ -145,7 +145,7 @@ export function useSrefSheet(): SrefSheet {
       designWeight,
       taxiFraction,
       climbFraction,
-      cruiseWeightRatio: cruiseRatio,
+      cruiseFraction,
       cruiseSpeed,
       altitude,
       powerLoading,
@@ -162,7 +162,7 @@ export function useSrefSheet(): SrefSheet {
     [
       clMax, stallSpeed, vmax, aspectRatio, cd0, oswald, propCruise,
       propClimb, propTakeoff,
-      designWeight, taxiFraction, climbFraction, cruiseRatio, cruiseSpeed,
+      designWeight, taxiFraction, climbFraction, cruiseFraction, cruiseSpeed,
       altitude, powerLoading, engineCount, gearDrag, rollingFriction,
       wingLoading, inducedDragFactor, ldMax, clTakeoff, shadows, privates,
     ]
@@ -249,7 +249,7 @@ export function useSrefSheet(): SrefSheet {
         propEfficiencyCruise: propCruise,
         taxiFraction,
         climbFraction,
-        cruiseWeightRatio: cruiseRatio,
+        cruiseFraction,
         cruiseSpeed,
         inducedDragFactor,
         ldMax,
@@ -259,7 +259,7 @@ export function useSrefSheet(): SrefSheet {
     },
     [
       shadows, designWeight, cd0, oswald, propCruise, taxiFraction,
-      climbFraction, cruiseRatio, cruiseSpeed, inducedDragFactor, ldMax,
+      climbFraction, cruiseFraction, cruiseSpeed, inducedDragFactor, ldMax,
       clTakeoff,
     ]
   );

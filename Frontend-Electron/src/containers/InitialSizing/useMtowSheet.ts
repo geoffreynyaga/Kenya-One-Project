@@ -1,14 +1,9 @@
 import { useMemo, useState } from "react";
 
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 
 import { MtowField, MtowFieldErrors, MtowSizingRequest } from "../../api/mtowSizing";
-import {
-  aircraftTypeAtom,
-  ldMaxAtom,
-  passengerCountAtom,
-  pilotCountAtom,
-} from "../../domain/atoms";
+import { aircraftTypeAtom, ldMaxAtom } from "../../domain/atoms";
 import { usePersistentValue } from "../../hooks/usePersistentState";
 
 export type MtowValues = {
@@ -154,8 +149,6 @@ export function useMtowSheet(axisRange: number[]) {
   // same reason: Sheet 04 weighs the people on board and the furnishings they
   // sit in. Both go on the commit rather than the keystroke, so a half-typed
   // number never reaches another stage.
-  const setPassengerCount = useSetAtom(passengerCountAtom);
-  const setPilotCount = useSetAtom(pilotCountAtom);
 
   // The sheet solves what it loaded with, so the first request is ready before
   // anything renders and the query needs no effect to start it.
@@ -186,8 +179,6 @@ export function useMtowSheet(axisRange: number[]) {
     const nextErrors = validate(values);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return false;
-    setPassengerCount(Number(values.pax));
-    setPilotCount(Number(values.crew));
     setSubmitted(toRequest(values, axisRange, ldMax));
     setIsStale(false);
     return true;

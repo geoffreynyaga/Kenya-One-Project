@@ -13,6 +13,8 @@ export interface ServerData {
   errors?: Record<string, string[]>;
   warnings?: SizingWarning[];
   finalMTOW?: number;
+  /** Breguet cruise-only weight fraction for the solved mission. */
+  cruiseFraction?: number;
   /**
    * The split each method decided, keyed by method name in lower case. The
    * weight a method solves is only half of what it said; these are the other

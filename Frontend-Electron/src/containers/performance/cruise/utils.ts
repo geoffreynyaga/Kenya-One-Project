@@ -18,64 +18,12 @@
 export const POLAR_POINT_COUNT = 9;
 export const STALL_TABLE_POINT_COUNT = 6;
 
-/** How far past the fastest level flight the polar is drawn. */
-export const POLAR_SPEED_MARGIN = 1.2;
+export type { CruiseInputs } from "./cruiseSchema";
 
 /** Evenly spaced points from start to end, inclusive of both. */
 export function span(start: number, end: number, count: number): number[] {
   const step = (end - start) / (count - 1);
   return Array.from({ length: count }, (_, i) => start + i * step);
-}
-
-export interface CruiseInputs {
-  /** Workbook B6, from Sheet 02 — cruise altitude, ft. */
-  cruiseAltitudeFt: number;
-  /** Workbook B7, from take-off — propeller efficiency in the cruise. */
-  propEfficiencyCruise: number;
-  /** Workbook E8, from Sheet 01 — cruise specific fuel consumption. */
-  cruiseSfc: number;
-  /** Workbook B11, from Sheet 02 — cruise speed, KTAS. */
-  cruiseSpeedKtas: number;
-  /** Workbook B8 — fraction of rated power held in the cruise. */
-  cruisePowerFraction: number;
-  /** Workbook B38 — bank angle the turning stall is taken at, degrees. */
-  bankAngleDeg: number;
-
-  /** Workbook B45 — wing pitching moment coefficient. */
-  wingMomentCoefficient: number;
-  /** Workbook B46 — forward centre of gravity, fraction of MAC. */
-  forwardCgMac: number;
-  /** Workbook B47 — aft centre of gravity, fraction of MAC. */
-  aftCgMac: number;
-  /** Workbook B48 — tail arm, ft. */
-  tailArmFt: number;
-  /** Workbook B49 — thrust line offset above the centre of gravity, ft. */
-  thrustLineOffsetFt: number;
-  /** Workbook E46 — thrust line arm, ft. */
-  thrustArmFt: number;
-  /** Workbook E47 — aerodynamic centre, fraction of MAC. */
-  aerodynamicCentreMac: number;
-  /** Workbook E50 — main gear position, fraction of MAC. */
-  mainGearMac: number;
-
-  /** Take-off C7, from Sheet 02 — installed shaft power, bhp. */
-  maxRatedPowerBhp: number;
-  /** Take-off P9, from Sheet 01 — maximum take-off weight, lb. */
-  mtowLb: number;
-  /** Take-off R10, from Sheet 02 — reference area, ft². */
-  wingAreaFt2: number;
-  /** Take-off P6, from Sheet 07 — minimum drag coefficient. */
-  cdMin: number;
-  /** Take-off P7, from Sheet 02 — induced drag factor. */
-  inducedDragFactor: number;
-  /** Take-off P11, from Sheet 02 — maximum lift coefficient. */
-  clMax: number;
-  /** Climb B56, from Sheet 06 — lift coefficient at minimum drag. */
-  clAtMinimumDrag: number;
-  /** Wing & Airfoil B25 — stalling angle of attack, degrees. */
-  stallAngleDeg: number;
-  /** Wing & Airfoil E48 — mean aerodynamic chord, ft. */
-  meanAerodynamicChordFt: number;
 }
 
 /**
@@ -168,6 +116,9 @@ export interface SpeedLimits {
 }
 
 export interface CruiseResult {
+  mode: "engineering" | "workbook";
+  cruiseConditionSupported: boolean;
+  noSolutionReason: string | null;
   /** Workbook B8 — shaft power held in the cruise, bhp. */
   cruisePowerBhp: number;
   /** Workbook B9 — density at the cruise altitude, slug/ft³. */
