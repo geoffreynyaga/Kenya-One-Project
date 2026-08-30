@@ -4,7 +4,7 @@
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/95d504fe-9137-40b2-b27b-c417c0791d2f/deploy-status)](https://app.netlify.com/sites/kenya-one/deploys)
 
-<div style="text-align:center"><img src="./docs/images/banner.png" alt="drawing" width="800"  padding="200px"/>
+<div style="text-align:center"><img src="./docs/images/banner.png" alt="Kenya One" width="360"/>
 </div>
 
 [Online Demo](https://kenya-one.netlify.com/)
