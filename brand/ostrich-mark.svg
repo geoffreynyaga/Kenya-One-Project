@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-5 3 130 138">
+  <style>
+    .hv,.md,.lt,.pin{fill:none;stroke:#1B2A6B;stroke-linejoin:round;stroke-linecap:round}
+    .hv{stroke-width:2.4} .md{stroke-width:1.7} .lt{stroke-width:0.95}
+    .pin{stroke-width:1.2;fill:#fff}
+  </style>
+  <g>
+    <polygon class="hv" points="84,21 85,12 93,9 99,15 92,23"/>
+    <polygon class="hv" points="99,15 109,17.5 98,20.5" fill="#1B2A6B"/>
+    <line class="lt" x1="85" y1="12" x2="92" y2="23"/>
+    <circle cx="91" cy="14.5" r="1.5" fill="none" stroke="#1B2A6B" stroke-width="1.1"/>
+
+    <polyline class="hv" points="84,21 78,34 70,46 65,57"/>
+    <polyline class="hv" points="92,23 84,36 77,48 73,57"/>
+    <line class="lt" x1="84" y1="21" x2="84" y2="36"/>
+    <line class="lt" x1="78" y1="34" x2="77" y2="48"/>
+    <line class="lt" x1="70" y1="46" x2="73" y2="57"/>
+
+    <polygon class="hv" points="17,66 4,50 0,61 8,76 15,79"/>
+    <line class="lt" x1="16" y1="72" x2="4" y2="50"/>
+    <line class="lt" x1="16" y1="72" x2="0" y2="61"/>
+    <line class="lt" x1="16" y1="72" x2="8" y2="76"/>
+
+    <polygon class="hv" points="64,57 48,52 30,56 17,66 15,79 25,92 43,100 62,99 76,90 82,75 77,63"/>
+    <polygon class="md" points="74,68 56,62.5 38,68 46,80 66,78"/>
+    <line class="lt" x1="66" y1="65" x2="63" y2="78.5"/>
+    <line class="lt" x1="56" y1="62.5" x2="54" y2="79"/>
+    <line class="lt" x1="46" y1="65" x2="46" y2="80"/>
+    <line class="lt" x1="56" y1="62.5" x2="48" y2="52"/>
+    <line class="lt" x1="56" y1="62.5" x2="64" y2="57"/>
+    <line class="lt" x1="38" y1="68" x2="30" y2="56"/>
+    <line class="lt" x1="38" y1="68" x2="17" y2="66"/>
+    <line class="lt" x1="46" y1="80" x2="15" y2="79"/>
+    <line class="lt" x1="46" y1="80" x2="43" y2="100"/>
+    <line class="lt" x1="66" y1="78" x2="62" y2="99"/>
+    <line class="lt" x1="66" y1="78" x2="76" y2="90"/>
+    <line class="lt" x1="74" y1="68" x2="82" y2="75"/>
+    <line class="lt" x1="74" y1="68" x2="77" y2="63"/>
+    
+    <polygon class="hv" points="46.28,91.74 29.59,108.31 32.41,111.69 51.72,98.26"/>
+    <polygon class="md" points="29.56,109.10 20.24,125.52 21.76,126.48 32.44,110.90"/>
+    <polygon class="md" points="20.72,125.15 8.87,129.62 9.13,130.38 21.28,126.85"/>
+    <polygon class="md" points="20.48,125.65 14.75,134.83 15.25,135.17 21.52,126.35"/>
+    <circle class="pin" cx="31" cy="110" r="2.4"/>
+    <circle class="pin" cx="21" cy="126" r="1.8"/>
+    
+    <polygon class="hv" points="60.78,98.63 79.85,107.88 82.15,104.12 65.22,91.37"/>
+    <polygon class="md" points="79.65,104.96 70.29,118.45 71.71,119.55 82.35,107.04"/>
+    <polygon class="md" points="70.80,119.88 83.91,122.39 84.09,121.61 71.20,118.12"/>
+    <polygon class="md" points="70.50,119.39 77.76,128.18 78.24,127.82 71.50,118.61"/>
+    <circle class="pin" cx="81" cy="106" r="2.4"/>
+    <circle class="pin" cx="71" cy="119" r="1.8"/>
+  </g>
+</svg>
