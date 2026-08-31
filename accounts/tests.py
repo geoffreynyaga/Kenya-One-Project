@@ -38,9 +38,40 @@ import numpy as np  # type: ignore
 from math import isclose
 from rest_framework.test import APIClient  # type: ignore
 
+from accounts.api.serializers import AIRCRAFT_TYPES
+from CORE.engines.prerequisitesEngine import get_empty_weight_constants
+
+
+RAYMER_EMPTY_WEIGHT_CONSTANTS = {
+    "SailPlane_Unpowered": {"a": 0.86, "c": -0.05},
+    "SailPlane_Powered": {"a": 0.91, "c": -0.05},
+    "Homebuilt_Metal_or_Wood": {"a": 1.19, "c": -0.09},
+    "Homebuilt_Composite": {"a": 1.15, "c": -0.09},
+    "GA_Single": {"a": 2.36, "c": -0.18},
+    "GA_Twin": {"a": 1.51, "c": -0.10},
+    "Agricultural": {"a": 0.74, "c": -0.03},
+    "Twin_Turboprop": {"a": 0.96, "c": -0.05},
+    "Flying_Boat": {"a": 1.09, "c": -0.05},
+    "Jet_Trainer": {"a": 1.59, "c": -0.10},
+    "Jet_Fighter": {"a": 2.34, "c": -0.13},
+    "Military_cargo_or_bomber": {"a": 0.93, "c": -0.07},
+    "Jet_Transport": {"a": 1.02, "c": -0.06},
+    "UAV_Tac_Recce_or_UCAV": {"a": 1.67, "c": -0.16},
+    "UAV_High_Altitude": {"a": 2.75, "c": -0.18},
+    "UAV_Small": {"a": 0.97, "c": -0.06},
+}
+
 
 def test_a_plus_b():
     assert 1 + 1 == 2
+
+
+def test_raymer_empty_weight_constants_cover_every_supported_aircraft_type():
+    assert AIRCRAFT_TYPES == tuple(RAYMER_EMPTY_WEIGHT_CONSTANTS)
+    assert {
+        aircraft_type: get_empty_weight_constants(aircraft_type)
+        for aircraft_type in AIRCRAFT_TYPES
+    } == RAYMER_EMPTY_WEIGHT_CONSTANTS
 
 
 def test_mtow_solve_is_independent_of_requested_plot_range():
@@ -85,9 +116,7 @@ def test_mtow_solve_is_independent_of_requested_plot_range():
         assert 0.05 < fuel_fraction < 0.25
         # Empty, fuel and useful load are the whole aeroplane.
         useful_load = 3 * 180 + 3 * 50 + 1 * 200
-        assert (
-            abs((empty_fraction + fuel_fraction) * mtow + useful_load - mtow) < 1
-        )
+        assert abs((empty_fraction + fuel_fraction) * mtow + useful_load - mtow) < 1
 
     assert response.data["suggestedAxisLimits"] == [2000, 4000]
     assert len(response.data["wtoGuess"]) == 401
@@ -106,6 +135,40 @@ def test_mtow_solve_is_independent_of_requested_plot_range():
             "suggestedAxisLimits": [2000, 4000],
         }
     ]
+
+
+def test_mtow_api_uses_the_new_uav_empty_weight_models():
+    client = APIClient()
+
+    for aircraft_type in (
+        "UAV_Tac_Recce_or_UCAV",
+        "UAV_High_Altitude",
+        "UAV_Small",
+    ):
+        response = client.post(
+            "/api/accounts/example/",
+            {
+                "yAxisLimits": [2000, 6000],
+                "xAxisLimits": [2000, 6000],
+                "aircraft_type": aircraft_type,
+                "altitude": 10000,
+                "pax": 3,
+                "propellerEfficiency": 0.78,
+                "range": 1200,
+                "aspectRatio": 7.8,
+                "crew": 1,
+            },
+            format="json",
+        )
+
+        assert response.status_code == 200
+        constants = RAYMER_EMPTY_WEIGHT_CONSTANTS[aircraft_type]
+        raymer_mtow = response.data["raymerIntersect"][0]
+        expected_fraction = constants["a"] * raymer_mtow ** constants["c"]
+        assert isclose(
+            response.data["emptyWeightFraction"]["raymer"],
+            expected_fraction,
+        )
 
 
 def test_mtow_api_returns_actionable_field_validation_errors():

@@ -89,7 +89,6 @@ cruise_altitude: int = 10000
 
 # from Raymer 6th Ed
 def get_equivalent_aspect_ratio(aircraft_type: str) -> float:
-
     """
     This function takes in a General Aviation aircraft type and
     returns its equivalent aspect ratio
@@ -131,38 +130,28 @@ def get_equivalent_aspect_ratio(aircraft_type: str) -> float:
     #     pass
 
 
-def get_empty_weight_constants(aircraft_type: str) -> dict:
+EMPTY_WEIGHT_CONSTANTS: dict[str, dict[str, float]] = {
+    # Raymer, Aircraft Design: A Conceptual Approach, Table 3.1.
+    # These are the imperial A values and dimensionless C exponents.
+    "SailPlane_Unpowered": {"a": 0.86, "c": -0.05},
+    "SailPlane_Powered": {"a": 0.91, "c": -0.05},
+    "Homebuilt_Metal_or_Wood": {"a": 1.19, "c": -0.09},
+    "Homebuilt_Composite": {"a": 1.15, "c": -0.09},
+    "GA_Single": {"a": 2.36, "c": -0.18},
+    "GA_Twin": {"a": 1.51, "c": -0.10},
+    "Agricultural": {"a": 0.74, "c": -0.03},
+    "Twin_Turboprop": {"a": 0.96, "c": -0.05},
+    "Flying_Boat": {"a": 1.09, "c": -0.05},
+    "Jet_Trainer": {"a": 1.59, "c": -0.10},
+    "Jet_Fighter": {"a": 2.34, "c": -0.13},
+    "Military_cargo_or_bomber": {"a": 0.93, "c": -0.07},
+    "Jet_Transport": {"a": 1.02, "c": -0.06},
+    "UAV_Tac_Recce_or_UCAV": {"a": 1.67, "c": -0.16},
+    "UAV_High_Altitude": {"a": 2.75, "c": -0.18},
+    "UAV_Small": {"a": 0.97, "c": -0.06},
+}
 
-    """
-    This function takes in a General Aviation aircraft type and
-    returns its equivalent aspect ratio
-        :param aircraftType:
-    """
-    if aircraft_type == "SailPlane_Unpowered":
-        return {"a": 0.86, "c": -0.05}
-    elif aircraft_type == "SailPlane_Powered":
-        return {"a": 0.91, "c": -0.05}
-    elif aircraft_type == "Homebuilt_Metal_or_Wood":
-        return {"a": 1.19, "c": -0.09}
-    elif aircraft_type == "Homebuilt_Composite":
-        return {"a": 0.99, "c": -0.05}
-    elif aircraft_type == "GA_Single":
-        return {"a": 2.36, "c": -0.18}
-    elif aircraft_type == "GA_Twin":
-        return {"a": 1.51, "c": -0.10}
-    elif aircraft_type == "Agricultural":
-        return {"a": 0.74, "c": -0.03}
-    elif aircraft_type == "Twin_Turboprop":
-        return {"a": 0.96, "c": -0.05}
-    elif aircraft_type == "Flying_Boat":
-        return {"a": 1.09, "c": -0.05}
-    elif aircraft_type == "Jet_Trainer":
-        return {"a": 1.59, "c": -0.10}
-    elif aircraft_type == "Jet_Fighter":
-        return {"a": 2.34, "c": -0.13}
-    elif aircraft_type == "Military_cargo_or_bomber":
-        return {"a": 0.93, "c": -0.07}
-    elif aircraft_type == "Jet_Transport":
-        return {"a": 1.02, "c": -0.06}
-    else:
-        return {"a": 0.0, "c": 0.00}
+
+def get_empty_weight_constants(aircraft_type: str) -> dict[str, float]:
+    """Return the Raymer empty-weight constants for an aircraft category."""
+    return EMPTY_WEIGHT_CONSTANTS.get(aircraft_type, {"a": 0.0, "c": 0.0}).copy()

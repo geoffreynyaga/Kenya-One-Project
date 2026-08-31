@@ -59,6 +59,9 @@ const AIRCRAFT_TYPES = [
   ["Jet_Fighter", "Jet fighter"],
   ["Military_cargo_or_bomber", "Military — cargo/bomber"],
   ["Jet_Transport", "Jet transport"],
+  ["UAV_Tac_Recce_or_UCAV", "UAV — tactical reconnaissance/UCAV"],
+  ["UAV_High_Altitude", "UAV — high altitude"],
+  ["UAV_Small", "UAV — small"],
 ];
 
 export interface Notice {

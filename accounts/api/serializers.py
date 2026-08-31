@@ -1,21 +1,9 @@
 from rest_framework import serializers
 
+from CORE.engines.prerequisitesEngine import EMPTY_WEIGHT_CONSTANTS
 
-AIRCRAFT_TYPES = (
-    "SailPlane_Unpowered",
-    "SailPlane_Powered",
-    "Homebuilt_Metal_or_Wood",
-    "Homebuilt_Composite",
-    "GA_Single",
-    "GA_Twin",
-    "Agricultural",
-    "Twin_Turboprop",
-    "Flying_Boat",
-    "Jet_Trainer",
-    "Jet_Fighter",
-    "Military_cargo_or_bomber",
-    "Jet_Transport",
-)
+
+AIRCRAFT_TYPES = tuple(EMPTY_WEIGHT_CONSTANTS)
 
 
 class InitialSizingRequestSerializer(serializers.Serializer):

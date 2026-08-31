@@ -248,12 +248,12 @@ def MTOW_estimate(
 
     empty_weight_constants = get_empty_weight_constants(aircraft_type)
     a: float = empty_weight_constants["a"]
-    b: float = empty_weight_constants["c"]
+    c: float = empty_weight_constants["c"]
 
-    raymer_mtow = _solve_mtow(useful_load, a, b, wfWtoRaymer)
-    gudmundsson_mtow = _solve_mtow(useful_load, a, b, wfWtoGud)
-    roskam_mtow = _solve_mtow(useful_load, a, b, wfWtoRoskam)
-    sadraey_mtow = _solve_mtow(useful_load, a, b, wfWtoSadraey)
+    raymer_mtow = _solve_mtow(useful_load, a, c, wfWtoRaymer)
+    gudmundsson_mtow = _solve_mtow(useful_load, a, c, wfWtoGud)
+    roskam_mtow = _solve_mtow(useful_load, a, c, wfWtoRoskam)
+    sadraey_mtow = _solve_mtow(useful_load, a, c, wfWtoSadraey)
     mtow_values = [raymer_mtow, gudmundsson_mtow, roskam_mtow, sadraey_mtow]
 
     suggested_axis_limits = _nice_plot_limits(mtow_values)
@@ -263,7 +263,7 @@ def MTOW_estimate(
         PLOT_SAMPLE_COUNT,
     )
 
-    weWto = a * (wtoGuess**b)
+    weWto = a * (wtoGuess**c)
     wtoYaxisRaymer = (payload + crewTotal) / (1 - wfWtoRaymer - weWto)
     wtoYaxisRoskam = (payload + crewTotal) / (1 - wfWtoRoskam - weWto)
     wtoYaxisSadraey = (payload + crewTotal) / (1 - wfWtoSadraey - weWto)
@@ -281,10 +281,10 @@ def MTOW_estimate(
     # Returning the fractions rather than the pounds keeps them attached to the
     # method that produced them, whichever one the reader carries forward.
     empty_weight_fraction = {
-        "raymer": float(a * raymer_mtow**b),
-        "gudmundsson": float(a * gudmundsson_mtow**b),
-        "roskam": float(a * roskam_mtow**b),
-        "sadraey": float(a * sadraey_mtow**b),
+        "raymer": float(a * raymer_mtow**c),
+        "gudmundsson": float(a * gudmundsson_mtow**c),
+        "roskam": float(a * roskam_mtow**c),
+        "sadraey": float(a * sadraey_mtow**c),
     }
     fuel_fraction = {
         "raymer": float(wfWtoRaymer),

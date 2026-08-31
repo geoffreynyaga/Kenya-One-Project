@@ -76,6 +76,33 @@ test("user can clear, replace, and submit numeric sizing values", async () => {
   });
 });
 
+test("aircraft type selector includes every Raymer empty-weight category", () => {
+  renderForm();
+
+  const aircraftType = document.querySelector(
+    "#aircraftType"
+  ) as HTMLSelectElement;
+
+  expect(Array.from(aircraftType.options, ({ value }) => value)).toEqual([
+    "SailPlane_Unpowered",
+    "SailPlane_Powered",
+    "Homebuilt_Metal_or_Wood",
+    "Homebuilt_Composite",
+    "GA_Single",
+    "GA_Twin",
+    "Agricultural",
+    "Twin_Turboprop",
+    "Flying_Boat",
+    "Jet_Trainer",
+    "Jet_Fighter",
+    "Military_cargo_or_bomber",
+    "Jet_Transport",
+    "UAV_Tac_Recce_or_UCAV",
+    "UAV_High_Altitude",
+    "UAV_Small",
+  ]);
+});
+
 test("empty numeric values are explained and do not submit", async () => {
   const user = userEvent.setup();
   renderForm();
