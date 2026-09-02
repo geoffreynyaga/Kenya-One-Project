@@ -21,6 +21,7 @@ import {
   vmaxKnotsAtom,
   wingLoadingOverrideAtom,
 } from "../../../../domain/atoms";
+import { openHint } from "../../../../testing/openHint";
 import TakeOff from "../TakeOff";
 import { WORKBOOK_INPUTS } from "./fixture";
 
@@ -178,7 +179,9 @@ describe("TakeOff", () => {
 
     expect(Number(input.value)).toBeCloseTo(5.86, 2);
     expect(within(row).getByText("PROVISIONAL")).toBeInTheDocument();
-    expect(within(row).getByRole("tooltip")).toHaveTextContent("5.49–6.23 ft");
+    expect(
+      openHint(within(row).getByTestId("help-to-propellerDiameterFt"))
+    ).toHaveTextContent("5.49–6.23 ft");
 
     fireEvent.blur(input);
     expect(within(row).queryByText("PROVISIONAL")).toBeNull();
@@ -262,7 +265,7 @@ describe("TakeOff", () => {
 
     expect(screen.getAllByText("EXPLAINER")).toHaveLength(3);
     expect(
-      screen.getByTestId("help-to-thrust-explainer").nextElementSibling
+      openHint(screen.getByTestId("help-to-thrust-explainer"))
     ).toHaveTextContent("fitted propeller model");
   });
 });

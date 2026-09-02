@@ -13,6 +13,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "jotai": "^2.20.3",
+    "katex": "^0.18.5",
     "plotly.js-basic-dist": "^4",
     "prop-types": "^15.8.1",
     "react": "^19.0.0",
@@ -48,6 +49,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@tauri-apps/cli": "^2.11.4",
+    "@types/katex": "^0.16.8",
     "@vitejs/plugin-react": "^6.1.0",
     "autoprefixer": "^10.5.4",
     "eslint": "^10",
