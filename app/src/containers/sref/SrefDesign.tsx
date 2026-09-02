@@ -17,6 +17,7 @@ import {
 } from "../../api/srefDesign";
 import { getCalculationClient } from "../../api/client";
 import { usePersistentState } from "../../hooks/usePersistentState";
+import { axisTitle } from "../../components/sheet/ConstraintFigure";
 import tokens from "../../design-tokens";
 import { InputSection } from "../../components/sheet/InputSection";
 import {
@@ -649,24 +650,24 @@ function ConstraintFigure({
         ]}
         layout={{
           autosize: true,
-          margin: { l: 72, r: 18, t: 28, b: 68 },
+          margin: { l: 82, r: 18, t: 28, b: 76 },
           paper_bgcolor: tokens.colors.field,
           plot_bgcolor: tokens.colors.field,
           font: { family: MONO, size: 10, color: tokens.colors.ink.muted },
           shapes: shading,
           xaxis: {
-            title: "WING LOADING  W/S  [lb/ft²]",
+            title: axisTitle("WING LOADING  W/S  [lb/ft²]"),
             gridcolor: tokens.colors.rule.grid,
             zeroline: false,
             range: [xMin, xMax],
           },
           yaxis: {
-            title: "POWER LOADING  W/P  [lb/hp]",
+            title: axisTitle("POWER LOADING  W/P  [lb/hp]"),
             gridcolor: tokens.colors.rule.grid,
             zeroline: false,
             range: [yMin, yMax],
           },
-          legend: { orientation: "h", y: -0.23, x: 0 },
+          legend: { orientation: "h", y: -0.3, x: 0 },
           hovermode: "closest",
         }}
         style={{ width: "100%", height: "380px" }}

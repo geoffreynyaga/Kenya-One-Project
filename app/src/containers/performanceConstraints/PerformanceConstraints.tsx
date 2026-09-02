@@ -6,9 +6,6 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import Plotly from "plotly.js-basic-dist";
-import createPlotlyComponent from "react-plotly.js/factory";
-
 import { FT2_PER_M2 } from "../../domain/constants";
 import { powerRequiredHpAtom, wingAreaFt2Atom } from "../../domain/atoms";
 import {
@@ -24,8 +21,10 @@ import {
   missionVerdict,
   MissionVerdictRow,
 } from "./missionCompute";
+import { AeroClassTable } from "./AeroClassTable";
 import { useMissionSheet } from "./usePerformanceSheet";
 import { usePersistentState } from "../../hooks/usePersistentState";
+import { Figure } from "../../components/sheet/ConstraintFigure";
 import { Hint } from "../../components/sheet/Hint";
 import { InputSection } from "../../components/sheet/InputSection";
 import tokens from "../../design-tokens";
@@ -44,9 +43,6 @@ const DEFAULT_VIEW: ViewState = {
 const derivedSpecs = Object.fromEntries(
   derivedFields.map((spec) => [spec.field, spec])
 ) as Record<MissionField, FieldSpec>;
-
-const Plot = createPlotlyComponent(Plotly);
-const MONO = tokens.fontFamily.mono.join(", ");
 
 const formatNumber = (value: number, digits = 2) =>
   new Intl.NumberFormat("en-US", { maximumFractionDigits: digits }).format(value);
@@ -117,124 +113,6 @@ function FieldRow({ spec, value, editable, onChange, onBlur }: FieldRowProps) {
           {provenance}
         </span>
       ) : null}
-    </div>
-  );
-}
-
-interface FigureProps {
-  title: string;
-  figureLabel: string;
-  curves: Array<{
-    name: string;
-    x: number[];
-    y: number[];
-    color: string;
-    dash?: "dash" | "dot";
-    width?: number;
-  }>;
-  markers?: Array<{ x: number; y: number; name: string }>;
-  yTitle: string;
-  desiredWingLoading: number;
-  /** Horizontal accent rule, e.g. installed power. */
-  hRule?: { y: number; label: string };
-  height?: number;
-}
-
-function Figure({
-  title,
-  figureLabel,
-  curves,
-  markers,
-  yTitle,
-  desiredWingLoading,
-  hRule,
-  height = 300,
-}: FigureProps) {
-  const yValues = curves.flatMap((curve) => curve.y);
-  const yMax = Math.max(...yValues, hRule?.y ?? 0) * 1.08;
-
-  return (
-    <div
-      className="relative mt-4 min-h-[240px] border border-rule bg-field px-2 pb-1 pt-3"
-      style={{ minHeight: height + 40 }}
-    >
-      <div className="absolute right-[14px] top-[10px] z-10 font-mono text-label text-ink-faint">
-        {figureLabel}
-      </div>
-      <Plot
-        className="w-full"
-        config={{ displayModeBar: false, responsive: true }}
-        data={[
-          ...curves.map((curve) => ({
-            x: curve.x,
-            y: curve.y,
-            type: "scatter" as const,
-            mode: "lines" as const,
-            name: curve.name,
-            line: {
-              color: curve.color,
-              width: curve.width ?? 1.6,
-              dash: curve.dash,
-            },
-          })),
-          {
-            x: [desiredWingLoading, desiredWingLoading],
-            y: [0, yMax],
-            type: "scatter" as const,
-            mode: "lines" as const,
-            name: "DESIGN POINT W/S",
-            line: { color: tokens.colors.accent.DEFAULT, width: 2 },
-          },
-          ...(hRule
-            ? [
-                {
-                  x: [curves[0]?.x[0] ?? 6, curves[0]?.x[curves[0].x.length - 1] ?? 32],
-                  y: [hRule.y, hRule.y],
-                  type: "scatter" as const,
-                  mode: "lines" as const,
-                  name: hRule.label,
-                  line: {
-                    color: tokens.colors.accent.DEFAULT,
-                    width: 1.4,
-                    dash: "dash" as const,
-                  },
-                },
-              ]
-            : []),
-          ...(markers ?? []).map((marker) => ({
-            x: [marker.x],
-            y: [marker.y],
-            type: "scatter" as const,
-            mode: "markers" as const,
-            name: marker.name,
-            marker: { color: tokens.colors.accent.DEFAULT, size: 8 },
-          })),
-        ]}
-        layout={{
-          autosize: true,
-          margin: { l: 68, r: 18, t: 28, b: 62 },
-          paper_bgcolor: tokens.colors.field,
-          plot_bgcolor: tokens.colors.field,
-          font: { family: MONO, size: 10, color: tokens.colors.ink.muted },
-          xaxis: {
-            title: "WING LOADING  W/S  [lb/ft²]",
-            gridcolor: tokens.colors.rule.grid,
-            zeroline: false,
-          },
-          yaxis: {
-            title: yTitle,
-            gridcolor: tokens.colors.rule.grid,
-            zeroline: false,
-          },
-          legend: { orientation: "h", y: -0.28, x: 0 },
-          hovermode: "closest",
-        }}
-        style={{ width: "100%", height }}
-        useResizeHandler
-      />
-      <div className="px-[2px] pb-1 pt-2 font-mono text-[10.5px] leading-[1.5] tracking-[0.08em] text-ink-faint">
-        {title}
-      </div>
     </div>
   );
 }
@@ -384,11 +262,20 @@ export default function PerformanceConstraints() {
   void markerAt;
 
   const constraintCurves = [
-    { name: "LEVEL TURN", key: "twTurn" as const, bhpKey: "bhpTurnSeaLevel" as const, color: tokens.colors.series.compare, dash: undefined },
-    { name: "RATE OF CLIMB", key: "twRateOfClimb" as const, bhpKey: "bhpRateOfClimbSeaLevel" as const, color: tokens.colors.accent.DEFAULT, dash: undefined, width: 2 },
-    { name: "GROUND RUN", key: "twGroundRun" as const, bhpKey: "bhpGroundRunSeaLevel" as const, color: tokens.colors.series.compare, dash: "dash" as const },
-    { name: "CRUISE SPEED", key: "twCruise" as const, bhpKey: "bhpCruiseSeaLevel" as const, color: tokens.colors.series.faint, dash: undefined },
-    { name: "SERVICE CEILING", key: "twServiceCeiling" as const, bhpKey: "bhpServiceCeilingSeaLevel" as const, color: tokens.colors.series.faint, dash: "dot" as const },
+    { name: "LEVEL TURN", key: "twTurn" as const, altitudeBhpKey: "bhpTurn" as const, bhpKey: "bhpTurnSeaLevel" as const, color: tokens.colors.series.compare, dash: undefined },
+    { name: "RATE OF CLIMB", key: "twRateOfClimb" as const, altitudeBhpKey: "bhpRateOfClimb" as const, bhpKey: "bhpRateOfClimbSeaLevel" as const, color: tokens.colors.accent.DEFAULT, dash: undefined, width: 2 },
+    { name: "GROUND RUN", key: "twGroundRun" as const, altitudeBhpKey: "bhpGroundRun" as const, bhpKey: "bhpGroundRunSeaLevel" as const, color: tokens.colors.series.compare, dash: "dash" as const },
+    { name: "CRUISE SPEED", key: "twCruise" as const, altitudeBhpKey: "bhpCruise" as const, bhpKey: "bhpCruiseSeaLevel" as const, color: tokens.colors.series.faint, dash: undefined },
+    { name: "SERVICE CEILING", key: "twServiceCeiling" as const, altitudeBhpKey: "bhpServiceCeiling" as const, bhpKey: "bhpServiceCeilingSeaLevel" as const, color: tokens.colors.series.faint, dash: "dot" as const },
+  ];
+
+  // Gudmundsson eq. (3-7). Drawn twice: once on the right axis of the
+  // constraint diagram, where the point of them is, and once at full height
+  // where the curves are legible.
+  const stallIsobars = [
+    { name: `Vs = ${formatNumber(numbers.stallSpeedKcas, 0)} kt`, x, y: curves.map((p) => p.clStallBase), color: tokens.colors.accent.DEFAULT, width: 2 },
+    { name: "Vs + 5 kt", x, y: curves.map((p) => p.clStallPlus5), color: tokens.colors.series.compare, dash: "dash" as const },
+    { name: "Vs − 5 kt", x, y: curves.map((p) => p.clStallMinus5), color: tokens.colors.series.compare, dash: "dot" as const },
   ];
 
   const cellProps = { onChange: setField, onBlur: commitField };
@@ -483,6 +370,15 @@ export default function PerformanceConstraints() {
           {renderSection("requirements", "ENTRY · REQUIREMENTS", requirementFields)}
           {renderSection("carried", "CARRIED · UPSTREAM", carriedFields)}
 
+          <InputSection
+            count={13}
+            onToggle={(open) => toggleSection("table31", open)}
+            open={view.openSections.includes("table31")}
+            title="REFERENCE · TABLE 3-1"
+          >
+            <AeroClassTable />
+          </InputSection>
+
           <button
             className="mt-4 w-full border border-rule bg-panel px-4 py-3 font-mono text-meta tracking-tab text-ink-faint"
             onClick={reset}
@@ -518,8 +414,25 @@ export default function PerformanceConstraints() {
                   name: curve.name,
                 })),
               ]}
-              title="Thrust-to-weight each phase demands. The accent rule is the design point from Sheet 02; the sheet note reads the region above each curve as desired."
+              rightAxis={{ title: "REQUIRED  CL", curves: stallIsobars }}
+              shadeRegions
+              title="Thrust-to-weight each phase demands. The accent rule is the design point from Sheet 02, and the shaded region above every curve is where a design meets all five at once. The stall isobars on the right axis say what CL the wing must reach at each wing loading — a point can clear every constraint here and still stall too fast to certify."
               yTitle="REQUIRED  T/W"
+            />
+
+            <Figure
+              curves={constraintCurves.map((curve) => ({
+                name: curve.name,
+                x,
+                y: curves.map((point) => point[curve.altitudeBhpKey]),
+                color: curve.color,
+                dash: curve.dash,
+                width: curve.width,
+              }))}
+              desiredWingLoading={desired}
+              figureLabel="FIG. 3.2 · BHP REQUIRED — AT ALTITUDE"
+              title="Brake horsepower each phase demands where it is actually flown. The curves are not comparable to each other or to an engine rating: the ceiling curve is at the service ceiling, the ground run at sea level. The next figure puts them on one footing."
+              yTitle="BHP REQUIRED"
             />
 
             <Figure
@@ -532,27 +445,23 @@ export default function PerformanceConstraints() {
                 width: curve.width,
               }))}
               desiredWingLoading={desired}
-              figureLabel="FIG. 3.2 · BHP REQUIRED — NORMALISED TO S-L"
+              figureLabel="FIG. 3.3 · BHP REQUIRED — NORMALISED TO S-L"
               hRule={{ y: powerRequiredHp, label: "INSTALLED POWER" }}
-              title="Brake horsepower per phase, normalised to sea level. Where a curve rises above the dashed installed-power rule at the design W/S, Sheet 02 underestimated the power."
+              title="The same demands lapsed back to sea level, which is how engines are rated. Where a curve rises above the dashed installed-power rule at the design W/S, Sheet 02 underestimated the power."
               yTitle="BHP REQUIRED (S-L)"
             />
 
             <Figure
-              curves={[
-                { name: `Vs = ${formatNumber(numbers.stallSpeedKcas, 0)} kt`, x, y: curves.map((p) => p.clStallBase), color: tokens.colors.accent.DEFAULT, width: 2 },
-                { name: "Vs + 5 kt", x, y: curves.map((p) => p.clStallPlus5), color: tokens.colors.series.compare, dash: "dash" },
-                { name: "Vs − 5 kt", x, y: curves.map((p) => p.clStallMinus5), color: tokens.colors.series.compare, dash: "dot" },
-              ]}
+              curves={stallIsobars}
               desiredWingLoading={desired}
-              figureLabel="FIG. 3.3 · STALL SPEED SENSITIVITY"
+              figureLabel="FIG. 3.4 · STALL SPEED SENSITIVITY"
               height={220}
-              title="Lift coefficient the wing must deliver to stall at Vs, Vs+5 and Vs−5 across the wing-loading range."
+              title="The same isobars at full height: the lift coefficient the wing must deliver to stall at Vs, Vs+5 and Vs−5 across the wing-loading range."
               yTitle="REQUIRED  CL"
             />
 
             <div className="px-[2px] py-4 font-mono text-meta leading-[1.6] text-ink-muted">
-              NOTE · The first figure also certifies that the estimations in the
+              NOTE · FIG. 3.3 also certifies that the estimations in the
               previous Sref and Power Sizing were accurate: at the design W/S the
               most demanding phase must sit inside the installed power.
             </div>

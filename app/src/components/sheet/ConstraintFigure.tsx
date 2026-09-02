@@ -1,0 +1,255 @@
+/*
+ * The constraint-diagram figure, shared by every sheet that draws one.
+ *
+ * Gundmundsson's figures 3-1 through 3-5 are all the same picture: curves of
+ * a required quantity against wing loading, a rule at the design point, and
+ * — depending on the figure — the two regions separated by tone, a horizontal
+ * rule at what is installed, and a second axis on the right for the stall
+ * isobars.
+ *
+ * It draws what it is given and computes nothing but the envelope, so the
+ * sheets keep their own numbers.
+ */
+import Plotly from "plotly.js-basic-dist";
+import createPlotlyComponent from "react-plotly.js/factory";
+
+import tokens from "../../design-tokens";
+
+const Plot = createPlotlyComponent(Plotly);
+const MONO = tokens.fontFamily.mono.join(", ");
+
+export interface Series {
+  name: string;
+  x: number[];
+  y: number[];
+  color: string;
+  dash?: "dash" | "dot";
+  width?: number;
+}
+
+export interface FigureProps {
+  title: string;
+  figureLabel: string;
+  curves: Series[];
+  markers?: Array<{ x: number; y: number; name: string }>;
+  yTitle: string;
+  desiredWingLoading: number;
+  /** Horizontal accent rule, e.g. installed power. */
+  hRule?: { y: number; label: string };
+  /**
+   * Curves read off a second axis on the right. Gudmundsson's Fig. 3-5 puts
+   * the stall isobars on the constraint diagram this way, so the wing loading
+   * that satisfies every constraint can be checked against the lift
+   * coefficient it would need in the same glance.
+   */
+  rightAxis?: { title: string; curves: Series[] };
+  /**
+   * Separate the two regions of Gudmundsson's Fig. 3-1 by tone. Below the
+   * upper envelope at least one constraint is unmet, so that band carries the
+   * heavier wash; above it every constraint is satisfied and the field is left
+   * nearly clean, which is the way his figure reads — the eye should land on
+   * where the design can live, not on where it cannot.
+   */
+  shadeRegions?: boolean;
+  height?: number;
+}
+
+/** The wash over wing loadings that fail at least one constraint. */
+const UNACCEPTABLE_WASH = "rgba(20,23,26,0.10)";
+/** The barely-there tint over the region that satisfies all of them. */
+const ACCEPTABLE_WASH = "rgba(20,23,26,0.03)";
+
+/**
+ * Axis titles carry the units, so they are the difference between a figure
+ * and a decoration. Plotly 4 dropped the bare-string form of `axis.title`
+ * and silently draws nothing for it, which is how every one of these went
+ * missing.
+ */
+export const axisTitle = (text: string) => ({
+  text,
+  font: {
+    family: MONO,
+    size: 11,
+    color: tokens.colors.ink.label,
+    weight: 500,
+  },
+  standoff: 14,
+});
+
+export function Figure({
+  title,
+  figureLabel,
+  curves,
+  markers,
+  yTitle,
+  desiredWingLoading,
+  hRule,
+  rightAxis,
+  shadeRegions = false,
+  height = 300,
+}: FigureProps) {
+  const yValues = curves.flatMap((curve) => curve.y);
+  const yMax = Math.max(...yValues, hRule?.y ?? 0) * 1.08;
+
+  // The upper envelope: at each wing loading, the most demanding constraint.
+  // Everything above it satisfies all of them.
+  const envelopeX = curves[0]?.x ?? [];
+  const envelopeY = envelopeX.map((_, index) =>
+    Math.max(...curves.map((curve) => curve.y[index]))
+  );
+
+  return (
+    <div
+      className="relative mt-4 min-h-[240px] border border-rule bg-field px-2 pb-1 pt-3"
+      style={{ minHeight: height + 40 }}
+    >
+      <div className="absolute right-[14px] top-[10px] z-10 font-mono text-label text-ink-faint">
+        {figureLabel}
+      </div>
+      <Plot
+        className="w-full"
+        config={{ displayModeBar: false, responsive: true }}
+        data={[
+          // Drawn first so the constraint curves sit on top of the washes.
+          // `tonexty` fills between a trace and the one before it, so each
+          // band is a pair: a boundary, then the edge it fills towards.
+          ...(shadeRegions
+            ? [
+                {
+                  x: envelopeX,
+                  y: envelopeX.map(() => 0),
+                  type: "scatter" as const,
+                  mode: "lines" as const,
+                  name: "floor",
+                  line: { width: 0 },
+                  hoverinfo: "skip" as const,
+                  showlegend: false,
+                },
+                {
+                  x: envelopeX,
+                  y: envelopeY,
+                  type: "scatter" as const,
+                  mode: "lines" as const,
+                  name: "UNACCEPTABLE",
+                  line: { width: 0 },
+                  fill: "tonexty" as const,
+                  fillcolor: UNACCEPTABLE_WASH,
+                  hoverinfo: "skip" as const,
+                  showlegend: false,
+                },
+                {
+                  x: envelopeX,
+                  y: envelopeX.map(() => yMax),
+                  type: "scatter" as const,
+                  mode: "lines" as const,
+                  name: "ACCEPTABLE",
+                  line: { width: 0 },
+                  fill: "tonexty" as const,
+                  fillcolor: ACCEPTABLE_WASH,
+                  hoverinfo: "skip" as const,
+                  showlegend: false,
+                },
+              ]
+            : []),
+          ...curves.map((curve) => ({
+            x: curve.x,
+            y: curve.y,
+            type: "scatter" as const,
+            mode: "lines" as const,
+            name: curve.name,
+            line: {
+              color: curve.color,
+              width: curve.width ?? 1.6,
+              dash: curve.dash,
+            },
+          })),
+          {
+            x: [desiredWingLoading, desiredWingLoading],
+            y: [0, yMax],
+            type: "scatter" as const,
+            mode: "lines" as const,
+            name: "DESIGN POINT W/S",
+            line: { color: tokens.colors.accent.DEFAULT, width: 2 },
+          },
+          ...(hRule
+            ? [
+                {
+                  x: [curves[0]?.x[0] ?? 6, curves[0]?.x[curves[0].x.length - 1] ?? 32],
+                  y: [hRule.y, hRule.y],
+                  type: "scatter" as const,
+                  mode: "lines" as const,
+                  name: hRule.label,
+                  line: {
+                    color: tokens.colors.accent.DEFAULT,
+                    width: 1.4,
+                    dash: "dash" as const,
+                  },
+                },
+              ]
+            : []),
+          ...(rightAxis?.curves ?? []).map((curve) => ({
+            x: curve.x,
+            y: curve.y,
+            type: "scatter" as const,
+            mode: "lines" as const,
+            name: curve.name,
+            yaxis: "y2",
+            line: {
+              color: curve.color,
+              width: curve.width ?? 1.2,
+              dash: curve.dash,
+            },
+          })),
+          ...(markers ?? []).map((marker) => ({
+            x: [marker.x],
+            y: [marker.y],
+            type: "scatter" as const,
+            mode: "markers" as const,
+            name: marker.name,
+            marker: { color: tokens.colors.accent.DEFAULT, size: 8 },
+          })),
+        ]}
+        layout={{
+          autosize: true,
+          // Room for the axis titles; the right margin only when there is
+          // a second axis to title.
+          margin: { l: 78, r: rightAxis ? 76 : 18, t: 28, b: 72 },
+          paper_bgcolor: tokens.colors.field,
+          plot_bgcolor: tokens.colors.field,
+          font: { family: MONO, size: 10, color: tokens.colors.ink.muted },
+          xaxis: {
+            title: axisTitle("WING LOADING  W/S  [lb/ft²]"),
+            gridcolor: tokens.colors.rule.grid,
+            zeroline: false,
+          },
+          yaxis: {
+            title: axisTitle(yTitle),
+            gridcolor: tokens.colors.rule.grid,
+            zeroline: false,
+            // The shading lid sits at yMax, so let the axis stop there rather
+            // than padding above it and leaving a white band over the wash.
+            ...(shadeRegions ? { range: [0, yMax] } : {}),
+          },
+          ...(rightAxis
+            ? {
+                yaxis2: {
+                  title: axisTitle(rightAxis.title),
+                  overlaying: "y" as const,
+                  side: "right" as const,
+                  showgrid: false,
+                  zeroline: false,
+                },
+              }
+            : {}),
+          legend: { orientation: "h", y: -0.34, x: 0 },
+          hovermode: "closest",
+        }}
+        style={{ width: "100%", height }}
+        useResizeHandler
+      />
+      <div className="px-[2px] pb-1 pt-2 font-mono text-[10.5px] leading-[1.5] tracking-[0.08em] text-ink-faint">
+        {title}
+      </div>
+    </div>
+  );
+}
