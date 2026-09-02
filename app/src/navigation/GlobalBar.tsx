@@ -8,7 +8,9 @@
  */
 
 import { Link, useLocation } from "react-router-dom";
+import { useAtomValue } from "jotai";
 
+import { projectNameAtom, projectsAtom } from "../domain/atoms";
 import { GROUPS, groupOf } from "./sheets";
 
 /*
@@ -17,7 +19,6 @@ import { GROUPS, groupOf } from "./sheets";
  * and initials have no source yet and are the only invented values on screen.
  */
 const PROJECT = {
-  name: "SWIFT UAS",
   revision: "REV B",
   units: "IMPERIAL",
   initials: "GN",
@@ -29,6 +30,37 @@ const PROJECT = {
  */
 export default function GlobalBar() {
   const { pathname } = useLocation();
+  const projectName = useAtomValue(projectNameAtom);
+  const projects = useAtomValue(projectsAtom);
+
+  if (pathname === "/projects/create") return null;
+
+  if (pathname === "/") {
+    return (
+      <header className="flex h-[42px] flex-none items-stretch border-b border-rule bg-paper">
+        <Link
+          to="/"
+          className="flex items-center gap-[11px] border-r border-rule-mid px-[22px] text-ink no-underline"
+        >
+          <span className="block h-[9px] w-[9px] bg-accent" />
+          <span className="font-mono text-meta font-medium tracking-[.2em]">
+            KENYA ONE
+          </span>
+        </Link>
+        <div className="flex items-center border-r border-rule-mid px-[22px] font-mono text-meta tracking-tab text-ink-faint">
+          PROJECTS
+        </div>
+        <div className="flex-1" />
+        <div className="flex items-center border-l border-rule-mid px-[22px] font-mono text-meta tracking-tab text-ink-faint">
+          {projects.length} {projects.length === 1 ? "PROJECT" : "PROJECTS"}
+        </div>
+        <div className="flex items-center border-l border-rule-mid px-[22px] font-mono text-meta text-ink-faint">
+          {PROJECT.initials}
+        </div>
+      </header>
+    );
+  }
+
   const inProject =
     pathname.startsWith("/projects/") && pathname !== "/projects/create";
   const project = pathname.split("/").slice(0, 3).join("/");
@@ -80,7 +112,7 @@ export default function GlobalBar() {
 
       <div className="flex items-center gap-[18px] font-mono text-meta text-ink-faint">
         <span>
-          {PROJECT.name} · {PROJECT.revision}
+          {(projectName || "UNTITLED PROJECT").toUpperCase()} · {PROJECT.revision}
         </span>
         <span>UNITS {PROJECT.units}</span>
         <span className="flex h-[26px] w-[26px] items-center justify-center border border-white/25 text-panel">

@@ -36,6 +36,13 @@
 
 from django.urls import path
 
-from .views import ExampleSimpleAPIView
+from .views import AircraftTypeCatalogAPIView, ExampleSimpleAPIView
 
-urlpatterns = [path("example/", ExampleSimpleAPIView.as_view(), name="example_api")]
+urlpatterns = [
+    path(
+        "aircraft-types/",
+        AircraftTypeCatalogAPIView.as_view(),
+        name="aircraft_type_catalog",
+    ),
+    path("example/", ExampleSimpleAPIView.as_view(), name="example_api"),
+]
