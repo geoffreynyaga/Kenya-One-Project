@@ -39,6 +39,7 @@ import { aircraftTypeAtom } from "../domain/atoms";
 import { isUnmannedType } from "../domain/projects";
 import SrefDesign from "./sref/SrefDesign";
 import PerformanceConstraints from "./performanceConstraints/PerformanceConstraints";
+import StallLimits from "./stallLimits/StallLimits";
 import DetailedWeights from "./detailedWeights/DetailedWeights";
 import VnDiagram from "./vn/VnDiagram";
 import WingAndAirfoil from "./wingAndAirfoil/WingAndAirfoil";
@@ -82,6 +83,11 @@ const ProjectDetail = () => {
     {
       path: "performance-constraints",
       component: PerformanceConstraints,
+    },
+
+    {
+      path: "stall-limits",
+      component: StallLimits,
     },
 
     {

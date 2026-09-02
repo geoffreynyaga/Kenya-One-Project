@@ -46,12 +46,16 @@ export const SIZING_SHEETS: Sheet[] = [
   { id: "01", label: "01 MTOW", path: "/mtow" },
   { id: "02", label: "02 SREF", path: "/sref" },
   { id: "03", label: "03 MISSION", path: "/performance-constraints" },
-  { id: "04", label: "04 WEIGHTS", path: "/detailed-weights" },
-  { id: "05", label: "05 V–N", path: "/vn-diagram" },
-  { id: "06", label: "06 AEROFOIL", path: "/wing-and-airfoil" },
-  { id: "07", label: "07 DRAG", path: "/drag-analysis" },
-  { id: "08", label: "08 STRUCTURE", path: "/wing-structural" },
-  { id: "09", label: "09 COST", path: "/cost-analysis" },
+  // Sits next to 03 because it is the same diagram: Gundmundsson's §3.2.2
+  // adds the stall isobars to the constraint diagram, and the pair is only
+  // useful read together.
+  { id: "04", label: "04 STALL LIMITS", path: "/stall-limits" },
+  { id: "05", label: "05 WEIGHTS", path: "/detailed-weights" },
+  { id: "06", label: "06 V–N", path: "/vn-diagram" },
+  { id: "07", label: "07 AEROFOIL", path: "/wing-and-airfoil" },
+  { id: "08", label: "08 DRAG", path: "/drag-analysis" },
+  { id: "09", label: "09 STRUCTURE", path: "/wing-structural" },
+  { id: "10", label: "10 COST", path: "/cost-analysis" },
 ];
 
 /** Sheet index for the performance group, in the order they are flown. */
