@@ -125,8 +125,10 @@ export function thrustToWeightCruise(
 }
 
 /**
- * Workbook S: T/W for the service ceiling (Gudmundsson §5.5.2 form): the
- * thrust needed to keep 100 fpm-class climb available at altitude.
+ * Workbook S: T/W for the service ceiling (Gudmundsson eq (3-6)): the
+ * thrust needed to keep 100 fpm-class climb available at altitude. An
+ * earlier comment said "§5.5.2" — that section does not exist in the book;
+ * the formula is Section 3.2's constraint-analysis eq (3-6).
  */
 export function thrustToWeightServiceCeiling(
   rhoServiceCeiling: number,
