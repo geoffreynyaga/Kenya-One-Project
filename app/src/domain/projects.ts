@@ -33,3 +33,11 @@ export function nextProjectId(name: string, projects: ProjectRecord[]): string {
 export function aircraftTypeLabel(value: string): string {
   return value.replaceAll("_", " ");
 }
+
+/**
+ * Unmanned categories are sized by mass fractions (Gundlach ch. 3) rather
+ * than by the crewed fuel-fraction methods, so the MTOW route switches on this.
+ */
+export function isUnmannedType(value: string): boolean {
+  return value.startsWith("UAV_");
+}

@@ -205,8 +205,9 @@ export default function CreateProject() {
                 Select an aircraft category
               </h1>
               <p className="mt-2 text-body text-ink-muted">
-                This sets the starting empty-weight model. You can change it
-                later on the MTOW sheet.
+                This sets the sizing method and the empty-weight model. Unmanned
+                categories are sized by fixed weights and mass fractions; every
+                other category by the fuel-fraction methods.
               </p>
             </div>
             <div className="flex flex-col gap-2 font-mono text-meta text-ink-faint lg:items-end">
