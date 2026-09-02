@@ -63,6 +63,11 @@ export interface MissionInputs {
   altitudeFt: number;
   /** Workbook B19: load factor in the constant-velocity level turn. */
   turnLoadFactor: number;
+  /**
+   * Specific energy level the turn must hold, ft/s. Gudmundsson eq. (3-2).
+   * Zero is his eq. (3-1) and is what the workbook asks for.
+   */
+  specificEnergyFps: number;
   /** Workbook B20: rate of climb requirement, fpm. */
   rateOfClimbFpm: number;
   /** Workbook B21: climb speed, carried from the climb workbook B19. */
@@ -182,7 +187,9 @@ export function missionCurves(
       inputs.cd0,
       k,
       inputs.turnLoadFactor,
-      x
+      x,
+      inputs.specificEnergyFps,
+      inputs.cruiseSpeedKnots
     );
     const twRateOfClimb = thrustToWeightRateOfClimb(
       qClimb,

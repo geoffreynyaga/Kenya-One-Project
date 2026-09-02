@@ -48,20 +48,36 @@ export function raymerOswaldEfficiency(aspectRatio: number): number {
   return 1.78 * (1 - 0.045 * aspectRatio ** 0.68) - 0.64;
 }
 
-/** Workbook L: T/W for a constant-velocity level turn at load factor n. */
+/**
+ * Workbook L: T/W for a constant-velocity level turn at load factor n —
+ * Gudmundsson eq. (3-1), generalised to eq. (3-2) by the specific energy
+ * term P_S/V.
+ *
+ * Eq. (3-1) is eq. (3-2) at P_S = 0, which is the level turn the workbook
+ * asks for: the aircraft holds its altitude and its speed through the turn.
+ * A non-zero P_S asks it to keep climbing or accelerating out of the turn,
+ * which is an aerobatic requirement, so the sheet defaults to zero and the
+ * workbook parity is unaffected.
+ */
 export function thrustToWeightLevelTurn(
   qCruiseAlt: number,
   cd0: number,
   inducedDragFactor: number,
   turnLoadFactor: number,
-  wingLoading: number
+  wingLoading: number,
+  specificEnergyFps = 0,
+  speedKnots = 0
 ): number {
+  const specificEnergyTerm =
+    specificEnergyFps === 0 ? 0 : specificEnergyFps / (speedKnots * KNOT_TO_FPS);
+
   return (
     qCruiseAlt *
-    (cd0 / wingLoading +
-      inducedDragFactor *
-        (turnLoadFactor / qCruiseAlt) ** 2 *
-        wingLoading)
+      (cd0 / wingLoading +
+        inducedDragFactor *
+          (turnLoadFactor / qCruiseAlt) ** 2 *
+          wingLoading) +
+    specificEnergyTerm
   );
 }
 

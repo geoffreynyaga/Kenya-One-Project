@@ -22,6 +22,7 @@ export type MissionField =
   | "groundRun"
   | "altitude"
   | "turnLoadFactor"
+  | "specificEnergy"
   | "rateOfClimb"
   | "serviceCeiling"
   | "climbSpeed"
@@ -49,8 +50,8 @@ export interface FieldSpec {
   label: string;
   unit?: string;
   source: FieldSource;
-  /** Workbook cell this field reproduces. */
-  cell: string;
+  /** Workbook cell this field reproduces. Omit when the workbook has none. */
+  cell?: string;
   /** For `carried`: the sheet or workbook that produces the value. */
   origin?: string;
   /** For `derived`: the formula, shown under the value. */
@@ -73,7 +74,16 @@ export const requirementFields: FieldSpec[] = [
     cell: "B19",
     body: "Load factor held in a constant-velocity level turn. Sets how hard the turn constraint pulls: T/W grows with n² through the induced term.",
     typical: "1.4 for a 30° bank at modest speed; aerobatic designs run 3+.",
-    cite: "Raymer §5.3.3, Gudmundsson §5.4.1",
+    cite: "Gudmundsson eq. (3-1); Raymer §5.3, Sustained Turn",
+  },
+  {
+    field: "specificEnergy",
+    label: "Specific energy level",
+    unit: "P_S · ft/s",
+    source: "choice",
+    body: "Excess specific power the turn must still have in hand. Zero is the level turn the workbook asks for, where the aircraft holds both its altitude and its speed. Above zero it must also be climbing or accelerating out of the turn, which costs thrust the whole way along the curve.",
+    typical: "0 for a level turn; 20 ft/s for an aerobatic design.",
+    cite: "Gudmundsson eq. (3-2)",
   },
   {
     field: "rateOfClimb",
@@ -83,7 +93,7 @@ export const requirementFields: FieldSpec[] = [
     cell: "B20",
     body: "Sea-level rate of climb the aircraft must sustain at the climb speed. Usually the binding constraint for a lightly loaded twin — here it is what sizes the power.",
     typical: "Light twin: 1,000–1,600 fpm.",
-    cite: "Raymer §5.3.4, Gudmundsson §5.4.2",
+    cite: "Gudmundsson eq. (3-3); Raymer §5.3, Climb and Glide",
   },
   {
     field: "climbSpeed",
@@ -103,7 +113,7 @@ export const requirementFields: FieldSpec[] = [
     cell: "B12",
     body: "Take-off ground run the energy-method constraint must achieve from brakes release to liftoff.",
     typical: "800–1,500 ft for a light twin off pavement.",
-    cite: "Raymer §5.3.5, Gudmundsson §5.4.3",
+    cite: "Gudmundsson eq. (3-4); Raymer §5.3, Takeoff Distance",
   },
   {
     field: "serviceCeiling",
@@ -157,7 +167,8 @@ export const carriedFields: FieldSpec[] = [
     cell: "B6",
     origin: "DRAG ANALYSIS · E15",
     body: "Clean parasite drag from the drag build-up. CAUTION: it closes the CD0 ⇄ AREA loop — this sheet sizes power against a wing the drag was computed from.",
-    typical: "Clean GA airframe: 0.020–0.035.",
+    typical: "0.020–0.055 across the classes in Table 3-1; 0.028–0.035 for a GA single on fixed gear.",
+    cite: "Gundmundsson Table 3-1",
   },
   {
     field: "aspectRatio",
@@ -196,7 +207,9 @@ export const carriedFields: FieldSpec[] = [
     source: "seed",
     cell: "B10",
     origin: "TAKE-OFF WB · M16",
-    body: "Total drag coefficient in the take-off configuration, gear down, flaps set.",
+    body: "Drag coefficient during the take-off run, gear down and flaps set. CAUTION: eq. (3-4) reads this at the ground attitude, but the value carried here is the drag at the liftoff lift coefficient, which is a different and larger number. The ground run this sheet asks for is conservative as a result.",
+    typical: "0.030–0.065 across the classes in Table 3-1; 0.038–0.045 for a GA single on fixed gear.",
+    cite: "Gundmundsson Table 3-1",
   },
   {
     field: "clTakeoff",
@@ -205,8 +218,9 @@ export const carriedFields: FieldSpec[] = [
     source: "seed",
     cell: "B11",
     origin: "TAKE-OFF WB · M17",
-    body: "Lift coefficient with take-off flaps; offsets rolling friction in the ground-run constraint.",
-    typical: "1.4–1.6.",
+    body: "Lift the wing carries during the run, which is what offsets rolling friction. CAUTION: the value carried here is (W/S) ÷ q at liftoff — the coefficient at rotation, roughly twice the ground-attitude figure eq. (3-4) expects.",
+    typical: "≈0.4 (biplane, no flaps) to ≈0.8 (jets and turboprops) in Table 3-1; ≈0.7 for a GA aircraft with take-off flap.",
+    cite: "Gundmundsson Table 3-1",
   },
   {
     field: "cruiseSpeed",
