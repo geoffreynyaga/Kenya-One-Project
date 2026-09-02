@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AeroClassCatalogAPIView,
     AirfoilCatalogAPIView,
     AirfoilDetailAPIView,
     CostAnalysisAPIView,
@@ -17,6 +18,11 @@ urlpatterns = [
         "sref-engines/",
         SrefEngineCatalogAPIView.as_view(),
         name="sref_engines",
+    ),
+    path(
+        "aero-classes/",
+        AeroClassCatalogAPIView.as_view(),
+        name="aero_class_catalog",
     ),
     path("airfoils/", AirfoilCatalogAPIView.as_view(), name="airfoil_catalog"),
     path(

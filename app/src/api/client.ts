@@ -9,6 +9,7 @@
  * Results stay leaf-local in TanStack Query. Nothing here writes to jotai.
  */
 
+import type { AeroClass } from "./aeroClasses";
 import type { TunnelSection } from "./airfoils";
 import type { AircraftType } from "./aircraftTypes";
 import type { CostAnalysisRequest, CostAnalysisResult } from "./costAnalysis";
@@ -38,6 +39,8 @@ export interface CalculationClient {
   airfoilCatalog(): Promise<TunnelSection[]>;
   /** Aircraft categories supported by the empty-weight model. */
   aircraftTypes(): Promise<AircraftType[]>;
+  /** Typical drag and lift by class — advisory ranges for the hints. */
+  aeroClasses(): Promise<AeroClass[]>;
   /** Measurements for one section. Rejects when there are none. */
   airfoil(designation: string): Promise<TunnelSection>;
 }

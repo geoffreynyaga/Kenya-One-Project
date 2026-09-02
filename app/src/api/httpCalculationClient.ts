@@ -6,6 +6,7 @@
  * request and response shapes, which outlive the transport.
  */
 
+import { fetchAeroClasses } from "./aeroClasses";
 import { fetchAirfoil, fetchAirfoilCatalog } from "./airfoils";
 import { fetchAircraftTypes } from "./aircraftTypes";
 import type { CalculationClient } from "./client";
@@ -22,5 +23,6 @@ export const httpCalculationClient: CalculationClient = {
   uasSizing: fetchUasSizing,
   airfoilCatalog: fetchAirfoilCatalog,
   aircraftTypes: fetchAircraftTypes,
+  aeroClasses: fetchAeroClasses,
   airfoil: fetchAirfoil,
 };

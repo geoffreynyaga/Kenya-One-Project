@@ -6,6 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from aircraft_design.aero_classes import AERO_CLASSES
 from aircraft_design.airfoils import AirfoilNotFound, get_airfoil, list_airfoils
 from aircraft_design.costs import CostCalculationError, calculate_costs
 from aircraft_design.sref import ENGINE_CATALOG, SrefCalculationError, calculate_sref
@@ -115,6 +116,25 @@ class SrefEngineCatalogAPIView(APIView):
             {
                 "status": "success",
                 "data": [asdict(engine) for engine in ENGINE_CATALOG],
+            }
+        )
+
+
+class AeroClassCatalogAPIView(APIView):
+    """Gundmundsson Table 3-1 — typical drag and lift by aircraft class.
+
+    Advisory ranges the sheets show in their hints so a reviewer can tell
+    whether a typed coefficient is plausible for the class being designed.
+    They are never written into a field: the book offers them in place of a
+    study of comparable aircraft, not in place of a decision.
+    """
+
+    @method_decorator(cache_control(max_age=60 * 60 * 24, public=True))
+    def get(self, request, *args, **kwargs):
+        return Response(
+            {
+                "status": "success",
+                "data": [asdict(aero_class) for aero_class in AERO_CLASSES],
             }
         )
 
