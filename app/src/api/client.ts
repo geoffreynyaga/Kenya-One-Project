@@ -13,6 +13,7 @@ import type { TunnelSection } from "./airfoils";
 import type { AircraftType } from "./aircraftTypes";
 import type { CostAnalysisRequest, CostAnalysisResult } from "./costAnalysis";
 import type { MtowSizingRequest } from "./mtowSizing";
+import type { UasSizingRequest, UasSizingResult } from "./uasSizing";
 import type {
   SrefEngineSpec,
   SrefSizingRequest,
@@ -31,6 +32,8 @@ export interface CalculationClient {
   costAnalysis(request: CostAnalysisRequest): Promise<CostAnalysisResult>;
   /** The iterative maximum take-off weight solution. */
   mtowSizing(request: MtowSizingRequest): Promise<ServerData>;
+  /** Mass-fraction take-off weight sizing for an unmanned aircraft. */
+  uasSizing(request: UasSizingRequest): Promise<UasSizingResult>;
   /** Every section the wind-tunnel catalogue has measurements for. */
   airfoilCatalog(): Promise<TunnelSection[]>;
   /** Aircraft categories supported by the empty-weight model. */

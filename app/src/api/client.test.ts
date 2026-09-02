@@ -12,6 +12,7 @@ const OPERATIONS: (keyof CalculationClient)[] = [
   "srefEngines",
   "costAnalysis",
   "mtowSizing",
+  "uasSizing",
   "airfoilCatalog",
   "aircraftTypes",
   "airfoil",

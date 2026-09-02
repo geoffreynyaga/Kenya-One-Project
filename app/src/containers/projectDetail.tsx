@@ -34,6 +34,9 @@
 
 
 import { Routes, Route } from "react-router-dom";
+import { useAtomValue } from "jotai";
+import { aircraftTypeAtom } from "../domain/atoms";
+import { isUnmannedType } from "../domain/projects";
 import SrefDesign from "./sref/SrefDesign";
 import PerformanceConstraints from "./performanceConstraints/PerformanceConstraints";
 import DetailedWeights from "./detailedWeights/DetailedWeights";
@@ -43,6 +46,7 @@ import DragAnalysis from "./drag/DragAnalysis";
 import WingStructural from "./wingAndAirfoil/WingStructural";
 import SheetIndex from "../navigation/SheetIndex";
 import MTOWSizing from "./InitialSizing/MTOWSizing";
+import UasSizing from "./uasSizing/UasSizing";
 import CostAnalysis from "./costs/CostAnalysis";
 import TakeOff from "./performance/takeOff/TakeOff";
 import Climb from "./performance/climb/Climb";
@@ -53,11 +57,21 @@ import Aileron from "./control/aileron/Aileron";
 import Elevator from "./control/elevator/Elevator";
 import Rudder from "./control/rudder/Rudder";
 
+/**
+ * Sheet 01 depends on what is being designed. A crewed aircraft is sized by
+ * the fuel-fraction methods; an unmanned one by fixed weights and mass
+ * fractions, which asks different questions and closes in one expression.
+ */
+const SizingSheet = () => {
+  const aircraftType = useAtomValue(aircraftTypeAtom);
+  return isUnmannedType(aircraftType) ? <UasSizing /> : <MTOWSizing />;
+};
+
 const ProjectDetail = () => {
   const routes = [
     {
       path: "mtow",
-      component: MTOWSizing,
+      component: SizingSheet,
     },
 
     {

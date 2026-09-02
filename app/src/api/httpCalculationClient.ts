@@ -12,12 +12,14 @@ import type { CalculationClient } from "./client";
 import { fetchCostAnalysis } from "./costAnalysis";
 import { fetchMtowSizing } from "./mtowSizing";
 import { fetchSrefEngines, fetchSrefSizing } from "./srefDesign";
+import { fetchUasSizing } from "./uasSizing";
 
 export const httpCalculationClient: CalculationClient = {
   srefSizing: fetchSrefSizing,
   srefEngines: fetchSrefEngines,
   costAnalysis: fetchCostAnalysis,
   mtowSizing: fetchMtowSizing,
+  uasSizing: fetchUasSizing,
   airfoilCatalog: fetchAirfoilCatalog,
   aircraftTypes: fetchAircraftTypes,
   airfoil: fetchAirfoil,
