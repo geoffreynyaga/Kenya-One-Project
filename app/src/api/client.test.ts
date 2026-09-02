@@ -13,6 +13,7 @@ const OPERATIONS: (keyof CalculationClient)[] = [
   "costAnalysis",
   "mtowSizing",
   "airfoilCatalog",
+  "aircraftTypes",
   "airfoil",
 ];
 

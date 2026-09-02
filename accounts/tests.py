@@ -39,7 +39,10 @@ from math import isclose
 from rest_framework.test import APIClient  # type: ignore
 
 from accounts.api.serializers import AIRCRAFT_TYPES
-from CORE.engines.prerequisitesEngine import get_empty_weight_constants
+from CORE.engines.prerequisitesEngine import (
+    AIRCRAFT_TYPE_CATALOG,
+    get_empty_weight_constants,
+)
 
 
 RAYMER_EMPTY_WEIGHT_CONSTANTS = {
@@ -72,6 +75,18 @@ def test_raymer_empty_weight_constants_cover_every_supported_aircraft_type():
         aircraft_type: get_empty_weight_constants(aircraft_type)
         for aircraft_type in AIRCRAFT_TYPES
     } == RAYMER_EMPTY_WEIGHT_CONSTANTS
+
+
+def test_aircraft_type_catalog_exposes_every_supported_category():
+    response = APIClient().get("/api/accounts/aircraft-types/")
+
+    assert response.status_code == 200
+    assert response.data == {
+        "status": "success",
+        "data": AIRCRAFT_TYPE_CATALOG,
+    }
+    assert tuple(item["value"] for item in response.data["data"]) == AIRCRAFT_TYPES
+    assert response["Cache-Control"] == "max-age=86400, public"
 
 
 def test_mtow_solve_is_independent_of_requested_plot_range():

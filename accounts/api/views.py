@@ -34,11 +34,23 @@
 # Copyright (c) 2020 KENYA ONE PROJECT                                           #
 ##################################################################################
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_control
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
 from .serializers import InitialSizingRequestSerializer
+
+
+class AircraftTypeCatalogAPIView(APIView):
+    """Aircraft categories supported by the Raymer empty-weight model."""
+
+    @method_decorator(cache_control(max_age=60 * 60 * 24, public=True))
+    def get(self, request, *args, **kwargs):
+        from CORE.engines.prerequisitesEngine import AIRCRAFT_TYPE_CATALOG
+
+        return Response({"status": "success", "data": AIRCRAFT_TYPE_CATALOG})
 
 
 class ExampleSimpleAPIView(APIView):

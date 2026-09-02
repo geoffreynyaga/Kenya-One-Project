@@ -151,6 +151,57 @@ EMPTY_WEIGHT_CONSTANTS: dict[str, dict[str, float]] = {
     "UAV_Small": {"a": 0.97, "c": -0.06},
 }
 
+AIRCRAFT_TYPE_CATALOG: tuple[dict[str, str], ...] = (
+    {"value": "SailPlane_Unpowered", "group": "Sailplane", "label": "Unpowered"},
+    {"value": "SailPlane_Powered", "group": "Sailplane", "label": "Powered"},
+    {
+        "value": "Homebuilt_Metal_or_Wood",
+        "group": "Homebuilt",
+        "label": "Metal or wood",
+    },
+    {"value": "Homebuilt_Composite", "group": "Homebuilt", "label": "Composite"},
+    {
+        "value": "GA_Single",
+        "group": "General aviation",
+        "label": "Single engine",
+    },
+    {
+        "value": "GA_Twin",
+        "group": "General aviation",
+        "label": "Twin engine",
+    },
+    {
+        "value": "Agricultural",
+        "group": "Special purpose",
+        "label": "Agricultural",
+    },
+    {
+        "value": "Twin_Turboprop",
+        "group": "Turboprop",
+        "label": "Twin turboprop",
+    },
+    {"value": "Flying_Boat", "group": "Marine", "label": "Flying boat"},
+    {"value": "Jet_Trainer", "group": "Jet · military", "label": "Jet trainer"},
+    {"value": "Jet_Fighter", "group": "Jet · military", "label": "Jet fighter"},
+    {
+        "value": "Military_cargo_or_bomber",
+        "group": "Jet · military",
+        "label": "Cargo or bomber",
+    },
+    {"value": "Jet_Transport", "group": "Jet · civil", "label": "Jet transport"},
+    {
+        "value": "UAV_Tac_Recce_or_UCAV",
+        "group": "Unmanned",
+        "label": "Tactical recce or UCAV",
+    },
+    {
+        "value": "UAV_High_Altitude",
+        "group": "Unmanned",
+        "label": "High altitude",
+    },
+    {"value": "UAV_Small", "group": "Unmanned", "label": "Small UAV"},
+)
+
 
 def get_empty_weight_constants(aircraft_type: str) -> dict[str, float]:
     """Return the Raymer empty-weight constants for an aircraft category."""

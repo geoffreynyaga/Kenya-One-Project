@@ -10,6 +10,7 @@
  */
 
 import type { TunnelSection } from "./airfoils";
+import type { AircraftType } from "./aircraftTypes";
 import type { CostAnalysisRequest, CostAnalysisResult } from "./costAnalysis";
 import type { MtowSizingRequest } from "./mtowSizing";
 import type {
@@ -32,6 +33,8 @@ export interface CalculationClient {
   mtowSizing(request: MtowSizingRequest): Promise<ServerData>;
   /** Every section the wind-tunnel catalogue has measurements for. */
   airfoilCatalog(): Promise<TunnelSection[]>;
+  /** Aircraft categories supported by the empty-weight model. */
+  aircraftTypes(): Promise<AircraftType[]>;
   /** Measurements for one section. Rejects when there are none. */
   airfoil(designation: string): Promise<TunnelSection>;
 }

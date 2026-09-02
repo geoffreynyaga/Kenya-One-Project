@@ -18,6 +18,11 @@ import {
 import { estimatedFuselageLengthM } from "./fuselageLength";
 import { polhamusLiftSlopePerRad } from "./liftSlope";
 import { Stage, STAGES } from "./stages";
+import {
+  NewProjectRecord,
+  nextProjectId,
+  ProjectRecord,
+} from "./projects";
 
 const persisted = <T>(key: string, initial: T) =>
   atomWithStorage<T>(`design:${key}`, initial, undefined, {
@@ -93,6 +98,34 @@ export const resetQuantitiesAtom = atom(
 
 // MTOW owns the empirical empty-weight model selection. @link MTOW!B4
 export const aircraftTypeAtom = persisted("aircraftType", "GA_Twin");
+
+// Project record choices. The name is intentionally blank on a fresh install.
+export const projectNameAtom = persisted("projectName", "");
+export const projectsAtom = persisted<ProjectRecord[]>("projects:v1", []);
+
+export const createProjectAtom = atom(
+  null,
+  (get, set, input: NewProjectRecord): ProjectRecord => {
+    const projects = get(projectsAtom);
+    const record: ProjectRecord = {
+      ...input,
+      id: nextProjectId(input.name, projects),
+      createdAt: new Date().toISOString(),
+    };
+
+    set(projectsAtom, [...projects, record]);
+    set(projectNameAtom, record.name);
+    set(aircraftTypeAtom, record.aircraftType);
+    return record;
+  }
+);
+
+export const activateProjectAtom = atom(null, (get, set, projectId: string) => {
+  const project = get(projectsAtom).find(({ id }) => id === projectId);
+  if (!project) return;
+  set(projectNameAtom, project.name);
+  set(aircraftTypeAtom, project.aircraftType);
+});
 
 // MTOW writes the selected method's live weight split.
 export const emptyWeightFractionAtom = provisional(
