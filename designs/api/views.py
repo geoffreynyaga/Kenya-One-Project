@@ -9,8 +9,13 @@ from rest_framework.views import APIView
 from aircraft_design.airfoils import AirfoilNotFound, get_airfoil, list_airfoils
 from aircraft_design.costs import CostCalculationError, calculate_costs
 from aircraft_design.sref import ENGINE_CATALOG, SrefCalculationError, calculate_sref
+from aircraft_design.uas_sizing import UasSizingError, calculate_uas_sizing
 
-from .serializers import CostAnalysisRequestSerializer, SrefSizingRequestSerializer
+from .serializers import (
+    CostAnalysisRequestSerializer,
+    SrefSizingRequestSerializer,
+    UasSizingRequestSerializer,
+)
 
 
 class CostAnalysisAPIView(APIView):
@@ -61,6 +66,34 @@ class SrefSizingAPIView(APIView):
                 {
                     "status": "error",
                     "code": "INVALID_SIZING_INPUTS",
+                    "message": str(error),
+                },
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        return Response({"status": "success", "data": asdict(result)})
+
+
+class UasSizingAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = UasSizingRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Check the highlighted sizing inputs and try again.",
+                    "errors": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            result = calculate_uas_sizing(serializer.to_domain())
+        except UasSizingError as error:
+            return Response(
+                {
+                    "status": "error",
+                    "code": "INVALID_UAS_INPUTS",
                     "message": str(error),
                 },
                 status=status.HTTP_422_UNPROCESSABLE_ENTITY,

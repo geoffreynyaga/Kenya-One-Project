@@ -15,6 +15,19 @@ from aircraft_design.sref import (
     SrefInputs,
     WeightsAndCruise as SrefWeightsAndCruise,
 )
+from aircraft_design.uas_sizing import (
+    BatteryPerformance as UasBatteryPerformance,
+    Energy as UasEnergy,
+    FixedWeights as UasFixedWeights,
+    FuelPerformance as UasFuelPerformance,
+    JetPerformance as UasJetPerformance,
+    Mission as UasMission,
+    MissionObjective as UasMissionObjective,
+    Propulsion as UasPropulsion,
+    PropulsionType as UasPropulsionType,
+    ScalingFractions as UasScalingFractions,
+    UasSizingInputs,
+)
 
 
 class AircraftCostContextSerializer(serializers.Serializer):
@@ -188,4 +201,142 @@ class SrefSizingRequestSerializer(serializers.Serializer):
             aerodynamics=SrefAerodynamics(**data.get("aerodynamics", {})),
             weights=SrefWeightsAndCruise(**data.get("weights", {})),
             design_point=SrefDesignPoint(**data.get("design_point", {})),
+        )
+
+
+class UasFixedWeightsSerializer(serializers.Serializer):
+    payload_lb = serializers.FloatField(min_value=0)
+    avionics_lb = serializers.FloatField(min_value=0)
+    other_lb = serializers.FloatField(min_value=0, default=0.0)
+
+
+class UasScalingFractionsSerializer(serializers.Serializer):
+    structure = serializers.FloatField(min_value=0, max_value=1)
+    subsystems = serializers.FloatField(min_value=0, max_value=1)
+
+
+class UasPropulsionSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=[t.value for t in UasPropulsionType])
+    mass_fraction = serializers.FloatField(
+        min_value=0, max_value=1, allow_null=True, required=False
+    )
+
+    aircraft_power_to_weight = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+    aircraft_thrust_to_weight = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+    install_factor = serializers.FloatField(min_value=1, default=1.0)
+    powerplant_power_to_weight = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+    powerplant_thrust_to_weight = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+    propeller_power_to_weight = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+    motor_power_to_weight = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+    controller_power_to_weight = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+
+    fixed_weight_lb = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+    fixed_power_hp = serializers.FloatField(
+        min_value=0, allow_null=True, required=False
+    )
+    fixed_thrust_lbf = serializers.FloatField(
+        min_value=0, allow_null=True, required=False
+    )
+
+
+class UasMissionSerializer(serializers.Serializer):
+    objective = serializers.ChoiceField(choices=[o.value for o in UasMissionObjective])
+    range_nm = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+    endurance_h = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+    airspeed_kt = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+    lift_to_drag = serializers.FloatField(
+        min_value=0.000001, allow_null=True, required=False
+    )
+    load_factor = serializers.FloatField(min_value=1, default=1.0)
+
+
+class UasFuelPerformanceSerializer(serializers.Serializer):
+    bsfc_lb_per_hp_h = serializers.FloatField(min_value=0.000001)
+    propeller_efficiency = serializers.FloatField(min_value=0.000001, max_value=1)
+
+
+class UasJetPerformanceSerializer(serializers.Serializer):
+    tsfc_per_h = serializers.FloatField(min_value=0.000001)
+
+
+class UasBatteryPerformanceSerializer(serializers.Serializer):
+    specific_energy_wh_per_kg = serializers.FloatField(min_value=0.000001)
+    battery_efficiency = serializers.FloatField(min_value=0.000001, max_value=1)
+    usable_fraction = serializers.FloatField(min_value=0.000001, max_value=1)
+    propeller_efficiency = serializers.FloatField(min_value=0.000001, max_value=1)
+    motor_efficiency = serializers.FloatField(min_value=0.000001, max_value=1)
+    controller_efficiency = serializers.FloatField(min_value=0.000001, max_value=1)
+    gearbox_efficiency = serializers.FloatField(
+        min_value=0.000001, max_value=1, default=1.0
+    )
+    distribution_efficiency = serializers.FloatField(
+        min_value=0.000001, max_value=1, default=1.0
+    )
+
+
+class UasEnergySerializer(serializers.Serializer):
+    mass_fraction = serializers.FloatField(
+        min_value=0, max_value=1, allow_null=True, required=False
+    )
+    mission = UasMissionSerializer(allow_null=True, required=False)
+    fuel = UasFuelPerformanceSerializer(allow_null=True, required=False)
+    jet = UasJetPerformanceSerializer(allow_null=True, required=False)
+    battery = UasBatteryPerformanceSerializer(allow_null=True, required=False)
+
+
+class UasSizingRequestSerializer(serializers.Serializer):
+    fixed_weights = UasFixedWeightsSerializer()
+    fractions = UasScalingFractionsSerializer()
+    propulsion = UasPropulsionSerializer()
+    energy = UasEnergySerializer(required=False)
+    raymer_category = serializers.CharField(allow_null=True, required=False)
+
+    def to_domain(self) -> UasSizingInputs:
+        data = self.validated_data
+
+        propulsion = dict(data["propulsion"])
+        propulsion["type"] = UasPropulsionType(propulsion["type"])
+
+        energy = dict(data.get("energy", {}))
+        mission = energy.get("mission")
+        if mission is not None:
+            mission = dict(mission)
+            mission["objective"] = UasMissionObjective(mission["objective"])
+            energy["mission"] = UasMission(**mission)
+        for key, performance in (
+            ("fuel", UasFuelPerformance),
+            ("jet", UasJetPerformance),
+            ("battery", UasBatteryPerformance),
+        ):
+            if energy.get(key) is not None:
+                energy[key] = performance(**energy[key])
+
+        return UasSizingInputs(
+            fixed_weights=UasFixedWeights(**data["fixed_weights"]),
+            fractions=UasScalingFractions(**data["fractions"]),
+            propulsion=UasPropulsion(**propulsion),
+            energy=UasEnergy(**energy),
+            raymer_category=data.get("raymer_category"),
         )
