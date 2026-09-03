@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { Provider, createStore } from "jotai";
 
 import type { CalculationClient } from "../../api/client";
@@ -78,15 +78,16 @@ afterEach(() => setCalculationClient(null));
 function renderSheet({
   clMax,
   stallSpeed = 61,
+  store = createStore(),
 }: {
   clMax: number;
   stallSpeed?: number;
+  store?: ReturnType<typeof createStore>;
 }) {
   setCalculationClient({
     stallLimits: () => Promise.resolve(LIMITS),
   } as unknown as CalculationClient);
 
-  const store = createStore();
   store.set(mtowLbAtom, 2000);
   store.set(aspectRatioAtom, 9);
   store.set(cd0Atom, 0.025);
@@ -254,10 +255,74 @@ describe("StallLimits", () => {
     expect(widths["SERVICE CEILING"]).toBeLessThan(3);
   });
 
-  it("asks for nothing — every number is a decision made elsewhere", () => {
+  it("edits the two numbers the read depends on, and nothing else", () => {
     const { container } = renderSheet({ clMax: 1.8 });
 
-    expect(container.querySelectorAll("input")).toHaveLength(0);
-    expect(screen.getByText("SINK · EXPORTS NOTHING")).toBeInTheDocument();
+    expect(container.querySelectorAll("input")).toHaveLength(2);
+    expect(screen.getByLabelText("Target stalling speed")).toBeInTheDocument();
+    expect(screen.getByLabelText("Design wing loading")).toBeInTheDocument();
+    expect(screen.getByText("EDITS THE DESIGN POINT")).toBeInTheDocument();
+  });
+
+  it("writes the design wing loading to the atom Sheet 02 owns", () => {
+    const store = createStore();
+    renderSheet({ clMax: 1.8, store });
+
+    const field = screen.getByLabelText("Design wing loading");
+    fireEvent.change(field, { target: { value: "26" } });
+    fireEvent.blur(field);
+
+    expect(store.get(wingLoadingOverrideAtom)).toBe(26);
+    // And the read-off follows it, which is the whole point of editing here.
+    expect(screen.getByText("26 lb/ft²")).toBeInTheDocument();
+  });
+
+  it("writes the stall speed to the atom Sheet 02 owns", () => {
+    const store = createStore();
+    renderSheet({ clMax: 1.8, store });
+
+    const field = screen.getByLabelText("Target stalling speed");
+    fireEvent.change(field, { target: { value: "55" } });
+    fireEvent.blur(field);
+
+    expect(store.get(stallSpeedKcasAtom)).toBe(55);
+    expect(screen.getByText("To stall at 55 kt")).toBeInTheDocument();
+  });
+
+  it("never writes the achieved CL max — that is Sheet 07's to earn", () => {
+    // Required CL max is the requirement this sheet produces. clMaxAtom is
+    // what the wing actually reaches, and writing it here would close the
+    // loop through stallLimitWingLoadingAtom.
+    const store = createStore();
+    renderSheet({ clMax: 1.8, store });
+
+    const field = screen.getByLabelText("Design wing loading");
+    fireEvent.change(field, { target: { value: "28" } });
+    fireEvent.blur(field);
+
+    expect(store.get(clMaxAtom)).toBe(1.8);
+  });
+
+  it("lets the wing loading go back to tracking the stall limit", () => {
+    const store = createStore();
+    renderSheet({ clMax: 1.8, store });
+
+    const field = screen.getByLabelText("Design wing loading");
+    fireEvent.change(field, { target: { value: "26" } });
+    fireEvent.blur(field);
+    fireEvent.click(screen.getByText(/TRACK THE STALL LIMIT/));
+
+    expect(store.get(wingLoadingOverrideAtom)).toBeNull();
+  });
+
+  it("ignores an entry that is not a wing loading", () => {
+    const store = createStore();
+    renderSheet({ clMax: 1.8, store });
+
+    const field = screen.getByLabelText("Design wing loading");
+    fireEvent.change(field, { target: { value: "-4" } });
+    fireEvent.blur(field);
+
+    expect(store.get(wingLoadingOverrideAtom)).toBe(20);
   });
 });

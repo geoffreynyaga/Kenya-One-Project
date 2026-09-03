@@ -12,15 +12,33 @@
  * for the horsepower, then across to the isobar for the CL max the wing has
  * to reach. Both answers are in the panel on the right.
  *
- * A sink, like Sheet 03: it reads the shared quantities and exports nothing.
- * It also asks for nothing — every number here is already a decision made
- * somewhere else, so there is no entry rail and nothing to confirm.
+ * The two numbers the read depends on are editable here, because this is
+ * where you find out they were wrong. The book selects a target stalling
+ * speed, reads the required lift coefficient off the design wing loading,
+ * and — if the wing cannot reach it — goes back and moves one of the two.
+ * Both live in `domain/atoms`, both are owned by Sheet 02, and editing them
+ * here is the same edit made there. That is not a cycle: they are source
+ * atoms with two editors, not two sheets reading each other.
+ *
+ * What this sheet does NOT write is the lift coefficient. Required CL max is
+ * an output — the requirement handed to the high-lift design on Sheet 07 —
+ * while `clMaxAtom` is what the wing actually achieves. Writing it here
+ * would assert the wing already has the lift it has just been asked to find,
+ * and would close a real loop: clMax feeds the stall-limit wing loading,
+ * which feeds the wing loading this sheet reads.
  */
 
-import { useMemo } from "react";
-import { useAtomValue } from "jotai";
+import { useMemo, useState } from "react";
+import { useAtom, useAtomValue } from "jotai";
 
-import { clMaxAtom, powerRequiredHpAtom } from "../../domain/atoms";
+import {
+  clMaxAtom,
+  powerRequiredHpAtom,
+  stallLimitWingLoadingAtom,
+  stallSpeedKcasAtom,
+  wingLoadingOverrideAtom,
+} from "../../domain/atoms";
+import { Hint, HintSpec } from "../../components/sheet/Hint";
 import { liftCoefficientForStallSpeed } from "../../domain/missionUtils";
 import { Figure } from "../../components/sheet/ConstraintFigure";
 import { StallLimitTable } from "./StallLimitTable";
@@ -63,10 +81,104 @@ const REGULATORY_LIMITS = [
  */
 const PLAIN_ISOBARS_KCAS = [50, 55, 60, 65, 70];
 
+const ENTRY_HINTS: Record<"stallSpeed" | "wingLoading", HintSpec> = {
+  stallSpeed: {
+    label: "Target stalling speed",
+    body: "The stalling speed the design is being certified to. Gundmundsson's method starts here: pick the target, then read what lift coefficient the wing loading commits you to.",
+    typical: "45 KCAS light-sport, 61 KCAS FAR 23. See the table below.",
+    cell: "Sref!B11",
+    origin: "Shared with Sheet 02 — editing here edits there",
+    cite: "Gundmundsson §3.2.2",
+  },
+  wingLoading: {
+    label: "Design wing loading",
+    body: "The design point, the vertical rule on the figure. Until one is chosen it tracks the stall limit; typing one here pins it, exactly as choosing a point on Sheet 02 does.",
+    cell: "Sref!K3",
+    origin: "Shared with Sheet 02 — editing here edits there",
+    cite: "Gundmundsson eq. (3-7)",
+  },
+};
+
+interface EntryRowProps {
+  id: "stallSpeed" | "wingLoading";
+  label: string;
+  unit: string;
+  value: string;
+  onChange: (value: string) => void;
+  onCommit: () => void;
+  caption: string;
+}
+
+function EntryRow({
+  id,
+  label,
+  unit,
+  value,
+  onChange,
+  onCommit,
+  caption,
+}: EntryRowProps) {
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_88px] items-baseline gap-x-3 px-[18px] py-[7px] shadow-carried hover:bg-white/70 focus-within:bg-white">
+      <span className="min-w-0 text-body leading-[1.35] text-ink-muted">
+        {label}
+        <span className="ml-[5px] font-mono text-micro text-ink-faint">
+          [{unit}]
+        </span>{" "}
+        <Hint inputId={id} spec={ENTRY_HINTS[id]} />
+      </span>
+
+      <label className="contents cursor-text" htmlFor={id}>
+        <input
+          aria-label={label}
+          className="min-w-0 border-0 border-b border-dashed border-ink-faint bg-transparent px-[1px] pb-[3px] text-right font-mono text-body leading-none text-ink outline-none hover:border-accent focus:border-accent"
+          id={id}
+          inputMode="decimal"
+          onBlur={onCommit}
+          onChange={(event) => onChange(event.target.value)}
+          step="any"
+          type="number"
+          value={value}
+        />
+      </label>
+
+      <span className="col-span-2 mt-[3px] font-mono text-[10px] tracking-band text-ink-faint">
+        {caption}
+      </span>
+    </div>
+  );
+}
+
 export default function StallLimits() {
   const { numbers } = useMissionSheet();
   const clMaxDesign = useAtomValue(clMaxAtom);
   const powerRequiredHp = useAtomValue(powerRequiredHpAtom);
+
+  // Both are Sheet 02's, edited in place. Drafts so a half-typed number is
+  // not committed on every keystroke; they commit on blur.
+  const [stallSpeedKcas, setStallSpeedKcas] = useAtom(stallSpeedKcasAtom);
+  const [wingLoadingOverride, setWingLoadingOverride] = useAtom(
+    wingLoadingOverrideAtom
+  );
+  const stallLimitWingLoading = useAtomValue(stallLimitWingLoadingAtom);
+  const [drafts, setDrafts] = useState<Record<string, string> | null>(null);
+
+  const draftFor = (key: string, committed: number) =>
+    drafts?.[key] ?? String(Number(committed.toFixed(3)));
+  const editDraft = (key: string, value: string) =>
+    setDrafts((current) => ({ ...current, [key]: value }));
+
+  const commitStallSpeed = () => {
+    const next = Number(drafts?.stallSpeed);
+    if (Number.isFinite(next) && next > 0) setStallSpeedKcas(next);
+    setDrafts(null);
+  };
+
+  const commitWingLoading = () => {
+    const next = Number(drafts?.wingLoading);
+    if (Number.isFinite(next) && next > 0) setWingLoadingOverride(next);
+    setDrafts(null);
+  };
 
   const derived = useMemo(() => deriveMission(numbers), [numbers]);
   const curves = useMemo(
@@ -208,7 +320,7 @@ export default function StallLimits() {
     [
       "① DESIGN WING LOADING",
       `${formatNumber(desired, 2)} lb/ft²`,
-      "Carried from Sheet 02",
+      wingLoadingOverride === null ? "At the stall limit" : "Shared with Sheet 02",
     ],
     [
       "② POWER REQUIRED",
@@ -251,7 +363,58 @@ export default function StallLimits() {
         ))}
       </div>
 
-      <div className="grid min-h-0 xl:grid-cols-[minmax(520px,1fr)_330px]">
+      <div className="grid min-h-0 xl:grid-cols-[268px_minmax(480px,1fr)_330px]">
+        <form
+          className="bg-panel pb-5 xl:border-r xl:border-rule-mid"
+          onSubmit={(event) => event.preventDefault()}
+        >
+          <div className="px-[18px] pb-[11px] pt-[15px]">
+            <div className="font-mono text-label font-medium tracking-label text-ink-label">
+              DESIGN POINT
+            </div>
+            <p className="mt-[8px] font-mono text-[10px] leading-[1.6] tracking-band text-ink-faint">
+              BOTH ARE SHEET 02&apos;S · EDITING HERE EDITS THERE
+            </p>
+          </div>
+
+          <EntryRow
+            caption="← SHEET 02 SREF"
+            id="stallSpeed"
+            label="Target stalling speed"
+            onChange={(value) => editDraft("stallSpeed", value)}
+            onCommit={commitStallSpeed}
+            unit="KCAS"
+            value={draftFor("stallSpeed", stallSpeedKcas)}
+          />
+
+          <EntryRow
+            caption={
+              wingLoadingOverride === null
+                ? "TRACKING THE STALL LIMIT"
+                : "← SHEET 02 SREF · PINNED"
+            }
+            id="wingLoading"
+            label="Design wing loading"
+            onChange={(value) => editDraft("wingLoading", value)}
+            onCommit={commitWingLoading}
+            unit="lb/ft²"
+            value={draftFor("wingLoading", desired)}
+          />
+
+          {wingLoadingOverride === null ? null : (
+            <button
+              className="mx-[18px] mt-[10px] border border-rule-mid px-[9px] py-[5px] font-mono text-[10px] tracking-band text-ink-label hover:border-accent hover:text-accent"
+              onClick={() => {
+                setWingLoadingOverride(null);
+                setDrafts(null);
+              }}
+              type="button"
+            >
+              TRACK THE STALL LIMIT ({formatNumber(stallLimitWingLoading, 2)})
+            </button>
+          )}
+        </form>
+
         <div aria-live="polite" className="min-w-0">
           <div className="min-w-0 bg-paper px-[22px] pb-0 pt-[18px]">
             <div className="mb-[10px]">
@@ -276,7 +439,10 @@ export default function StallLimits() {
               // the whole point of it, and Plotly's automatic interval put
               // 200 between the lines.
               yDtick={50}
-              hRule={{ y: powerRequiredHp, label: "INSTALLED POWER" }}
+              // Sheet 02's power loading against this design weight. His
+              // arrow ② reads the same quantity — the power the design asks
+              // for, not the rating of an engine anyone has chosen.
+              hRule={{ y: powerRequiredHp, label: "REQUIRED POWER · SHEET 02" }}
               rightAxis={{ title: "REQUIRED  CL MAX", curves: isobars }}
               title="Power required per phase on the left axis, normalised to sea level; on the right, the maximum lift coefficient the wing must reach to stall at each speed. Read up from the design wing loading for the power, then across to an isobar for the lift coefficient that wing loading commits you to. The two green lines are certification limits; the thin grey ones are the 5-knot scale between them."
               yTitle="BHP REQUIRED (S-L)"
@@ -398,7 +564,11 @@ export default function StallLimits() {
           <div className="mt-auto space-y-[9px] border-t border-rule-mid px-[18px] py-[14px] font-mono text-note">
             <div className="flex justify-between gap-3">
               <span className="text-ink-label">THIS SHEET</span>
-              <span className="text-ink">SINK · EXPORTS NOTHING</span>
+              <span className="text-ink">EDITS THE DESIGN POINT</span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-ink-label">CL MAX REQUIRED</span>
+              <span className="text-ink">FOR 07 AEROFOIL</span>
             </div>
             <div className="flex justify-between gap-3">
               <span className="text-ink-label">DESIGN CL MAX</span>
