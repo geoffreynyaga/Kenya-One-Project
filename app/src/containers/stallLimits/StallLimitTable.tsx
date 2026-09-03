@@ -78,10 +78,8 @@ export function StallLimitTable() {
 
   if (limits.isError || !limits.data) {
     return (
-      <p className="px-[18px] pb-3 font-mono text-[10px] leading-[1.6] tracking-band text-ink-faint">
-        CERTIFICATION LIMITS UNAVAILABLE. The figure still draws the two the
-        book draws — 45 and 61 KCAS — which are the limits for a light
-        general-aviation aeroplane.
+      <p className="px-[18px] pb-3 font-mono text-[10px] tracking-band text-ink-faint">
+        CERTIFICATION LIMITS UNAVAILABLE · THE FIGURE STILL DRAWS 45 AND 61
       </p>
     );
   }
@@ -113,9 +111,8 @@ export function StallLimitTable() {
           </tbody>
         </table>
       </div>
-      <p className="mt-[7px] font-mono text-[10px] leading-[1.6] tracking-band text-ink-faint">
-        A CEILING MARKED IMPLIED IS NOT IN THE RULE · IT IS WHAT THE BINDING
-        REQUIREMENT WORKS OUT TO, AND THE SECTION IS STILL THE THING TO READ
+      <p className="mt-[7px] font-mono text-[10px] tracking-band text-ink-faint">
+        IMPLIED · NOT IN THE RULE. READ THE SECTION
       </p>
     </div>
   );

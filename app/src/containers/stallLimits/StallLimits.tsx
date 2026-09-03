@@ -107,7 +107,7 @@ export default function StallLimits() {
       // because it is this design's number; everything else is scale.
       let color = tokens.colors.ink.DEFAULT;
       if (design) color = tokens.colors.accent.DEFAULT;
-      else if (regulatory) color = tokens.colors.regulatory;
+      else if (regulatory) color = tokens.colors.figure.regulatory;
 
       let label = `Vs = ${formatNumber(speedKcas, 0)} KCAS`;
       if (regulatory) label = regulatory.label;
@@ -138,37 +138,44 @@ export default function StallLimits() {
     showInLegend: line.showInLegend,
   }));
 
-  // The book separates the five power curves by dash and weight, in pairs:
-  // two solid, two dashed, one dotted. It splits each pair by hue; this
-  // sheet has none to spend on a comparison series, so tone does that job.
+  /*
+   * Fig. 3-5's own legend, line for line. Three dashes — solid, dashed,
+   * dotted — over two colours, and the pairing is the point: turn against
+   * airspeed, climb against T-O. Both members of each pair run together for
+   * much of the sweep, so hue is what separates them and dash is what tells
+   * you which pair you are looking at.
+   *
+   * Our names for his: LEVEL TURN is Turn, RATE OF CLIMB is Climb, GROUND
+   * RUN is T-O, CRUISE SPEED is Airspeed.
+   */
   const powerCurves = [
     {
       name: "LEVEL TURN",
       key: "bhpTurnSeaLevel" as const,
-      color: tokens.colors.ink.DEFAULT,
-      dash: undefined,
-      width: 2,
-    },
-    {
-      name: "CRUISE SPEED",
-      key: "bhpCruiseSeaLevel" as const,
-      color: tokens.colors.series.compare,
+      color: tokens.colors.figure.turnAndClimb,
       dash: undefined,
       width: 2,
     },
     {
       name: "RATE OF CLIMB",
       key: "bhpRateOfClimbSeaLevel" as const,
-      color: tokens.colors.ink.DEFAULT,
+      color: tokens.colors.figure.turnAndClimb,
       dash: "dash" as const,
-      width: 1.5,
+      width: 1.8,
+    },
+    {
+      name: "CRUISE SPEED",
+      key: "bhpCruiseSeaLevel" as const,
+      color: tokens.colors.ink.DEFAULT,
+      dash: undefined,
+      width: 2,
     },
     {
       name: "GROUND RUN",
       key: "bhpGroundRunSeaLevel" as const,
-      color: tokens.colors.series.compare,
+      color: tokens.colors.ink.DEFAULT,
       dash: "dash" as const,
-      width: 1.5,
+      width: 1.8,
     },
     {
       name: "SERVICE CEILING",
@@ -275,12 +282,19 @@ export default function StallLimits() {
             </div>
           </div>
 
-          <div className="border-t border-rule-mid bg-panel pt-4">
-            <h2 className="px-[18px] pb-[10px] font-mono text-label font-medium tracking-label text-ink-label">
-              REFERENCE · STALL SPEED LIMITS BY CERTIFICATION BASIS
-            </h2>
+          {/*
+            Shut by default. The figure answers the question for the book's
+            aeroplane; this is only wanted by a reader sizing something else.
+          */}
+          <details className="border-t border-rule-mid bg-panel">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label marker:content-none hover:text-ink">
+              <span>REFERENCE · STALL LIMIT BY CERTIFICATION BASIS</span>
+              <span className="font-normal text-ink-faint">
+                WHICH ONE IS MINE
+              </span>
+            </summary>
             <StallLimitTable />
-          </div>
+          </details>
         </div>
 
         <aside className="flex flex-col bg-panel xl:border-l xl:border-rule-mid">

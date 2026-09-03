@@ -46,8 +46,7 @@ def test_rows_without_a_ceiling_say_so_rather_than_omitting_it():
     }
     for row in unbounded:
         assert row.speed == "", row.value
-        assert len(row.note) > 40, row.value
-        assert row.derived_basis, row.value
+        assert row.note, row.value
 
 
 def test_the_derived_column_is_only_for_rules_that_set_no_ceiling():
@@ -81,7 +80,20 @@ def test_the_uas_row_offers_no_number_because_there_is_none_to_offer():
 
     assert uas.limit_kcas is None
     assert uas.derived_kcas is None
-    assert uas.derived_basis
+    assert uas.derived_basis == ""
+
+
+def test_a_derived_speed_always_says_where_it_came_from():
+    for row in STALL_LIMITS:
+        if row.derived_kcas is not None:
+            assert row.derived_basis, row.value
+
+
+def test_the_prose_stays_short_enough_to_read_beside_the_figure():
+    """The table is a lookup under a diagram, not the section it cites."""
+    for row in STALL_LIMITS:
+        assert len(row.note) <= 120, row.value
+        assert len(row.derived_basis) <= 120, row.value
 
 
 def test_every_row_names_the_section_to_read():

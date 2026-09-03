@@ -23,8 +23,10 @@ and is the reason those rows exist.
 Those rows are still not free to stall at any speed — something else bounds
 them, it is just not a stall speed written into the CFR. Where that
 something reduces to a speed, ``derived_kcas`` carries it and
-``derived_basis`` shows the working. It is a second-hand number and the two
-are kept in separate fields so nothing can quote it as regulation.
+``derived_basis`` says in one line where it came from. It is a second-hand
+number, and the two live in separate fields so nothing can quote it as
+regulation. Keep both short: this table is read beside a figure, not
+instead of the section it cites.
 """
 
 from dataclasses import dataclass
@@ -69,9 +71,7 @@ STALL_LIMITS: tuple[StallLimit, ...] = (
         None,
         "",
         "14 CFR 103.1(e)(4)",
-        "Single seat, unpowered or under 5 US gal of fuel. The same rule "
-        "caps full-power level flight at 55 knots CAS, so the speed range "
-        "is bounded at both ends.",
+        "Single seat. The same rule caps level flight at 55 KCAS.",
     ),
     StallLimit(
         "light_sport",
@@ -81,10 +81,7 @@ STALL_LIMITS: tuple[StallLimit, ...] = (
         None,
         "",
         "14 CFR 1.1",
-        "Clean — the definition takes the stall speed without lift-enhancing "
-        "devices, so flaps buy nothing here. This is the green dotted line "
-        "on Fig. 3-5. The MOSAIC rulemaking revises the light-sport "
-        "definition; read the current section before certifying to it.",
+        "Clean, so flaps buy nothing. MOSAIC revises this definition.",
     ),
     StallLimit(
         "far23_single",
@@ -94,9 +91,7 @@ STALL_LIMITS: tuple[StallLimit, ...] = (
         None,
         "",
         "14 CFR 23.49",
-        "Landing configuration at maximum take-off weight. The green dashed "
-        "line on Fig. 3-5, and the limit most general-aviation designs are "
-        "sized against.",
+        "Landing configuration at maximum take-off weight.",
     ),
     StallLimit(
         "far23_light_twin",
@@ -106,9 +101,7 @@ STALL_LIMITS: tuple[StallLimit, ...] = (
         None,
         "",
         "14 CFR 23.49",
-        "The same 61 knots, but only for a light twin that cannot meet the "
-        "one-engine-inoperative climb gradient. A twin that does meet it has "
-        "no stall speed ceiling.",
+        "Only for a twin that cannot meet the one-engine-out climb.",
     ),
     StallLimit(
         "far23_amendment_64",
@@ -116,15 +109,10 @@ STALL_LIMITS: tuple[StallLimit, ...] = (
         None,
         "",
         61.0,
-        "The figure Part 23 carried before the restructuring, and the one "
-        "the accepted consensus standards continue to work to. Confirm it "
-        "against the standard the programme actually names.",
+        "The pre-Amendment 64 figure, which the consensus standards keep.",
         "14 CFR 23.2110",
-        "The 2017 restructuring made Part 23 performance-based: the rule now "
-        "requires a stall speed to be determined, not to be under a number. "
-        "The numeric ceilings moved into the accepted means of compliance, "
-        "so the figure to design against comes from the consensus standard "
-        "the programme is using, not from the CFR.",
+        "Performance-based since 2017. The number moved to the "
+        "consensus standard, so read the one the programme names.",
     ),
     StallLimit(
         "far25_transport",
@@ -132,19 +120,10 @@ STALL_LIMITS: tuple[StallLimit, ...] = (
         None,
         "",
         107.0,
-        "Not from Part 25 but from the approach category the aeroplane has "
-        "to fit. § 97.3 grades an aircraft on VREF, or on 1.3·VS0 where no "
-        "VREF is specified, and category C ends at 140 KCAS — so 140 / 1.3 "
-        "= 107 KCAS is the stall speed that keeps a transport in category C, "
-        "and 165 / 1.3 = 127 KCAS the one that keeps it in D. A category is "
-        "a choice about which airports and which approach minima the design "
-        "can use, so this is a requirement the programme sets, not one the "
-        "CFR sets for it.",
+        "Approach category C, at 1.3·VS0 ≤ 140 KCAS (§ 97.3). "
+        "Category D allows 127.",
         "14 CFR Part 25",
-        "No stall speed ceiling. What bounds the wing loading instead is the "
-        "landing field length of § 25.125 and the approach speed it implies, "
-        "which is a longer calculation but the same argument — the "
-        "constraint diagram alone will not see it.",
+        "No ceiling. Landing field length (§ 25.125) bounds it instead.",
     ),
     StallLimit(
         "uas_part_107",
@@ -152,15 +131,9 @@ STALL_LIMITS: tuple[StallLimit, ...] = (
         None,
         "",
         None,
-        "Nothing to derive. Recovery method sets the speed, and a "
-        "hand-launched airframe, a net, and a runway do not agree on a "
-        "number — this one belongs in the requirements document.",
+        "",
         "14 CFR 107.51",
-        "No stall speed ceiling, and none implied: Part 107 limits ground "
-        "speed to 87 knots and altitude to 400 ft AGL, and says nothing "
-        "about the low end. A fixed-wing UAS stall speed is set by how it is "
-        "launched and recovered, so it is a design requirement rather than a "
-        "regulatory one.",
+        "No ceiling, and none to derive — recovery method sets it.",
     ),
 )
 

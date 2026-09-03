@@ -35,12 +35,19 @@ const colors = {
     faint: "#c9ccd0",
   },
 
-  // The one exception to the rule above, and it is not a comparison series.
-  // A certification limit is not a curve to be ranked against the others —
-  // it is the line the design may not cross, whatever the ranking says. The
-  // book gives it its own colour for that reason and this follows, on the
-  // constraint diagram only.
-  regulatory: "#1f7a44",
+  // The constraint diagram is the one place that spends hue beyond the
+  // accent, because Gundmundsson's Fig. 3-5 does and for his reasons. Both
+  // of these are for that figure alone; nothing else in the app may use them.
+  figure: {
+    // A certification limit is not a comparison series to be ranked by
+    // weight and dash. It is the line the design may not cross.
+    regulatory: "#1f7a44",
+    // Fig. 3-5 draws the turn and climb requirements in blue and the other
+    // three in black. Both blue curves run alongside a black one — turn
+    // beside airspeed, climb beside T-O — so in graphite alone each pair
+    // reads as a single line.
+    turnAndClimb: "#1c4fa1",
+  },
 
   // Hairlines.
   rule: {

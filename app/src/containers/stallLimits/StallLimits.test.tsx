@@ -141,6 +141,15 @@ describe("StallLimits", () => {
     expect(screen.queryByText("Vs = 61 KCAS · DESIGN")).toBeNull();
   });
 
+  it("keeps the certification table shut until it is asked for", () => {
+    // The figure already answers the question for the book's aeroplane.
+    const { container } = renderSheet({ clMax: 1.8 });
+    const band = container.querySelector("details");
+
+    expect(band).not.toBeNull();
+    expect(band).not.toHaveAttribute("open");
+  });
+
   it("says which certification basis each limit belongs to", async () => {
     renderSheet({ clMax: 1.8 });
 
