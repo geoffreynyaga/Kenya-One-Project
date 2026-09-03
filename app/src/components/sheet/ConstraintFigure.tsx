@@ -60,6 +60,11 @@ export interface FigureProps {
   height?: number;
 }
 
+const MARGIN_TOP = 28;
+const MARGIN_BOTTOM = 72;
+/** Distance from the axis to the legend, held constant at any figure height. */
+const LEGEND_GAP_PX = 110;
+
 /** The wash over wing loadings that fail at least one constraint. */
 const UNACCEPTABLE_WASH = "rgba(20,23,26,0.10)";
 /** The barely-there tint over the region that satisfies all of them. */
@@ -94,6 +99,12 @@ export function Figure({
   shadeRegions = false,
   height = 300,
 }: FigureProps) {
+  // The legend's `y` is a fraction of the plotting area, so a taller figure
+  // would push it further from the axis and eventually off the paper. Hold
+  // the gap at a constant number of pixels instead.
+  const plotHeight = height - MARGIN_TOP - MARGIN_BOTTOM;
+  const legendY = -(LEGEND_GAP_PX / plotHeight);
+
   const yValues = curves.flatMap((curve) => curve.y);
   const yMax = Math.max(...yValues, hRule?.y ?? 0) * 1.08;
 
@@ -221,7 +232,12 @@ export function Figure({
           autosize: true,
           // Room for the axis titles; the right margin only when there is
           // a second axis to title.
-          margin: { l: 78, r: rightAxis ? 76 : 18, t: 28, b: 72 },
+          margin: {
+            l: 78,
+            r: rightAxis ? 76 : 18,
+            t: MARGIN_TOP,
+            b: MARGIN_BOTTOM,
+          },
           paper_bgcolor: tokens.colors.field,
           plot_bgcolor: tokens.colors.field,
           font: { family: MONO, size: 10, color: tokens.colors.ink.muted },
@@ -249,7 +265,7 @@ export function Figure({
                 },
               }
             : {}),
-          legend: { orientation: "h", y: -0.34, x: 0 },
+          legend: { orientation: "h", y: legendY, x: 0 },
           hovermode: "closest",
         }}
         style={{ width: "100%", height }}

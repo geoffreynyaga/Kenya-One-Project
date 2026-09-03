@@ -254,7 +254,9 @@ export default function StallLimits() {
               curves={powerCurves}
               desiredWingLoading={desired}
               figureLabel="FIG. 4.1 · BHP AND STALL SPEED REQUIREMENTS"
-              height={420}
+              // Twelve curves and two axes. The book gives Fig. 3-5 a page;
+              // at 420 the power curves stacked into the lower third.
+              height={540}
               hRule={{ y: powerRequiredHp, label: "INSTALLED POWER" }}
               rightAxis={{ title: "REQUIRED  CL MAX", curves: isobars }}
               title="Power required per phase on the left axis, normalised to sea level; on the right, the maximum lift coefficient the wing must reach to stall at each speed. Read up from the design wing loading for the power, then across to an isobar for the lift coefficient that wing loading commits you to. The two green lines are certification limits; the thin grey ones are the 5-knot scale between them."
