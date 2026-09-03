@@ -31,6 +31,12 @@ export interface Series {
    * listing every rung buries the curves that do need naming.
    */
   showInLegend?: boolean;
+  /**
+   * Written along the curve rather than in the legend. Fig. 3-5 names its
+   * isobars this way, and it is the only arrangement that scales: a key with
+   * eight near-parallel lines in it tells you nothing about which is which.
+   */
+  inlineLabel?: string;
 }
 
 export interface FigureProps {
@@ -57,6 +63,8 @@ export interface FigureProps {
    * where the design can live, not on where it cannot.
    */
   shadeRegions?: boolean;
+  /** Force the left axis onto a fixed tick interval. */
+  yDtick?: number;
   height?: number;
 }
 
@@ -64,6 +72,9 @@ const MARGIN_TOP = 28;
 const MARGIN_BOTTOM = 72;
 /** Distance from the axis to the legend, held constant at any figure height. */
 const LEGEND_GAP_PX = 110;
+/** Where along the sweep the first and last inline curve labels sit. */
+const LABEL_SPAN_START = 0.12;
+const LABEL_SPAN = 0.76;
 
 /** The wash over wing loadings that fail at least one constraint. */
 const UNACCEPTABLE_WASH = "rgba(20,23,26,0.10)";
@@ -97,6 +108,7 @@ export function Figure({
   hRule,
   rightAxis,
   shadeRegions = false,
+  yDtick,
   height = 300,
 }: FigureProps) {
   // The legend's `y` is a fraction of the plotting area, so a taller figure
@@ -107,6 +119,36 @@ export function Figure({
 
   const yValues = curves.flatMap((curve) => curve.y);
   const yMax = Math.max(...yValues, hRule?.y ?? 0) * 1.08;
+
+  /*
+   * Name each right-axis curve on the curve itself. Fig. 3-5 can put every
+   * name near the top of the field because its axis is clipped and the steep
+   * isobars run off it; ours is scaled to hold them all, so nothing but the
+   * steepest would ever reach a shared height and the names would pile up at
+   * one x. Spread them across the sweep in slope order instead — steepest
+   * furthest left — which lands each name on its own line and reads the same
+   * way: a fan of labels marching down and to the right.
+   */
+  const bySlope = (rightAxis?.curves ?? [])
+    .filter((curve) => curve.inlineLabel)
+    .sort((a, b) => Math.max(...b.y) - Math.max(...a.y));
+  const inlineLabels = bySlope.map((curve, rank) => {
+    const spread =
+      bySlope.length === 1
+        ? 0.5
+        : LABEL_SPAN_START + (LABEL_SPAN / (bySlope.length - 1)) * rank;
+    const index = Math.round(spread * (curve.x.length - 1));
+    return {
+      x: curve.x[index],
+      y: curve.y[index],
+      yref: "y2" as const,
+      text: curve.inlineLabel,
+      showarrow: false,
+      yshift: 9,
+      font: { family: MONO, size: 9.5, color: curve.color },
+      bgcolor: tokens.colors.field,
+    };
+  });
 
   // The upper envelope: at each wing loading, the most demanding constraint.
   // Everything above it satisfies all of them.
@@ -250,6 +292,7 @@ export function Figure({
             title: axisTitle(yTitle),
             gridcolor: tokens.colors.rule.grid,
             zeroline: false,
+            ...(yDtick ? { dtick: yDtick, tick0: 0 } : {}),
             // The shading lid sits at yMax, so let the axis stop there rather
             // than padding above it and leaving a white band over the wash.
             ...(shadeRegions ? { range: [0, yMax] } : {}),
@@ -265,6 +308,7 @@ export function Figure({
                 },
               }
             : {}),
+          annotations: inlineLabels,
           legend: { orientation: "h", y: legendY, x: 0 },
           hovermode: "closest",
         }}

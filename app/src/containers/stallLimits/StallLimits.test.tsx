@@ -15,11 +15,30 @@ import {
 } from "../../domain/atoms";
 import StallLimits from "./StallLimits";
 
+/**
+ * Plotly draws nothing in jsdom, so capture what it was handed. The axis
+ * titles once went missing for a whole release because nothing looked at
+ * these props, and the isobar names now live in them too.
+ */
+interface PlotProps {
+  data: Array<Record<string, unknown>>;
+  layout: Record<string, unknown>;
+}
+let lastPlot: PlotProps | null = null;
+
 vi.mock("plotly.js-basic-dist", () => ({ default: {} }));
 vi.mock("react-plotly.js/factory", () => ({
   __esModule: true,
-  default: () => () => null,
+  default: () => (props: PlotProps) => {
+    lastPlot = props;
+    return null;
+  },
 }));
+
+const plot = () => {
+  if (!lastPlot) throw new Error("the figure never rendered");
+  return lastPlot;
+};
 
 const LIMITS: StallLimit[] = [
   {
@@ -44,7 +63,10 @@ const LIMITS: StallLimit[] = [
   },
 ];
 
-beforeEach(() => window.localStorage.clear());
+beforeEach(() => {
+  window.localStorage.clear();
+  lastPlot = null;
+});
 afterEach(() => setCalculationClient(null));
 
 /**
@@ -148,6 +170,9 @@ describe("StallLimits", () => {
 
     expect(band).not.toBeNull();
     expect(band).not.toHaveAttribute("open");
+    // And it says so — a band that gives no sign of opening never gets opened.
+    expect(screen.getByText("WHICH ONE IS MINE")).toBeInTheDocument();
+    expect(band?.querySelector("summary svg")).not.toBeNull();
   });
 
   it("says which certification basis each limit belongs to", async () => {
@@ -168,6 +193,65 @@ describe("StallLimits", () => {
     ).toBeInTheDocument();
     expect(screen.getByText("≈107 KCAS")).toBeInTheDocument();
     expect(screen.getByText("IMPLIED")).toBeInTheDocument();
+  });
+
+  it("names each isobar along the curve, the way Fig. 3-5 does", () => {
+    renderSheet({ clMax: 1.8, stallSpeed: 72 });
+    const annotations = plot().layout.annotations as Array<{
+      text: string;
+      x: number;
+      yref: string;
+    }>;
+
+    expect(annotations.map((note) => note.text)).toEqual([
+      "45 KCAS",
+      "50 KCAS",
+      "55 KCAS",
+      "60 KCAS",
+      "61 KCAS",
+      "65 KCAS",
+      "70 KCAS",
+      "72 KCAS",
+    ]);
+    // They read off the right-hand axis, not the power axis.
+    expect(annotations.every((note) => note.yref === "y2")).toBe(true);
+  });
+
+  it("staggers those names in slope order rather than stacking them", () => {
+    // Every isobar is labelled at the same height, so the steeper the line
+    // the further left its name lands. That is what keeps them apart.
+    renderSheet({ clMax: 1.8, stallSpeed: 72 });
+    const xs = (plot().layout.annotations as Array<{ x: number }>).map(
+      (note) => note.x
+    );
+
+    expect(xs).toEqual([...xs].sort((a, b) => a - b));
+    expect(new Set(xs).size).toBe(xs.length);
+  });
+
+  it("steps the power axis at 50 BHP so a reading can be taken off it", () => {
+    renderSheet({ clMax: 1.8 });
+
+    expect((plot().layout.yaxis as { dtick: number }).dtick).toBe(50);
+  });
+
+  it("draws the two solid requirements heavier than the rest", () => {
+    // Fig. 3-5 weights Turn and Airspeed above the dashed and dotted curves.
+    renderSheet({ clMax: 1.8 });
+    const widths = Object.fromEntries(
+      plot()
+        .data.filter((trace) => typeof trace.name === "string")
+        .map((trace) => [
+          trace.name as string,
+          (trace.line as { width: number } | undefined)?.width,
+        ])
+    );
+
+    expect(widths["LEVEL TURN"]).toBe(3);
+    expect(widths["CRUISE SPEED"]).toBe(3);
+    expect(widths["RATE OF CLIMB"]).toBeLessThan(3);
+    expect(widths["GROUND RUN"]).toBeLessThan(3);
+    expect(widths["SERVICE CEILING"]).toBeLessThan(3);
   });
 
   it("asks for nothing — every number is a decision made elsewhere", () => {

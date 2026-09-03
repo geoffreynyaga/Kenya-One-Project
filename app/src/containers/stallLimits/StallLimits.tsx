@@ -116,6 +116,9 @@ export default function StallLimits() {
       return {
         speedKcas,
         label,
+        // Written along the curve, as the book writes them. Short, because
+        // it sits on top of the figure rather than beside it.
+        inlineLabel: `${formatNumber(speedKcas, 0)} KCAS`,
         color,
         dash: design ? undefined : regulatory?.dash,
         width: design || regulatory ? 2 : 0.9,
@@ -136,6 +139,7 @@ export default function StallLimits() {
     dash: line.dash,
     width: line.width,
     showInLegend: line.showInLegend,
+    inlineLabel: line.inlineLabel,
   }));
 
   /*
@@ -143,7 +147,9 @@ export default function StallLimits() {
    * dotted — over two colours, and the pairing is the point: turn against
    * airspeed, climb against T-O. Both members of each pair run together for
    * much of the sweep, so hue is what separates them and dash is what tells
-   * you which pair you are looking at.
+   * you which pair you are looking at. The two solid curves are the heaviest
+   * lines in the field, as they are in his: they are the ones that bound the
+   * design at either end of the wing loading sweep.
    *
    * Our names for his: LEVEL TURN is Turn, RATE OF CLIMB is Climb, GROUND
    * RUN is T-O, CRUISE SPEED is Airspeed.
@@ -154,7 +160,7 @@ export default function StallLimits() {
       key: "bhpTurnSeaLevel" as const,
       color: tokens.colors.figure.turnAndClimb,
       dash: undefined,
-      width: 2,
+      width: 3,
     },
     {
       name: "RATE OF CLIMB",
@@ -168,7 +174,7 @@ export default function StallLimits() {
       key: "bhpCruiseSeaLevel" as const,
       color: tokens.colors.ink.DEFAULT,
       dash: undefined,
-      width: 2,
+      width: 3,
     },
     {
       name: "GROUND RUN",
@@ -261,9 +267,15 @@ export default function StallLimits() {
               curves={powerCurves}
               desiredWingLoading={desired}
               figureLabel="FIG. 4.1 · BHP AND STALL SPEED REQUIREMENTS"
-              // Twelve curves and two axes. The book gives Fig. 3-5 a page;
-              // at 420 the power curves stacked into the lower third.
-              height={540}
+              // Twelve curves and two axes. The book gives Fig. 3-5 a page,
+              // and it needs one: below this the five power curves stack
+              // into the lower third and the isobars cross them too shallowly
+              // to follow.
+              height={945}
+              // 50 BHP a step. Reading a required power off this figure is
+              // the whole point of it, and Plotly's automatic interval put
+              // 200 between the lines.
+              yDtick={50}
               hRule={{ y: powerRequiredHp, label: "INSTALLED POWER" }}
               rightAxis={{ title: "REQUIRED  CL MAX", curves: isobars }}
               title="Power required per phase on the left axis, normalised to sea level; on the right, the maximum lift coefficient the wing must reach to stall at each speed. Read up from the design wing loading for the power, then across to an isobar for the lift coefficient that wing loading commits you to. The two green lines are certification limits; the thin grey ones are the 5-knot scale between them."
@@ -286,11 +298,29 @@ export default function StallLimits() {
             Shut by default. The figure answers the question for the book's
             aeroplane; this is only wanted by a reader sizing something else.
           */}
-          <details className="border-t border-rule-mid bg-panel">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label marker:content-none hover:text-ink">
-              <span>REFERENCE · STALL LIMIT BY CERTIFICATION BASIS</span>
-              <span className="font-normal text-ink-faint">
-                WHICH ONE IS MINE
+          <details className="group border-t border-rule-mid bg-panel">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-[18px] pb-[10px] pt-4 font-mono text-label font-medium tracking-label text-ink-label marker:content-none hover:text-ink">
+              <span className="min-w-0 truncate">
+                REFERENCE · STALL LIMIT BY CERTIFICATION BASIS
+              </span>
+              <span className="flex shrink-0 items-center gap-[7px] font-normal text-accent">
+                <span className="group-open:hidden">WHICH ONE IS MINE</span>
+                <span className="hidden group-open:inline">HIDE</span>
+                <svg
+                  aria-hidden="true"
+                  className="transition-transform duration-150 group-open:rotate-180"
+                  fill="none"
+                  height="10"
+                  viewBox="0 0 10 10"
+                  width="10"
+                >
+                  <path
+                    d="M1.5 3.5 5 7 8.5 3.5"
+                    stroke="currentColor"
+                    strokeLinecap="square"
+                    strokeWidth="1"
+                  />
+                </svg>
               </span>
             </summary>
             <StallLimitTable />
