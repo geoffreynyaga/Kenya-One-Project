@@ -1,6 +1,10 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { Provider, createStore } from "jotai";
 
+import type { CalculationClient } from "../../api/client";
+import { setCalculationClient } from "../../api/client";
+import type { StallLimit } from "../../api/stallLimits";
 import {
   aspectRatioAtom,
   cd0Atom,
@@ -17,7 +21,31 @@ vi.mock("react-plotly.js/factory", () => ({
   default: () => () => null,
 }));
 
+const LIMITS: StallLimit[] = [
+  {
+    value: "light_sport",
+    label: "Light-sport aircraft",
+    limit_kcas: 45,
+    speed: "VS1",
+    derived_kcas: null,
+    derived_basis: "",
+    citation: "14 CFR 1.1",
+    note: "Clean, without lift-enhancing devices.",
+  },
+  {
+    value: "far25_transport",
+    label: "Part 25 transport category",
+    limit_kcas: null,
+    speed: "",
+    derived_kcas: 107,
+    derived_basis: "Approach category C ends at 140 KCAS.",
+    citation: "14 CFR Part 25",
+    note: "No stall speed ceiling in the rule.",
+  },
+];
+
 beforeEach(() => window.localStorage.clear());
+afterEach(() => setCalculationClient(null));
 
 /**
  * Renders the sheet with a wing loading and stall speed chosen so the
@@ -25,18 +53,35 @@ beforeEach(() => window.localStorage.clear());
  *   CL max = (W/S) / q_stall, and q_stall = 1/2 rho0 (Vs * 1.688)^2.
  * At W/S = 20 and Vs = 61 KCAS, q_stall = 12.606 and CL max = 1.587.
  */
-function renderSheet({ clMax }: { clMax: number }) {
+function renderSheet({
+  clMax,
+  stallSpeed = 61,
+}: {
+  clMax: number;
+  stallSpeed?: number;
+}) {
+  setCalculationClient({
+    stallLimits: () => Promise.resolve(LIMITS),
+  } as unknown as CalculationClient);
+
   const store = createStore();
   store.set(mtowLbAtom, 2000);
   store.set(aspectRatioAtom, 9);
   store.set(cd0Atom, 0.025);
-  store.set(stallSpeedKcasAtom, 61);
+  store.set(stallSpeedKcasAtom, stallSpeed);
   store.set(clMaxAtom, clMax);
   store.set(wingLoadingOverrideAtom, 20);
+
+  const queries = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+
   return render(
-    <Provider store={store}>
-      <StallLimits />
-    </Provider>
+    <QueryClientProvider client={queries}>
+      <Provider store={store}>
+        <StallLimits />
+      </Provider>
+    </QueryClientProvider>
   );
 }
 
@@ -67,10 +112,53 @@ describe("StallLimits", () => {
   });
 
   it("always draws both regulatory limits, whatever the design stall speed", () => {
+    renderSheet({ clMax: 1.8, stallSpeed: 72 });
+
+    expect(screen.getByText(/45 KCAS · LSA LIMIT/)).toBeInTheDocument();
+    expect(screen.getByText(/61 KCAS · FAR 23 LIMIT/)).toBeInTheDocument();
+  });
+
+  it("draws the book's 5-knot ladder around them", () => {
+    // Fig. 3-5 runs 45, 50, 55, 60, 61, 65, 70 so the two limits sit inside
+    // a scale rather than floating on their own.
+    renderSheet({ clMax: 1.8, stallSpeed: 72 });
+
+    for (const speed of [50, 55, 60, 65, 70]) {
+      expect(screen.getByText(`Vs = ${speed} KCAS`)).toBeInTheDocument();
+    }
+  });
+
+  it("marks the design's own stall speed when it is not one of the limits", () => {
+    renderSheet({ clMax: 1.8, stallSpeed: 72 });
+
+    expect(screen.getByText("Vs = 72 KCAS · DESIGN")).toBeInTheDocument();
+  });
+
+  it("lets the regulatory label win when the design sits on the limit", () => {
     renderSheet({ clMax: 1.8 });
 
-    expect(screen.getByText(/FAR 23 LIMIT/)).toBeInTheDocument();
-    expect(screen.getByText(/LSA LIMIT/)).toBeInTheDocument();
+    expect(screen.getByText(/61 KCAS · FAR 23 LIMIT/)).toBeInTheDocument();
+    expect(screen.queryByText("Vs = 61 KCAS · DESIGN")).toBeNull();
+  });
+
+  it("says which certification basis each limit belongs to", async () => {
+    renderSheet({ clMax: 1.8 });
+
+    expect(
+      await screen.findByText("Light-sport aircraft")
+    ).toBeInTheDocument();
+    expect(screen.getByText("45 KCAS")).toBeInTheDocument();
+    expect(screen.getByText("14 CFR 1.1")).toBeInTheDocument();
+  });
+
+  it("shows a rule that sets no ceiling as the implied speed, not as blank", async () => {
+    renderSheet({ clMax: 1.8 });
+
+    expect(
+      await screen.findByText("Part 25 transport category")
+    ).toBeInTheDocument();
+    expect(screen.getByText("≈107 KCAS")).toBeInTheDocument();
+    expect(screen.getByText("IMPLIED")).toBeInTheDocument();
   });
 
   it("asks for nothing — every number is a decision made elsewhere", () => {

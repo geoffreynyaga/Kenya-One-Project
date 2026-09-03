@@ -25,6 +25,12 @@ export interface Series {
   color: string;
   dash?: "dash" | "dot";
   width?: number;
+  /**
+   * Draw the curve but keep it out of the legend. A scale — Fig. 3-5's
+   * 5-knot isobar ladder, say — is read off the axis, not off a key, and
+   * listing every rung buries the curves that do need naming.
+   */
+  showInLegend?: boolean;
 }
 
 export interface FigureProps {
@@ -157,6 +163,7 @@ export function Figure({
             type: "scatter" as const,
             mode: "lines" as const,
             name: curve.name,
+            showlegend: curve.showInLegend ?? true,
             line: {
               color: curve.color,
               width: curve.width ?? 1.6,
@@ -194,6 +201,7 @@ export function Figure({
             mode: "lines" as const,
             name: curve.name,
             yaxis: "y2",
+            showlegend: curve.showInLegend ?? true,
             line: {
               color: curve.color,
               width: curve.width ?? 1.2,

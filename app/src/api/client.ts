@@ -20,6 +20,7 @@ import type {
   SrefSizingRequest,
   SrefSizingResult,
 } from "./srefDesign";
+import type { StallLimit } from "./stallLimits";
 import type { ServerData } from "../containers/InitialSizing/types";
 
 import { httpCalculationClient } from "./httpCalculationClient";
@@ -41,6 +42,8 @@ export interface CalculationClient {
   aircraftTypes(): Promise<AircraftType[]>;
   /** Typical drag and lift by class — advisory ranges for the hints. */
   aeroClasses(): Promise<AeroClass[]>;
+  /** The stall speed ceiling each certification basis imposes. */
+  stallLimits(): Promise<StallLimit[]>;
   /** Measurements for one section. Rejects when there are none. */
   airfoil(designation: string): Promise<TunnelSection>;
 }

@@ -10,6 +10,7 @@ from aircraft_design.aero_classes import AERO_CLASSES
 from aircraft_design.airfoils import AirfoilNotFound, get_airfoil, list_airfoils
 from aircraft_design.costs import CostCalculationError, calculate_costs
 from aircraft_design.sref import ENGINE_CATALOG, SrefCalculationError, calculate_sref
+from aircraft_design.stall_limits import STALL_LIMITS
 from aircraft_design.uas_sizing import UasSizingError, calculate_uas_sizing
 
 from .serializers import (
@@ -135,6 +136,26 @@ class AeroClassCatalogAPIView(APIView):
             {
                 "status": "success",
                 "data": [asdict(aero_class) for aero_class in AERO_CLASSES],
+            }
+        )
+
+
+class StallLimitCatalogAPIView(APIView):
+    """The stall speed ceiling each certification basis imposes.
+
+    Fig. 3-5 draws 45 and 61 KCAS because those certify a light general
+    aviation aeroplane in the United States, and the figure does not say so.
+    This is the rest of the answer: which rule applies, what it caps, and —
+    for transport category and for small unmanned aircraft — that it caps
+    nothing, so the wing loading is bounded by something else.
+    """
+
+    @method_decorator(cache_control(max_age=60 * 60 * 24, public=True))
+    def get(self, request, *args, **kwargs):
+        return Response(
+            {
+                "status": "success",
+                "data": [asdict(limit) for limit in STALL_LIMITS],
             }
         )
 

@@ -35,6 +35,13 @@ const colors = {
     faint: "#c9ccd0",
   },
 
+  // The one exception to the rule above, and it is not a comparison series.
+  // A certification limit is not a curve to be ranked against the others —
+  // it is the line the design may not cross, whatever the ranking says. The
+  // book gives it its own colour for that reason and this follows, on the
+  // constraint diagram only.
+  regulatory: "#1f7a44",
+
   // Hairlines.
   rule: {
     DEFAULT: "rgba(20,23,26,0.22)",

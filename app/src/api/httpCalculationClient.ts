@@ -7,6 +7,7 @@
  */
 
 import { fetchAeroClasses } from "./aeroClasses";
+import { fetchStallLimits } from "./stallLimits";
 import { fetchAirfoil, fetchAirfoilCatalog } from "./airfoils";
 import { fetchAircraftTypes } from "./aircraftTypes";
 import type { CalculationClient } from "./client";
@@ -24,5 +25,6 @@ export const httpCalculationClient: CalculationClient = {
   airfoilCatalog: fetchAirfoilCatalog,
   aircraftTypes: fetchAircraftTypes,
   aeroClasses: fetchAeroClasses,
+  stallLimits: fetchStallLimits,
   airfoil: fetchAirfoil,
 };

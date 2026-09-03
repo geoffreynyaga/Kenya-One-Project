@@ -23,6 +23,7 @@ import { useAtomValue } from "jotai";
 import { clMaxAtom, powerRequiredHpAtom } from "../../domain/atoms";
 import { liftCoefficientForStallSpeed } from "../../domain/missionUtils";
 import { Figure } from "../../components/sheet/ConstraintFigure";
+import { StallLimitTable } from "./StallLimitTable";
 import {
   deriveMission,
   missionCurves,
@@ -39,16 +40,28 @@ const formatNumber = (value: number, digits = 2) =>
 /**
  * The two stall speeds that are regulation rather than preference. The book
  * draws both on Fig. 3-5 because they are the lines a design cannot cross,
- * whatever else the constraint diagram says.
+ * whatever else the constraint diagram says, and gives them the figure's
+ * only colour for the same reason.
+ *
+ * These two are hard-coded because they are the book's figure and this is
+ * the book's aeroplane. Which limit applies to some other aircraft is a
+ * different question, and the table under the figure answers it.
  */
 const REGULATORY_LIMITS = [
-  { speedKcas: 61, label: "Vs = 61 kt · FAR 23 LIMIT", cite: "14 CFR 23.49(d)" },
-  { speedKcas: 45, label: "Vs = 45 kt · LSA LIMIT", cite: "14 CFR 1.1" },
+  { speedKcas: 45, label: "Vs = 45 KCAS · LSA LIMIT", dash: "dot" as const },
+  {
+    speedKcas: 61,
+    label: "Vs = 61 KCAS · FAR 23 LIMIT",
+    dash: "dash" as const,
+  },
 ];
 
-/** The book draws isobars "say, 5 KCAS apart" around the design's own. */
-const ISOBAR_SPACING_KT = 5;
-const ISOBARS_EACH_SIDE = 2;
+/**
+ * The plain isobars, thin and unlabelled, 5 KCAS apart. The book's ladder
+ * runs from the LSA limit up past the FAR 23 one so both sit inside a scale
+ * rather than floating alone.
+ */
+const PLAIN_ISOBARS_KCAS = [50, 55, 60, 65, 70];
 
 export default function StallLimits() {
   const { numbers } = useMissionSheet();
@@ -69,57 +82,101 @@ export default function StallLimits() {
   const desired = numbers.desiredWingLoading;
   const stallSpeed = numbers.stallSpeedKcas;
 
-  /** The design's own stall speed, bracketed, plus the two legal limits. */
-  const isobarSpeeds = useMemo(() => {
-    const around = Array.from(
-      { length: ISOBARS_EACH_SIDE * 2 + 1 },
-      (_, index) => stallSpeed + (index - ISOBARS_EACH_SIDE) * ISOBAR_SPACING_KT
-    ).filter((speed) => speed > 0);
+  /**
+   * The isobar ladder: the two regulatory limits in green, the design's own
+   * in the accent, the rest thin and grey behind them. Sorted so the panel
+   * beside the figure reads slowest first.
+   */
+  const isobarLines = useMemo(() => {
+    const speeds = Array.from(
+      new Set([
+        ...PLAIN_ISOBARS_KCAS,
+        ...REGULATORY_LIMITS.map((limit) => limit.speedKcas),
+        stallSpeed,
+      ])
+    ).sort((a, b) => a - b);
 
-    const regulatory = REGULATORY_LIMITS.map((limit) => limit.speedKcas);
-    return Array.from(new Set([...around, ...regulatory])).sort(
-      (a, b) => a - b
-    );
+    return speeds.map((speedKcas) => {
+      const regulatory = REGULATORY_LIMITS.find(
+        (limit) => limit.speedKcas === speedKcas
+      );
+      const design = speedKcas === stallSpeed;
+
+      // Green is the one hue on the sheet, and it is spent on the lines the
+      // design may not cross. The design's own stall speed keeps the accent
+      // because it is this design's number; everything else is scale.
+      let color = tokens.colors.ink.DEFAULT;
+      if (design) color = tokens.colors.accent.DEFAULT;
+      else if (regulatory) color = tokens.colors.regulatory;
+
+      let label = `Vs = ${formatNumber(speedKcas, 0)} KCAS`;
+      if (regulatory) label = regulatory.label;
+      else if (design) label = `${label} · DESIGN`;
+
+      return {
+        speedKcas,
+        label,
+        color,
+        dash: design ? undefined : regulatory?.dash,
+        width: design || regulatory ? 2 : 0.9,
+        // Only the lines that mean something get a legend entry. Five more
+        // grey rows would bury the power curves under their own scale.
+        showInLegend: Boolean(design || regulatory),
+      };
+    });
   }, [stallSpeed]);
 
-  const labelFor = (speedKcas: number) => {
-    const regulatory = REGULATORY_LIMITS.find(
-      (limit) => limit.speedKcas === speedKcas
-    );
-    if (regulatory) return regulatory.label;
-    if (speedKcas === stallSpeed) return `Vs = ${formatNumber(speedKcas, 0)} kt · DESIGN`;
-    return `Vs = ${formatNumber(speedKcas, 0)} kt`;
-  };
+  const isobars = isobarLines.map((line) => ({
+    name: line.label,
+    x,
+    y: x.map((wingLoading) =>
+      liftCoefficientForStallSpeed(wingLoading, line.speedKcas)
+    ),
+    color: line.color,
+    dash: line.dash,
+    width: line.width,
+    showInLegend: line.showInLegend,
+  }));
 
-  const isobars = isobarSpeeds.map((speedKcas) => {
-    const regulatory = REGULATORY_LIMITS.some(
-      (limit) => limit.speedKcas === speedKcas
-    );
-    const design = speedKcas === stallSpeed;
-    // The design's own stall speed takes the accent, the two legal limits
-    // rank above the rest by weight and dash. Never by hue.
-    let color = tokens.colors.series.faint;
-    if (design) color = tokens.colors.accent.DEFAULT;
-    else if (regulatory) color = tokens.colors.series.compare;
-
-    return {
-      name: labelFor(speedKcas),
-      x,
-      y: x.map((wingLoading) =>
-        liftCoefficientForStallSpeed(wingLoading, speedKcas)
-      ),
-      color,
-      dash: regulatory && !design ? ("dash" as const) : undefined,
-      width: design ? 2 : 1.2,
-    };
-  });
-
+  // The book separates the five power curves by dash and weight, in pairs:
+  // two solid, two dashed, one dotted. It splits each pair by hue; this
+  // sheet has none to spend on a comparison series, so tone does that job.
   const powerCurves = [
-    { name: "LEVEL TURN", key: "bhpTurnSeaLevel" as const, color: tokens.colors.series.compare, dash: undefined },
-    { name: "RATE OF CLIMB", key: "bhpRateOfClimbSeaLevel" as const, color: tokens.colors.accent.DEFAULT, dash: undefined, width: 2 },
-    { name: "GROUND RUN", key: "bhpGroundRunSeaLevel" as const, color: tokens.colors.series.compare, dash: "dash" as const },
-    { name: "CRUISE SPEED", key: "bhpCruiseSeaLevel" as const, color: tokens.colors.series.faint, dash: undefined },
-    { name: "SERVICE CEILING", key: "bhpServiceCeilingSeaLevel" as const, color: tokens.colors.series.faint, dash: "dot" as const },
+    {
+      name: "LEVEL TURN",
+      key: "bhpTurnSeaLevel" as const,
+      color: tokens.colors.ink.DEFAULT,
+      dash: undefined,
+      width: 2,
+    },
+    {
+      name: "CRUISE SPEED",
+      key: "bhpCruiseSeaLevel" as const,
+      color: tokens.colors.series.compare,
+      dash: undefined,
+      width: 2,
+    },
+    {
+      name: "RATE OF CLIMB",
+      key: "bhpRateOfClimbSeaLevel" as const,
+      color: tokens.colors.ink.DEFAULT,
+      dash: "dash" as const,
+      width: 1.5,
+    },
+    {
+      name: "GROUND RUN",
+      key: "bhpGroundRunSeaLevel" as const,
+      color: tokens.colors.series.compare,
+      dash: "dash" as const,
+      width: 1.5,
+    },
+    {
+      name: "SERVICE CEILING",
+      key: "bhpServiceCeilingSeaLevel" as const,
+      color: tokens.colors.ink.DEFAULT,
+      dash: "dot" as const,
+      width: 1.5,
+    },
   ].map((curve) => ({
     name: curve.name,
     x,
@@ -200,18 +257,27 @@ export default function StallLimits() {
               height={420}
               hRule={{ y: powerRequiredHp, label: "INSTALLED POWER" }}
               rightAxis={{ title: "REQUIRED  CL MAX", curves: isobars }}
-              shadeRegions
-              title="Power required per phase on the left axis, normalised to sea level; on the right, the maximum lift coefficient the wing must reach to stall at each speed. Read up from the design wing loading for the power, then across to an isobar for the lift coefficient that wing loading commits you to."
+              title="Power required per phase on the left axis, normalised to sea level; on the right, the maximum lift coefficient the wing must reach to stall at each speed. Read up from the design wing loading for the power, then across to an isobar for the lift coefficient that wing loading commits you to. The two green lines are certification limits; the thin grey ones are the 5-knot scale between them."
               yTitle="BHP REQUIRED (S-L)"
             />
 
             <div className="px-[2px] py-4 font-mono text-meta leading-[1.6] text-ink-muted">
               NOTE · A wing loading can satisfy every constraint on Sheet 03 and
               still stall too fast to certify. The isobars are the limit the
-              performance curves cannot see: 61 kt is the FAR 23 ceiling for
-              this class and 45 kt the light-sport ceiling, and both are
-              regulation rather than preference.
+              performance curves cannot see: 61 KCAS is the FAR 23 ceiling for
+              this class and 45 KCAS the light-sport ceiling, and both are
+              regulation rather than preference. They are the right two lines
+              for a light aeroplane certified in the United States and the
+              wrong two for anything else — the table below says which pair is
+              yours.
             </div>
+          </div>
+
+          <div className="border-t border-rule-mid bg-panel pt-4">
+            <h2 className="px-[18px] pb-[10px] font-mono text-label font-medium tracking-label text-ink-label">
+              REFERENCE · STALL SPEED LIMITS BY CERTIFICATION BASIS
+            </h2>
+            <StallLimitTable />
           </div>
         </div>
 
@@ -261,21 +327,21 @@ export default function StallLimits() {
             AT THE DESIGN POINT
           </h2>
           <dl className="space-y-[9px] px-[18px] pb-[14px] font-mono text-note">
-            {isobarSpeeds.map((speedKcas) => (
-              <div className="flex justify-between gap-3" key={speedKcas}>
+            {isobarLines.map((line) => (
+              <div className="flex justify-between gap-3" key={line.speedKcas}>
                 <dt className="min-w-0 truncate text-ink-label">
-                  {labelFor(speedKcas)}
+                  {line.label}
                 </dt>
                 <dd
                   className={
-                    liftCoefficientForStallSpeed(desired, speedKcas) >
+                    liftCoefficientForStallSpeed(desired, line.speedKcas) >
                     clMaxDesign
                       ? "shrink-0 text-accent-dark"
                       : "shrink-0 text-ink"
                   }
                 >
                   {formatNumber(
-                    liftCoefficientForStallSpeed(desired, speedKcas),
+                    liftCoefficientForStallSpeed(desired, line.speedKcas),
                     3
                   )}
                 </dd>

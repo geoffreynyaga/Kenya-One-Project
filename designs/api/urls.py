@@ -7,6 +7,7 @@ from .views import (
     CostAnalysisAPIView,
     SrefEngineCatalogAPIView,
     SrefSizingAPIView,
+    StallLimitCatalogAPIView,
     UasSizingAPIView,
 )
 
@@ -23,6 +24,11 @@ urlpatterns = [
         "aero-classes/",
         AeroClassCatalogAPIView.as_view(),
         name="aero_class_catalog",
+    ),
+    path(
+        "stall-limits/",
+        StallLimitCatalogAPIView.as_view(),
+        name="stall_limit_catalog",
     ),
     path("airfoils/", AirfoilCatalogAPIView.as_view(), name="airfoil_catalog"),
     path(
