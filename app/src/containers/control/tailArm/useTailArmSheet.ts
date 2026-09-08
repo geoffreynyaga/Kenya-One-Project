@@ -32,7 +32,9 @@ import {
   combinedTailSizing,
   horizontalTailSizing,
   raymerTailArm,
+  surfaceFor,
   verticalTailSizing,
+  wettedAreaAt,
 } from "../../../domain/tailSizing";
 import { usePersistentState } from "../../../hooks/usePersistentState";
 
@@ -131,43 +133,48 @@ export function useTailArmSheet() {
     armFraction(view.armFractionKey) ?? RAYMER_ARM_FRACTIONS[0];
 
   const methods: Method[] = useMemo(() => {
-    const combined = combinedTailSizing(inputs);
-    const raymerArm = raymerTailArm(fuselageLength, fraction).arm;
+    /*
+     * Each method decides an arm and nothing else. Both surfaces are then
+     * sized at that arm, which is what makes the four rows comparable — and
+     * what the book itself does: Example 11-8 optimises on the horizontal
+     * tail, then sizes the fin at the arm that produced. A row showing only
+     * the surface its own equation optimised understates its wetted area and
+     * reads as though the methods disagree far more than they do.
+     */
+    const sizedAt = (arm: number): TailSizingResult => {
+      const at = wettedAreaAt(inputs, arm, "both");
+      return {
+        arm,
+        horizontal: surfaceFor(at.htArea, inputs.htAspectRatio),
+        vertical: surfaceFor(at.vtArea, inputs.vtAspectRatio),
+        coneArea: at.coneArea,
+        wettedArea: at.wettedArea,
+      };
+    };
+
     return [
       {
         key: "raymer" as const,
         label: "Raymer · fraction of fuselage",
-        cite: "Raymer ch. 6",
+        cite: "Raymer p. 160",
         because: `${fraction.label}. ${fraction.because}`,
-        // The areas that arm implies, so it can be compared like for like.
-        result: {
-          ...combined,
-          arm: raymerArm,
-          horizontal: {
-            ...combined.horizontal!,
-            area: (inputs.htVolume * wingArea * meanChord) / raymerArm,
-          },
-          vertical: {
-            ...combined.vertical!,
-            area: (inputs.vtVolume * wingArea * span) / raymerArm,
-          },
-        },
+        result: sizedAt(raymerTailArm(fuselageLength, fraction).arm),
       },
       {
         key: "horizontal" as const,
         label: "Gudmundsson 1 · horizontal tail",
         cite: "Eq. (11-40)",
         because:
-          "Least wetted area for the horizontal tail volume alone. Size the fin afterwards against the arm this gives.",
-        result: horizontalTailSizing(inputs),
+          "The arm of least wetted area for the horizontal tail volume alone. The fin is then sized at that arm, as the book directs.",
+        result: sizedAt(horizontalTailSizing(inputs).arm),
       },
       {
         key: "vertical" as const,
         label: "Gudmundsson 2 · vertical tail",
         cite: "Eq. (11-48)",
         because:
-          "The same trade run for the fin instead, for a design the fin drives.",
-        result: verticalTailSizing(inputs),
+          "The same trade run for the fin instead, for a design the fin drives. The tailplane is then sized at that arm.",
+        result: sizedAt(verticalTailSizing(inputs).arm),
       },
       {
         key: "combined" as const,
@@ -175,10 +182,10 @@ export function useTailArmSheet() {
         cite: "Eq. (11-56)",
         because:
           "Both volumes at once. Use it when the two tail centroids sit close together along the fuselage, which is the conventional arrangement.",
-        result: combined,
+        result: combinedTailSizing(inputs),
       },
     ];
-  }, [fraction, fuselageLength, inputs, meanChord, span, wingArea]);
+  }, [fraction, fuselageLength, inputs]);
 
   const chosen = methods.find((method) => method.key === view.chosen) ?? null;
 

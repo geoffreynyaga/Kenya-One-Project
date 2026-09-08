@@ -9,14 +9,16 @@
  * area), and the sum of the tail cone's wetted area and the tail's own passes
  * through a minimum. That minimum is the arm.
  *
- * Raymer, chapter 6, Fig. 6.2 and Eqs. (6.28)-(6.29); Gudmundsson, chapter 11,
- * §11.5.1-11.5.3, Eqs. (11-40), (11-48) and (11-56).
+ * Raymer, chapter 6, Eqs. (6.28)-(6.29) and the arm fractions on p. 160;
+ * Gudmundsson, chapter 11, §11.5.1-11.5.3, Eqs. (11-40), (11-48) and (11-56).
  */
 
 /**
  * Candidate tail volumes by class. Gudmundsson's Table 11-4, which reproduces
  * Raymer's Table 6.4 — "conservative averages" to size a tail against before
- * there is a stability analysis to size it properly.
+ * there is a stability analysis to size it properly. Raymer gives the jet
+ * fighter fin as a 0.07-0.12 range; Gudmundsson flattens it to 0.07, and that
+ * is the value taken here.
  *
  * Keyed by the sizing service's aircraft types, as Raymer Table 6.3 is.
  */
@@ -41,7 +43,8 @@ export const TAIL_VOLUMES: Record<string, { ht: number; vt: number }> = {
  *
  * It is read off where the engines are, not off the aircraft class: a nose
  * propeller pushes the wing aft and lengthens the arm; engines hung on the
- * tail shorten it. Raymer gives ranges; the midpoint is used, and the range is
+ * tail shorten it. Raymer gives the percentages as plain text on p. 160 and no
+ * reasoning with them; the midpoint of each range is used, and the range is
  * kept so the sheet can show what it came from.
  */
 export interface ArmFraction {
@@ -49,7 +52,7 @@ export interface ArmFraction {
   label: string;
   low: number;
   high: number;
-  /** Raymer's own words for when this applies. */
+  /** Why the wing sits where it does in this layout. Not Raymer's wording. */
   because: string;
 }
 
@@ -150,7 +153,7 @@ const conePerArm = (inputs: TailSizingInputs) =>
   Math.PI * (inputs.rootRadius + inputs.tipRadius);
 
 /** A surface of this area at this aspect ratio. Eqs. (11-42), (11-43). */
-function surfaceFor(area: number, aspectRatio: number): SurfaceSize {
+export function surfaceFor(area: number, aspectRatio: number): SurfaceSize {
   const span = Math.sqrt(aspectRatio * area);
   return { area, span, chord: span / aspectRatio };
 }

@@ -152,3 +152,46 @@ test("the fuselage length and cone radii are marked as estimates", () => {
   // Three quantities on this sheet stand only until the geometry is drawn.
   expect(screen.getAllByText("UNTIL DRAWN")).toHaveLength(3);
 });
+
+/*
+ * Raymer's row used to borrow method 3's wetted area and tail spans wholesale
+ * and overwrite only the areas, so it reported the optimum's cost at an arm
+ * that is not the optimum. The single-surface rows had the opposite problem:
+ * they were costed without the surface their own equation ignores, which made
+ * them look far cheaper than they are.
+ */
+const numbersIn = (name: RegExp) =>
+  within(rowFor(name))
+    .getAllByRole("cell")
+    .slice(1, 5)
+    .map((cell) => Number(cell.textContent));
+
+test("every method is costed with both surfaces at its own arm", () => {
+  render(
+    <Provider store={sizedStore()}>
+      <TailArm />
+    </Provider>
+  );
+
+  const rows = [
+    /Raymer · fraction of fuselage/,
+    /Gudmundsson 1 · horizontal tail/,
+    /Gudmundsson 2 · vertical tail/,
+    /Gudmundsson 3 · both surfaces/,
+  ].map(numbersIn);
+
+  // No row may leave a surface unsized: whichever arm the method picks, the
+  // book sizes the other surface at that same arm. Example 11-8.
+  for (const [, htArea, vtArea] of rows) {
+    expect(htArea).toBeGreaterThan(0);
+    expect(vtArea).toBeGreaterThan(0);
+  }
+
+  // Method 3 minimises that same curve, so no other arm can cost less.
+  const [, , , combinedWetted] = rows[3];
+  for (const [, , , wetted] of rows) {
+    expect(wetted).toBeGreaterThanOrEqual(combinedWetted);
+  }
+  // Raymer's is a layout rule, not an optimum, so it must cost strictly more.
+  expect(rows[0][3]).toBeGreaterThan(combinedWetted);
+});
