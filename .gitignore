@@ -128,3 +128,9 @@ backlog.md
 
 # JS dependencies, restored with `bun install`
 node_modules/
+
+# Local book screenshot generator, dependencies, and tests
+/tools/books/
+
+# Local, machine-specific agent notes. Optional: AGENTS.md works without it.
+/local.AGENTS.md
