@@ -7,7 +7,10 @@
  * typed as 24 instead of 2.4 looked exactly like a sweep typed correctly.
  */
 
+import type { KeyboardEvent } from "react";
+
 import { Hint } from "../../components/sheet/Hint";
+import type { WingGuideField } from "./WingGeometryGuide";
 
 const rad = (deg: number) => (deg * Math.PI) / 180;
 
@@ -23,6 +26,8 @@ export interface WingPlanformProps {
   dihedralDeg: number;
   incidenceDeg: number;
   twistDeg: number;
+  active?: WingGuideField | string | null;
+  onSelect?: (field: WingGuideField) => void;
 }
 
 export default function WingPlanform({
@@ -35,6 +40,8 @@ export default function WingPlanform({
   dihedralDeg,
   incidenceDeg,
   twistDeg,
+  active = null,
+  onSelect,
 }: WingPlanformProps) {
   const half = spanM / 2;
   if (!(half > 0) || !(rootChordM > 0)) return null;
@@ -61,6 +68,24 @@ export default function WingPlanform({
     ].join(" ");
 
   const frontRise = Math.max(rise, chordExtent * 0.06);
+  const selected = (field: WingGuideField) => active === field;
+  const selectProps = (field: WingGuideField) =>
+    ({
+      role: "button",
+      tabIndex: 0,
+      "aria-pressed": selected(field),
+      onClick: () => onSelect?.(field),
+      onKeyDown: (event: KeyboardEvent<SVGGElement>) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onSelect?.(field);
+        }
+      },
+    }) as const;
+  const dimClass = (field: WingGuideField) =>
+    selected(field) ? "text-accent" : "text-ink-muted";
+  const dimWidth = (field: WingGuideField) =>
+    selected(field) ? chordExtent * 0.015 : chordExtent * 0.008;
 
   return (
     <section className="border border-rule-mid bg-field">
@@ -118,16 +143,78 @@ export default function WingPlanform({
           {/* Mean aerodynamic chord, both sides. */}
           {[1, -1].map((sign) => (
             <line
-              className="text-accent"
+              className={selected("meanChordM") ? "text-accent" : "text-accent-dark"}
               key={sign}
               stroke="currentColor"
-              strokeWidth={chordExtent * 0.016}
+              strokeWidth={selected("meanChordM") ? chordExtent * 0.022 : chordExtent * 0.016}
               x1={sign * yMgcM}
               x2={sign * yMgcM}
               y1={mgcLe}
               y2={mgcLe + meanChordM}
             />
           ))}
+          <g {...selectProps("spanM")} className={dimClass("spanM")}>
+            <path
+              d={`M ${-half},${-padY * 0.5} H ${half}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={dimWidth("spanM")}
+            />
+            <text
+              fill="currentColor"
+              fontSize={chordExtent * 0.07}
+              textAnchor="middle"
+              x="0"
+              y={-padY * 0.68}
+            >
+              b
+            </text>
+          </g>
+          <g {...selectProps("rootChordM")} className={dimClass("rootChordM")}>
+            <path
+              d={`M ${-half * 0.05},0 V ${rootChordM}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={dimWidth("rootChordM")}
+            />
+            <text
+              fill="currentColor"
+              fontSize={chordExtent * 0.065}
+              textAnchor="end"
+              x={-half * 0.08}
+              y={rootChordM * 0.5}
+            >
+              Cr
+            </text>
+          </g>
+          <g {...selectProps("tipChordM")} className={dimClass("tipChordM")}>
+            <path
+              d={`M ${half * 0.97},${tipLe} V ${tipTe}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={dimWidth("tipChordM")}
+            />
+            <text
+              fill="currentColor"
+              fontSize={chordExtent * 0.065}
+              textAnchor="start"
+              x={half * 0.91}
+              y={(tipLe + tipTe) * 0.5}
+            >
+              Ct
+            </text>
+          </g>
+          <g {...selectProps("meanChordM")} className={dimClass("meanChordM")}>
+            <text
+              fill="currentColor"
+              fontSize={chordExtent * 0.065}
+              textAnchor="middle"
+              x={yMgcM}
+              y={mgcLe + meanChordM * 0.52}
+            >
+              MAC
+            </text>
+          </g>
         </svg>
 
         <div className="mt-3 font-mono text-label tracking-band text-ink-faint">
@@ -159,6 +246,23 @@ export default function WingPlanform({
             strokeLinejoin="round"
             strokeWidth={frontRise * 0.07}
           />
+          <g {...selectProps("dihedralDeg")} className={dimClass("dihedralDeg")}>
+            <path
+              d={`M ${half * 0.2},0 C ${half * 0.26},${-rise * 0.18} ${half * 0.3},${-rise * 0.28} ${half * 0.36},${-rise * 0.36}`}
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={frontRise * 0.035}
+            />
+            <text
+              fill="currentColor"
+              fontSize={frontRise * 0.26}
+              textAnchor="middle"
+              x={half * 0.42}
+              y={-frontRise * 0.5}
+            >
+              dihedral
+            </text>
+          </g>
         </svg>
 
         <dl className="mt-3 grid grid-cols-2 gap-x-4 border-t border-rule-hair pt-2 font-mono text-label text-ink-faint">

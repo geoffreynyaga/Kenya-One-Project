@@ -486,9 +486,8 @@ export default function DetailedWeights() {
           <EstimationTable rows={result.rows} />
 
           <p className="px-[2px] py-3 font-mono text-meta leading-[1.6] text-ink-muted">
-            Each row averages only the methods the workbook fills in. A row on
-            the accent wash sits outside the generalised band that Sheet 01
-            assumed for it.
+            Averages include available methods only. Highlighted rows fall outside
+            the initial weight-estimate band.
           </p>
 
           <div className="mt-4 grid gap-4 lg:grid-cols-2">

@@ -9,15 +9,19 @@
  * Results stay leaf-local in TanStack Query. Nothing here writes to jotai.
  */
 
+import type { AeroClass } from "./aeroClasses";
 import type { TunnelSection } from "./airfoils";
 import type { AircraftType } from "./aircraftTypes";
 import type { CostAnalysisRequest, CostAnalysisResult } from "./costAnalysis";
+import type { RudderReferenceCatalog } from "./controlReferences";
 import type { MtowSizingRequest } from "./mtowSizing";
+import type { UasSizingRequest, UasSizingResult } from "./uasSizing";
 import type {
   SrefEngineSpec,
   SrefSizingRequest,
   SrefSizingResult,
 } from "./srefDesign";
+import type { StallLimit } from "./stallLimits";
 import type { ServerData } from "../containers/InitialSizing/types";
 
 import { httpCalculationClient } from "./httpCalculationClient";
@@ -31,10 +35,18 @@ export interface CalculationClient {
   costAnalysis(request: CostAnalysisRequest): Promise<CostAnalysisResult>;
   /** The iterative maximum take-off weight solution. */
   mtowSizing(request: MtowSizingRequest): Promise<ServerData>;
+  /** Mass-fraction take-off weight sizing for an unmanned aircraft. */
+  uasSizing(request: UasSizingRequest): Promise<UasSizingResult>;
   /** Every section the wind-tunnel catalogue has measurements for. */
   airfoilCatalog(): Promise<TunnelSection[]>;
   /** Aircraft categories supported by the empty-weight model. */
   aircraftTypes(): Promise<AircraftType[]>;
+  /** Typical drag and lift by class — advisory ranges for the hints. */
+  aeroClasses(): Promise<AeroClass[]>;
+  /** The stall speed ceiling each certification basis imposes. */
+  stallLimits(): Promise<StallLimit[]>;
+  /** Book-backed comparable-aircraft rudder geometry records. */
+  rudderReferences(): Promise<RudderReferenceCatalog>;
   /** Measurements for one section. Rejects when there are none. */
   airfoil(designation: string): Promise<TunnelSection>;
 }

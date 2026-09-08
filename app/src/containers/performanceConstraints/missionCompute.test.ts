@@ -1,3 +1,4 @@
+import { KNOT_TO_FPS } from "../../domain/constants";
 import {
   deriveMission,
   missionCurves,
@@ -21,6 +22,9 @@ const WORKBOOK = {
     groundRunFt: 900,
     altitudeFt: 10000,
     turnLoadFactor: 1.4,
+    // The workbook's turn is level, so it is Gudmundsson eq. (3-1), which is
+    // eq. (3-2) at P_S = 0. Parity depends on this staying zero.
+    specificEnergyFps: 0,
     rateOfClimbFpm: 1500,
     climbSpeedKnots: 75.22503345993844,
     cruiseSpeedKnots: 140,
@@ -166,6 +170,23 @@ describe("missionCompute parity with PERFORMANCE SIZING sheet", () => {
     expect(verdict.rows).toHaveLength(5);
     verdict.rows.forEach((row) => {
       expect(row.marginHp).toBeGreaterThan(0);
+    });
+  });
+
+  it("adds P_S/V to the turn when a specific energy level is asked for", () => {
+    // Gudmundsson eq. (3-2). The term is a constant offset in T/W, the same
+    // at every wing loading, because neither P_S nor the airspeed varies
+    // along the sweep.
+    const aerobatic: MissionInputs = { ...inputs, specificEnergyFps: 20 };
+    const level = missionCurves(inputs, deriveMission(inputs));
+    const energetic = missionCurves(aerobatic, deriveMission(aerobatic));
+
+    const offset = 20 / (140 * KNOT_TO_FPS);
+    energetic.forEach((point, index) => {
+      expect(point.twTurn).toBeCloseTo(level[index].twTurn + offset, 12);
+      // No other constraint moves: eq. (3-2) generalises the turn alone.
+      expect(point.twCruise).toBeCloseTo(level[index].twCruise, 12);
+      expect(point.twRateOfClimb).toBeCloseTo(level[index].twRateOfClimb, 12);
     });
   });
 

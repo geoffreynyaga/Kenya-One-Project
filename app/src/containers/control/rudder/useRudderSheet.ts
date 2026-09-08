@@ -7,8 +7,8 @@
  * belong upstream.
  */
 
-import { useAtomValue } from "jotai";
-import { useMemo } from "react";
+import { useAtomValue, useSetAtom } from "jotai";
+import { useCallback, useMemo } from "react";
 
 import {
   engineLateralOffsetMAtom,
@@ -17,6 +17,7 @@ import {
   fuselageSideAreaM2Atom,
   meanChordMAtom,
   stallSpeedKcasAtom,
+  tailArmMAtom,
   takeoffThrustNAtom,
   verticalTailAreaM2Atom,
   verticalTailAspectRatioAtom,
@@ -35,7 +36,6 @@ export type SurfaceField =
 export type CaseField =
   | "crosswindKnots"
   | "sideDragCoefficient"
-  | "finArmM"
   | "crosswindArmM"
   | "sidewashSlope"
   | "yawInterferenceFactor"
@@ -43,6 +43,23 @@ export type CaseField =
   | "yawMomentAtZero";
 
 export type EntryField = SurfaceField | CaseField;
+
+/**
+ * The fin arm is drawn and labelled on the diagram like an entry field, but it
+ * is no longer one: it follows the tail arm carried from Control 01.
+ */
+export type DimensionField = EntryField | "finArmM";
+
+/**
+ * The fin itself. These are shared quantities, not rudder entries: the rudder
+ * sheet owns them because it is the only stage that draws the fin, and nothing
+ * upstream claims them yet.
+ */
+export type FinField =
+  | "verticalTailAreaM2"
+  | "verticalTailAspectRatio"
+  | "verticalTailTaper"
+  | "finSectionLiftSlopePerDeg";
 
 const ENTRY_DEFAULTS: Record<EntryField, number> = {
   spanFraction: 1,
@@ -52,7 +69,6 @@ const ENTRY_DEFAULTS: Record<EntryField, number> = {
 
   crosswindKnots: 20,
   sideDragCoefficient: 0.8,
-  finArmM: 4.299372,
   crosswindArmM: 2.3148712025699796,
   sidewashSlope: 0,
   yawInterferenceFactor: 0.75,
@@ -62,6 +78,7 @@ const ENTRY_DEFAULTS: Record<EntryField, number> = {
 
 const SECTION_DEFAULTS = {
   surface: true,
+  fin: false,
   cases: false,
   carried: false,
 };
@@ -74,6 +91,7 @@ const SECTIONS_KEY = "kenya-one:rudder:sections:v1";
 export interface RudderSheet {
   inputs: RudderInputs;
   setEntry: (field: EntryField, value: number) => void;
+  setFin: (field: FinField, value: number) => void;
   openSections: Record<SectionKey, boolean>;
   toggleSection: (key: SectionKey, open: boolean) => void;
   reset: () => void;
@@ -92,7 +110,30 @@ export function useRudderSheet(): RudderSheet {
   const fuselageSideAreaM2 = useAtomValue(fuselageSideAreaM2Atom);
   const fuselageLengthM = useAtomValue(fuselageLengthMAtom);
   const thrustN = useAtomValue(takeoffThrustNAtom);
+  const tailArmM = useAtomValue(tailArmMAtom);
   const engineOffsetM = useAtomValue(engineLateralOffsetMAtom);
+
+  const setVerticalTailAreaM2 = useSetAtom(verticalTailAreaM2Atom);
+  const setVerticalTailAspectRatio = useSetAtom(verticalTailAspectRatioAtom);
+  const setVerticalTailTaper = useSetAtom(verticalTailTaperAtom);
+  const setFinSectionLiftSlopePerDeg = useSetAtom(finSectionLiftSlopePerDegAtom);
+
+  const setFin = useCallback(
+    (field: FinField, value: number) => {
+      if (field === "verticalTailAreaM2") setVerticalTailAreaM2(value);
+      if (field === "verticalTailAspectRatio") setVerticalTailAspectRatio(value);
+      if (field === "verticalTailTaper") setVerticalTailTaper(value);
+      if (field === "finSectionLiftSlopePerDeg") {
+        setFinSectionLiftSlopePerDeg(value);
+      }
+    },
+    [
+      setVerticalTailAreaM2,
+      setVerticalTailAspectRatio,
+      setVerticalTailTaper,
+      setFinSectionLiftSlopePerDeg,
+    ],
+  );
 
   const [entry, setEntryState, resetEntry] = usePersistentState<
     Record<EntryField, number>
@@ -104,6 +145,10 @@ export function useRudderSheet(): RudderSheet {
   const inputs = useMemo<RudderInputs>(
     () => ({
       ...entry,
+      // The arm the fin volume coefficient is defined on, carried from
+      // Control 01. It was typed in here as 4.299 m against the elevator's
+      // 5.100 m, and the two describe the same aeroplane.
+      finArmM: tailArmM,
       verticalTailAreaM2,
       verticalTailAspectRatio,
       verticalTailTaper,
@@ -120,6 +165,7 @@ export function useRudderSheet(): RudderSheet {
     }),
     [
       entry,
+      tailArmM,
       verticalTailAreaM2,
       verticalTailAspectRatio,
       verticalTailTaper,
@@ -140,6 +186,7 @@ export function useRudderSheet(): RudderSheet {
     inputs,
     setEntry: (field, value) =>
       setEntryState((current) => ({ ...current, [field]: value })),
+    setFin,
     openSections,
     toggleSection: (key, open) =>
       setOpenSections((current) =>

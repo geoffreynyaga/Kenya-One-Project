@@ -11,7 +11,7 @@ vi.mock("react-plotly.js/factory", () => ({
 beforeEach(() => window.localStorage.clear());
 
 describe("Aileron", () => {
-  it("shows both figures without opening anything", () => {
+  it("shows the to-scale planform and the bank curve without opening anything", () => {
     const { container } = render(<Aileron />);
 
     const figures = container.querySelectorAll("figure");

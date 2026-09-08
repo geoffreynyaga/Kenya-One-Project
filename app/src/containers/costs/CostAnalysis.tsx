@@ -14,6 +14,7 @@ import {
   CostAnalysisResult,
 } from "../../api/costAnalysis";
 import { getCalculationClient } from "../../api/client";
+import { axisTitle } from "../../components/sheet/ConstraintFigure";
 import { InputSection } from "../../components/sheet/InputSection";
 import { usePersistentState } from "../../hooks/usePersistentState";
 import tokens from "../../design-tokens";
@@ -549,7 +550,7 @@ function CostResults({
           </summary>
           <div className="border-t border-rule-soft p-3">
             <p className="mb-3 text-note leading-5 text-ink-muted">
-              DAPCA labour costs apply the workbook factor and CPI to loaded rates. Crew cost is pilot-hours × crew rate.
+              DAPCA labour costs include the rate multiplier and CPI adjustment. Crew cost is pilot-hours × crew rate.
             </p>
             <LabourBasisTable rows={labourRows} />
           </div>
@@ -594,13 +595,13 @@ function CostResults({
             ]}
             layout={{
               autosize: true,
-              margin: { l: 72, r: 18, t: 28, b: 68 },
+              margin: { l: 82, r: 18, t: 28, b: 76 },
               paper_bgcolor: tokens.colors.field,
               plot_bgcolor: tokens.colors.field,
               font: { family: MONO, size: 10, color: tokens.colors.ink.muted },
-              xaxis: { title: "UNITS PRODUCED", gridcolor: tokens.colors.rule.grid, zeroline: false },
-              yaxis: { title: "COST / REVENUE  [USD]", gridcolor: tokens.colors.rule.grid, zeroline: false },
-              legend: { orientation: "h", y: -0.23, x: 0 },
+              xaxis: { title: axisTitle("UNITS PRODUCED"), gridcolor: tokens.colors.rule.grid, zeroline: false },
+              yaxis: { title: axisTitle("COST / REVENUE  [USD]"), gridcolor: tokens.colors.rule.grid, zeroline: false },
+              legend: { orientation: "h", y: -0.3, x: 0 },
             }}
             style={{ width: "100%", height: "300px" }}
             useResizeHandler
@@ -830,7 +831,7 @@ export default function CostAnalysis() {
   function renderModel() {
     if (query.isPending) {
       return (
-        <div className="m-5 border border-rule bg-field p-8 font-mono text-note text-ink-muted">Calculating the workbook model…</div>
+        <div className="m-5 border border-rule bg-field p-8 font-mono text-note text-ink-muted">Calculating costs…</div>
       );
     }
     if (query.isError) {

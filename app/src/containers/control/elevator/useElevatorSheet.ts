@@ -7,8 +7,8 @@
  * upstream.
  */
 
-import { useAtom, useAtomValue } from "jotai";
-import { useMemo } from "react";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useCallback, useMemo } from "react";
 
 import {
   aspectRatioAtom,
@@ -18,6 +18,7 @@ import {
   cruiseSpeedKnotsAtom,
   horizontalTailAreaM2Atom,
   horizontalTailAspectRatioAtom,
+  horizontalTailTaperAtom,
   horizontalTailEfficiencyAtom,
   inducedDragFactorAtom,
   meanChordMAtom,
@@ -26,6 +27,7 @@ import {
   rollingFrictionAtom,
   stallAngleDegAtom,
   stallSpeedKcasAtom,
+  tailArmMAtom,
   takeoffThrustNAtom,
   tailIncidenceDegAtom,
   tailSectionLiftSlopePerDegAtom,
@@ -52,7 +54,6 @@ export type GeometryField =
   | "mainGearXM"
   | "cgXM"
   | "wingAcXM"
-  | "tailAcXM"
   | "dragZM"
   | "mainGearZM"
   | "cgZM"
@@ -63,6 +64,22 @@ export type GeometryField =
   | "forwardCgToAcM";
 
 export type EntryField = SurfaceField | RotationField | GeometryField;
+
+/**
+ * The tail station is drawn and labelled on the diagram like an entry field,
+ * but it is no longer one: it follows the tail arm carried from Control 01.
+ */
+export type DimensionField = EntryField | "tailAcXM";
+
+/**
+ * The tailplane the elevator hinges off. Shared quantities the workbook types
+ * in by hand — off a drawing or an iteration, not out of a formula — which the
+ * elevator sheet owns because nothing upstream claims them yet.
+ */
+export type TailField =
+  | "horizontalTailAreaM2"
+  | "horizontalTailAspectRatio"
+  | "horizontalTailTaper";
 
 /**
  * The thrust is an entry too, but the rudder needs it as well — one engine's
@@ -81,7 +98,6 @@ const ENTRY_DEFAULTS: Record<LocalField, number> = {
   mainGearXM: 0,
   cgXM: -0.61894,
   wingAcXM: -0.477468,
-  tailAcXM: 4.622532,
   dragZM: 1.6,
   mainGearZM: 0,
   cgZM: 1.5,
@@ -94,6 +110,7 @@ const ENTRY_DEFAULTS: Record<LocalField, number> = {
 
 const SECTION_DEFAULTS = {
   surface: true,
+  tail: false,
   rotation: false,
   geometry: false,
   carried: false,
@@ -107,6 +124,7 @@ const SECTIONS_KEY = "kenya-one:elevator:sections:v1";
 export interface ElevatorSheet {
   inputs: ElevatorInputs;
   setEntry: (field: EntryField, value: number) => void;
+  setTail: (field: TailField, value: number) => void;
   openSections: Record<SectionKey, boolean>;
   toggleSection: (key: SectionKey, open: boolean) => void;
   reset: () => void;
@@ -142,8 +160,31 @@ export function useElevatorSheet(): ElevatorSheet {
   );
   const horizontalTailAspectRatio = useAtomValue(horizontalTailAspectRatioAtom);
   const horizontalTailAreaM2 = useAtomValue(horizontalTailAreaM2Atom);
+  const horizontalTailTaper = useAtomValue(horizontalTailTaperAtom);
+
+  const setHorizontalTailAreaM2 = useSetAtom(horizontalTailAreaM2Atom);
+  const setHorizontalTailAspectRatio = useSetAtom(
+    horizontalTailAspectRatioAtom,
+  );
+  const setHorizontalTailTaper = useSetAtom(horizontalTailTaperAtom);
+
+  const setTail = useCallback(
+    (field: TailField, value: number) => {
+      if (field === "horizontalTailAreaM2") setHorizontalTailAreaM2(value);
+      if (field === "horizontalTailAspectRatio") {
+        setHorizontalTailAspectRatio(value);
+      }
+      if (field === "horizontalTailTaper") setHorizontalTailTaper(value);
+    },
+    [
+      setHorizontalTailAreaM2,
+      setHorizontalTailAspectRatio,
+      setHorizontalTailTaper,
+    ],
+  );
   const tailIncidenceDeg = useAtomValue(tailIncidenceDegAtom);
   const tailEfficiency = useAtomValue(horizontalTailEfficiencyAtom);
+  const tailArmM = useAtomValue(tailArmMAtom);
   const [thrustN, setThrustN] = useAtom(takeoffThrustNAtom);
 
   const [entry, setEntryState, resetEntry] = usePersistentState<
@@ -156,6 +197,10 @@ export function useElevatorSheet(): ElevatorSheet {
   const inputs = useMemo<ElevatorInputs>(
     () => ({
       ...entry,
+      // The tail station is the wing's plus the arm Control 01 settled. It
+      // used to be typed in, and disagreed with both the rudder sheet and the
+      // workbook's own cruise figure.
+      tailAcXM: entry.wingAcXM + tailArmM,
       thrustN,
       mtowLb,
       wingAreaM2,
@@ -184,6 +229,7 @@ export function useElevatorSheet(): ElevatorSheet {
       tailSectionLiftSlopePerDeg,
       horizontalTailAspectRatio,
       horizontalTailAreaM2,
+      horizontalTailTaper,
       tailIncidenceDeg,
       tailEfficiency,
       tailStallAngleDeg: stallAngleDeg,
@@ -194,6 +240,7 @@ export function useElevatorSheet(): ElevatorSheet {
     }),
     [
       entry,
+      tailArmM,
       thrustN,
       mtowLb,
       wingAreaM2,
@@ -219,6 +266,7 @@ export function useElevatorSheet(): ElevatorSheet {
       tailSectionLiftSlopePerDeg,
       horizontalTailAspectRatio,
       horizontalTailAreaM2,
+      horizontalTailTaper,
       tailIncidenceDeg,
       tailEfficiency,
     ]
@@ -226,6 +274,7 @@ export function useElevatorSheet(): ElevatorSheet {
 
   return {
     inputs,
+    setTail,
     setEntry: (field, value) => {
       if (field === "thrustN") {
         setThrustN(value);

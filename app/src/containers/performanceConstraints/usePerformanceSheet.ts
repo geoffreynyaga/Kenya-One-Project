@@ -31,6 +31,7 @@ import { MissionField } from "./missionFields";
 export type PrivateField =
   | "groundRun"
   | "turnLoadFactor"
+  | "specificEnergy"
   | "rateOfClimb"
   | "serviceCeiling"
   | "propEfficiencyAltitude"
@@ -45,6 +46,9 @@ const PRIVATE_DEFAULTS: Record<PrivateField, number> = {
   // Workbook B12, B19, B20, B23.
   groundRun: 900,
   turnLoadFactor: 1.4,
+  // The workbook has no cell for this: its turn is level, which is
+  // Gudmundsson eq. (3-1), and eq. (3-1) is eq. (3-2) at P_S = 0.
+  specificEnergy: 0,
   rateOfClimb: 1500,
   serviceCeiling: 25000,
   // Workbook B26, B21, B22, B9, B10, B11, B8 — seeds from the external
@@ -81,6 +85,7 @@ export interface MissionSheet {
     groundRunFt: number;
     altitudeFt: number;
     turnLoadFactor: number;
+    specificEnergyFps: number;
     rateOfClimbFpm: number;
     climbSpeedKnots: number;
     cruiseSpeedKnots: number;
@@ -150,6 +155,7 @@ export function useMissionSheet(): MissionSheet {
       // Private choices.
       groundRun: privateString("groundRun"),
       turnLoadFactor: privateString("turnLoadFactor"),
+      specificEnergy: privateString("specificEnergy"),
       rateOfClimb: privateString("rateOfClimb"),
       serviceCeiling: privateString("serviceCeiling"),
       propEfficiencyAltitude: privateString("propEfficiencyAltitude"),
@@ -197,6 +203,7 @@ export function useMissionSheet(): MissionSheet {
       groundRunFt: privateValues.groundRun,
       altitudeFt,
       turnLoadFactor: privateValues.turnLoadFactor,
+      specificEnergyFps: privateValues.specificEnergy,
       rateOfClimbFpm: privateValues.rateOfClimb,
       climbSpeedKnots: privateValues.climbSpeed,
       cruiseSpeedKnots: privateValues.cruiseSpeed,

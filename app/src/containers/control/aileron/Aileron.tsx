@@ -2,7 +2,7 @@
  * Control 01 — Aileron. Where the surface sits on the span, how big it has to
  * be, and whether the aeroplane banks as fast as the rules demand.
  */
-import { ReactNode, useMemo } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
@@ -10,6 +10,15 @@ import { Hint, HintSpec } from "../../../components/sheet/Hint";
 import { InputSection } from "../../../components/sheet/InputSection";
 import { ValueRow } from "../../../components/sheet/ValueRow";
 import tokens from "../../../design-tokens";
+import { ControlEffectivenessGuide } from "../ControlEffectivenessGuide";
+import {
+  GeometryFrame,
+  annotationField,
+  dimensionBar,
+  dimensionLabel,
+  geometryLayout,
+  witnessLine,
+} from "../GeometryPlot";
 import { aileron, aileronWarnings } from "./aileronCompute";
 import { EntryField, useAileronSheet } from "./useAileronSheet";
 import { AileronInputs, AileronResult, span } from "./utils";
@@ -183,19 +192,237 @@ function planform(inputs: AileronInputs, result: AileronResult) {
       x: [...surface, ...[...surface].reverse()],
       y: [...surface.map(hinge), ...[...surface].reverse().map(chordAt)],
     },
+    semi,
+    rootChordM: result.rootChordM,
+    inner: result.innerStationM,
+    outer: result.outerStationM,
+    hingeAtOuter: hinge(result.outerStationM),
+    chordAtOuter: chordAt(result.outerStationM),
   };
+}
+
+/**
+ * The dimensions drawn on the planform. Every one of them is in metres on the
+ * same axes as the wing, so the drawing is the shape the aeroplane is. The
+ * symbols sit on the figure and the numbers sit in the key beneath it.
+ */
+function planformDimensions(
+  view: ReturnType<typeof planform>,
+  active: EntryField | null,
+) {
+  const { semi, rootChordM, inner, outer, hingeAtOuter, chordAtOuter } = view;
+  if (!Number.isFinite(semi) || !Number.isFinite(rootChordM)) {
+    return { shapes: [], annotations: [] };
+  }
+
+  /* Dimension bars stand off the trailing edge in chord units, so the spacing
+     holds whatever the wing's proportions turn out to be. */
+  const step = rootChordM * 0.22;
+  const tick = step * 0.3;
+  const innerRow = rootChordM + step;
+  const outerRow = rootChordM + step * 2.2;
+  const chordColumn = outer + semi * 0.06;
+
+  const shapes = [
+    ...witnessLine({
+      from: 0,
+      to: outerRow,
+      at: inner,
+      vertical: true,
+      active: active === "innerSpanFraction",
+    }),
+    ...witnessLine({
+      from: 0,
+      to: outerRow,
+      at: outer,
+      vertical: true,
+      active: active === "outerSpanFraction",
+    }),
+    ...dimensionBar({
+      from: 0,
+      to: inner,
+      at: innerRow,
+      tick,
+      active: active === "innerSpanFraction",
+    }),
+    ...dimensionBar({
+      from: 0,
+      to: outer,
+      at: outerRow,
+      tick,
+      active: active === "outerSpanFraction",
+    }),
+    ...dimensionBar({
+      from: hingeAtOuter,
+      to: chordAtOuter,
+      at: chordColumn,
+      tick: tick * 0.8,
+      vertical: true,
+      active: active === "chordFraction",
+    }),
+  ];
+
+  const annotations = [
+    ...dimensionLabel({
+      field: "innerSpanFraction",
+      symbol: "ηᵢ",
+      x: inner / 2,
+      y: innerRow,
+      active: active === "innerSpanFraction",
+    }),
+    ...dimensionLabel({
+      field: "outerSpanFraction",
+      symbol: "ηₒ",
+      x: outer / 2,
+      y: outerRow,
+      active: active === "outerSpanFraction",
+    }),
+    ...dimensionLabel({
+      field: "chordFraction",
+      symbol: "Cₐ",
+      x: chordColumn,
+      xShift: 18,
+      y: (hingeAtOuter + chordAtOuter) / 2,
+      active: active === "chordFraction",
+    }),
+  ];
+
+  return { shapes, annotations };
 }
 
 export default function Aileron() {
   const sheet = useAileronSheet();
   const { inputs } = sheet;
+  const [activeField, setActiveField] = useState<EntryField | null>(null);
 
   const result = useMemo(() => aileron(inputs), [inputs]);
   const warnings = useMemo(
     () => aileronWarnings(inputs, result),
-    [inputs, result]
+    [inputs, result],
   );
   const view = useMemo(() => planform(inputs, result), [inputs, result]);
+  const guideEntries = useMemo(
+    () => [
+      {
+        field: "innerSpanFraction",
+        symbol: "ηᵢ",
+        name: "inboard end",
+        value: `${nf(inputs.innerSpanFraction, 2)} b/2 · ${q(result.innerStationM, "m", 2)}`,
+      },
+      {
+        field: "outerSpanFraction",
+        symbol: "ηₒ",
+        name: "outboard end",
+        value: `${nf(inputs.outerSpanFraction, 2)} b/2 · ${q(result.outerStationM, "m", 2)}`,
+      },
+      {
+        field: "chordFraction",
+        symbol: "Cₐ",
+        name: "chord",
+        value: `${nf(inputs.chordFraction, 2)} c · ${q(result.aileronChordM, "m", 2)}`,
+      },
+      {
+        field: "maxDeflectionDeg",
+        symbol: "δₐmax",
+        name: "max deflection",
+        value: q(inputs.maxDeflectionDeg, "°", 0),
+      },
+      {
+        field: "tauEffectiveness",
+        symbol: "τ",
+        name: "effectiveness",
+        value: nf(inputs.tauEffectiveness, 2),
+      },
+    ],
+    [inputs, result],
+  );
+
+  const focusField = (field: string) => {
+    const entryField = field as EntryField;
+    setActiveField(entryField);
+    const section = SURFACE_FIELDS.some((spec) => spec.field === entryField)
+      ? "surface"
+      : "roll";
+    sheet.toggleSection(section, true);
+    requestAnimationFrame(() => {
+      document.getElementById(`al-${entryField}`)?.focus();
+    });
+  };
+
+  const dimensions = useMemo(
+    () => planformDimensions(view, activeField),
+    [view, activeField],
+  );
+
+  const geometryGuide = (
+    <GeometryFrame
+      activeField={activeField}
+      entries={guideEntries}
+      onSelect={focusField}
+      scaleNote="to scale · metres on both axes"
+      title="AILERON ON THE SPAN"
+    >
+      <Plot
+        config={{ displayModeBar: false, responsive: true }}
+        data={[
+          {
+            x: view.outline.x,
+            y: view.outline.y,
+            mode: "lines",
+            fill: "toself",
+            fillcolor: tokens.colors.rule.grid,
+            line: { color: tokens.colors.ink.muted, width: 1 },
+            name: "WING",
+          },
+          {
+            x: view.aileron.x,
+            y: view.aileron.y,
+            mode: "lines",
+            fill: "toself",
+            fillcolor: tokens.colors.accent.DEFAULT,
+            opacity: 0.35,
+            line: { color: tokens.colors.accent.DEFAULT, width: 1 },
+            name: "AILERON",
+          },
+        ]}
+        layout={geometryLayout({
+          annotations: dimensions.annotations,
+          height: 420,
+          reversed: true,
+          shapes: dimensions.shapes,
+          x: "SPANWISE STATION  [M]",
+          xRange: [-view.semi * 0.06, view.semi * 1.18] as [number, number],
+          y: "CHORD  [M]",
+        })}
+        onClickAnnotation={(event: unknown) => {
+          const field = annotationField(event);
+          if (field) focusField(field);
+        }}
+        style={{ width: "100%" }}
+        useResizeHandler
+      />
+    </GeometryFrame>
+  );
+
+  const effectivenessGuide = (
+    <ControlEffectivenessGuide
+      chordRatio={inputs.chordFraction}
+      onApplyChordRatio={(ratio) => sheet.setEntry("chordFraction", ratio)}
+      onApplyTau={(value) => sheet.setEntry("tauEffectiveness", value)}
+      tau={inputs.tauEffectiveness}
+      tauLabel="τ"
+    />
+  );
+
+  const withGeometryGuide = (spec: EntrySpec): EntrySpec => {
+    if (spec.field === "tauEffectiveness") {
+      return { ...spec, guide: effectivenessGuide };
+    }
+    if (SURFACE_FIELDS.some((surface) => surface.field === spec.field)) {
+      return { ...spec, guide: geometryGuide };
+    }
+    return spec;
+  };
 
   const carried: CarriedSpec[] = [
     {
@@ -332,33 +559,37 @@ export default function Aileron() {
     },
   ];
 
-  const entryRow = (spec: EntrySpec) => (
-    <label
-      className="flex items-baseline gap-2 py-[5px] pl-[18px] pr-[18px]"
-      htmlFor={`al-${spec.field}`}
-      key={spec.field}
-      title={spec.label}
-    >
-      <span className="min-w-0 flex-1 truncate text-note text-ink-body">
-        {spec.label}
-        {spec.unit ? (
-          <span className="ml-[5px] font-mono text-label text-ink-faint">
-            [{spec.unit}]
-          </span>
-        ) : null}
-      </span>
-      <Hint inputId={`al-${spec.field}`} spec={spec} />
-      <input
-        className="w-[104px] shrink-0 border-b border-dashed border-rule bg-transparent pb-[2px] text-right font-mono text-value text-ink outline-none focus:border-solid focus:border-accent"
-        id={`al-${spec.field}`}
-        inputMode="decimal"
-        onChange={(event) =>
-          sheet.setEntry(spec.field, Number(event.target.value))
-        }
-        value={inputs[spec.field]}
-      />
-    </label>
-  );
+  const entryRow = (spec: EntrySpec) => {
+    const guideSpec = withGeometryGuide(spec);
+    return (
+      <label
+        className="flex items-baseline gap-2 py-[5px] pl-[18px] pr-[18px]"
+        htmlFor={`al-${spec.field}`}
+        key={spec.field}
+        title={spec.label}
+      >
+        <span className="min-w-0 flex-1 truncate text-note text-ink-body">
+          {spec.label}
+          {spec.unit ? (
+            <span className="ml-[5px] font-mono text-label text-ink-faint">
+              [{spec.unit}]
+            </span>
+          ) : null}
+        </span>
+        <Hint inputId={`al-${spec.field}`} spec={guideSpec} />
+        <input
+          className="w-[104px] shrink-0 border-b border-dashed border-rule bg-transparent pb-[2px] text-right font-mono text-value text-ink outline-none focus:border-solid focus:border-accent"
+          id={`al-${spec.field}`}
+          inputMode="decimal"
+          onChange={(event) =>
+            sheet.setEntry(spec.field, Number(event.target.value))
+          }
+          onFocus={() => setActiveField(spec.field)}
+          value={inputs[spec.field]}
+        />
+      </label>
+    );
+  };
 
   const carriedRow = (spec: CarriedSpec) => (
     <div
@@ -575,6 +806,8 @@ export default function Aileron() {
             <h2 className="text-sheet">How fast the aeroplane banks</h2>
           </div>
 
+          <div className="mb-4">{geometryGuide}</div>
+
           <div className="grid gap-4 xl:grid-cols-2">
             <Figure
               caption="The roll is still accelerating throughout the manoeuvre, so bank builds with the square of time and the curve steepens rather than straightening out. Where it crosses the required bank is the number the whole sheet is for."
@@ -587,7 +820,10 @@ export default function Aileron() {
                     x: bankTimes,
                     y: bankAngles,
                     mode: "lines",
-                    line: { color: tokens.colors.ink.DEFAULT, width: 2 },
+                    line: {
+                      color: tokens.colors.ink.DEFAULT,
+                      width: 2,
+                    },
                     name: "BANK",
                   },
                   {
@@ -619,44 +855,6 @@ export default function Aileron() {
               />
             </Figure>
 
-            <Figure
-              caption="Half the wing, leading edge at the top. The shaded strip is the aileron; everything inboard of it is what the flaps have left. Moving the surface outboard buys roll rate faster than making it bigger does, because the moment arm grows while the chord shrinks."
-              title="AILERON ON THE SPAN"
-            >
-              <Plot
-                config={{ displayModeBar: false, responsive: true }}
-                data={[
-                  {
-                    x: view.outline.x,
-                    y: view.outline.y,
-                    mode: "lines",
-                    fill: "toself",
-                    fillcolor: tokens.colors.rule.grid,
-                    line: { color: tokens.colors.ink.muted, width: 1 },
-                    name: "WING",
-                  },
-                  {
-                    x: view.aileron.x,
-                    y: view.aileron.y,
-                    mode: "lines",
-                    fill: "toself",
-                    fillcolor: tokens.colors.accent.DEFAULT,
-                    opacity: 0.35,
-                    line: { color: tokens.colors.accent.DEFAULT, width: 1 },
-                    name: "AILERON",
-                  },
-                ]}
-                layout={{
-                  ...figureLayout("SPANWISE STATION  [M]", "CHORD  [M]", 54),
-                  yaxis: { ...axis("CHORD  [M]"), autorange: "reversed" },
-                }}
-                style={{ width: "100%" }}
-                useResizeHandler
-              />
-            </Figure>
-          </div>
-
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
             <section className="border border-rule-mid bg-field">
               <h3 className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
                 THE AEROPLANE IN ROLL
@@ -689,7 +887,10 @@ export default function Aileron() {
                   />
                 ))}
               </dl>
-              <h3 className="border-y border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
+            </section>
+
+            <section className="border border-rule-mid bg-field">
+              <h3 className="border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label">
                 TAIL PLANFORM
               </h3>
               <dl className="px-4 py-2 font-mono text-note">

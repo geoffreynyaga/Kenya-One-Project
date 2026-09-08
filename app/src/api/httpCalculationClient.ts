@@ -6,19 +6,27 @@
  * request and response shapes, which outlive the transport.
  */
 
+import { fetchAeroClasses } from "./aeroClasses";
+import { fetchStallLimits } from "./stallLimits";
 import { fetchAirfoil, fetchAirfoilCatalog } from "./airfoils";
 import { fetchAircraftTypes } from "./aircraftTypes";
+import { fetchRudderReferences } from "./controlReferences";
 import type { CalculationClient } from "./client";
 import { fetchCostAnalysis } from "./costAnalysis";
 import { fetchMtowSizing } from "./mtowSizing";
 import { fetchSrefEngines, fetchSrefSizing } from "./srefDesign";
+import { fetchUasSizing } from "./uasSizing";
 
 export const httpCalculationClient: CalculationClient = {
   srefSizing: fetchSrefSizing,
   srefEngines: fetchSrefEngines,
   costAnalysis: fetchCostAnalysis,
   mtowSizing: fetchMtowSizing,
+  uasSizing: fetchUasSizing,
   airfoilCatalog: fetchAirfoilCatalog,
   aircraftTypes: fetchAircraftTypes,
+  aeroClasses: fetchAeroClasses,
+  stallLimits: fetchStallLimits,
+  rudderReferences: fetchRudderReferences,
   airfoil: fetchAirfoil,
 };

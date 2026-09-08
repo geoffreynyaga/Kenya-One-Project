@@ -41,4 +41,4 @@ export const WORKBOOK_INPUTS: RudderInputs = {
 export const STALE_MEAN_CHORD_M = 1.7684;
 
 /** The sideslip the sheet arrived at by typing values into a column, rad. */
-export const WORKBOOK_SOLVED_SIDESLIP_RAD = 0.368;
+export const WORKBOOK_SOLVED_CRAB_RAD = 0.368;

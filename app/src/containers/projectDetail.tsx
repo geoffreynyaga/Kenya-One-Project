@@ -1,12 +1,4 @@
 /*
- * File: c:\Projects\KENYA ONE PROJECT\app\src\ProjectDetail.js
- * Project: c:\Projects\KENYA ONE PROJECT\app
- * Created Date: Sunday, January 12th 2020, 3:43:06 pm
- * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
- * -----
- * Last Modified: Saturday April 11th 2020 11:54:41 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
- * -----
  * MIT License
  *
  * Copyright (c) 2020 KENYA ONE PROJECT
@@ -34,8 +26,12 @@
 
 
 import { Routes, Route } from "react-router-dom";
+import { useAtomValue } from "jotai";
+import { aircraftTypeAtom } from "../domain/atoms";
+import { isUnmannedType } from "../domain/projects";
 import SrefDesign from "./sref/SrefDesign";
 import PerformanceConstraints from "./performanceConstraints/PerformanceConstraints";
+import StallLimits from "./stallLimits/StallLimits";
 import DetailedWeights from "./detailedWeights/DetailedWeights";
 import VnDiagram from "./vn/VnDiagram";
 import WingAndAirfoil from "./wingAndAirfoil/WingAndAirfoil";
@@ -43,31 +39,47 @@ import DragAnalysis from "./drag/DragAnalysis";
 import WingStructural from "./wingAndAirfoil/WingStructural";
 import SheetIndex from "../navigation/SheetIndex";
 import MTOWSizing from "./InitialSizing/MTOWSizing";
+import UasSizing from "./uasSizing/UasSizing";
 import CostAnalysis from "./costs/CostAnalysis";
 import TakeOff from "./performance/takeOff/TakeOff";
 import Climb from "./performance/climb/Climb";
 import Cruise from "./performance/cruise/Cruise";
 import Range from "./performance/range/Range";
 import Landing from "./performance/landing/Landing";
+import TailArm from "./control/tailArm/TailArm";
 import Aileron from "./control/aileron/Aileron";
 import Elevator from "./control/elevator/Elevator";
 import Rudder from "./control/rudder/Rudder";
+
+/**
+ * Sheet 01 depends on what is being designed. A crewed aircraft is sized by
+ * the fuel-fraction methods; an unmanned one by fixed weights and mass
+ * fractions, which asks different questions and closes in one expression.
+ */
+const SizingSheet = () => {
+  const aircraftType = useAtomValue(aircraftTypeAtom);
+  return isUnmannedType(aircraftType) ? <UasSizing /> : <MTOWSizing />;
+};
 
 const ProjectDetail = () => {
   const routes = [
     {
       path: "mtow",
-      component: MTOWSizing,
+      component: SizingSheet,
     },
 
     {
       path: "sref",
       component: SrefDesign,
-      // main: () => <SrefDesign />,
     },
     {
       path: "performance-constraints",
       component: PerformanceConstraints,
+    },
+
+    {
+      path: "stall-limits",
+      component: StallLimits,
     },
 
     {
@@ -115,6 +127,10 @@ const ProjectDetail = () => {
       component: Landing,
     },
     {
+      path: "control/tail-arm",
+      component: TailArm,
+    },
+    {
       path: "control/aileron",
       component: Aileron,
     },
@@ -133,8 +149,6 @@ const ProjectDetail = () => {
       <SheetIndex />
       <Routes>
         {routes.map((route) => (
-          // Render more <Route>s with the same paths as
-          // above, but different components this time.
           <Route
             key={route.path}
             path={route.path}

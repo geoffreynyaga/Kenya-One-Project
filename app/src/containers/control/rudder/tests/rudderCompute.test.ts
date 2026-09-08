@@ -1,8 +1,9 @@
+import { KNOT_TO_MPS } from "../../../../domain/constants";
 import { rudder, rudderWarnings } from "../rudderCompute";
 import {
   STALE_MEAN_CHORD_M,
   WORKBOOK_INPUTS,
-  WORKBOOK_SOLVED_SIDESLIP_RAD,
+  WORKBOOK_SOLVED_CRAB_RAD,
 } from "./fixture";
 
 function close(actual: number, expected: number, tolerance = 1e-9): boolean {
@@ -87,7 +88,7 @@ describe("rudderCompute parity with the rudder sheet", () => {
     // -9.7 N·m against moments of order ten thousand — near enough by eye.
     // Solving it properly lands nine ten-thousandths of a radian further on.
     expect(
-      Math.abs(result.solvedSideslipRad - WORKBOOK_SOLVED_SIDESLIP_RAD)
+      Math.abs(result.solvedCrabRad - WORKBOOK_SOLVED_CRAB_RAD)
     ).toBeLessThan(0.002);
 
     // The rudder angle is small and steeply sensitive to that sideslip — the
@@ -99,21 +100,46 @@ describe("rudderCompute parity with the rudder sheet", () => {
     ).toBeLessThan(0.15);
   });
 
-  it("reproduces the sheet's own column at the angles it typed", () => {
-    const at = (sideslipRad: number) => {
-      const sweep = rudder({ ...WORKBOOK_INPUTS }).sideslipSweep;
-      return sweep.reduce((best, point) =>
-        Math.abs(point.sideslipRad - sideslipRad) <
-        Math.abs(best.sideslipRad - sideslipRad)
-          ? point
-          : best
-      );
-    };
-    // The column's own endpoints: a large negative sideslip needs a large
-    // positive rudder, and the residual is far from zero there.
-    const negative = at(-0.5);
-    expect(negative.rudderRad).toBeGreaterThan(2);
-    expect(negative.residualNm).toBeLessThan(-10000);
+  /*
+   * Both figures and the readout under them called the swept variable the
+   * sideslip. It is the crab angle: Sadraey fixes the sideslip from the wind
+   * in Eq. (12.105) and leaves the crab angle and the rudder as the two
+   * unknowns of Eqs. (12.114) and (12.115). The two are different numbers on
+   * this aeroplane, which is what makes the mislabel worth a test.
+   */
+  it("keeps the crab angle distinct from the sideslip the wind sets", () => {
+    const beta = result.crosswindSideslipRad;
+    const wind = WORKBOOK_INPUTS.crosswindKnots * KNOT_TO_MPS;
+    const approach = 1.1 * WORKBOOK_INPUTS.stallSpeedMps;
+
+    // Sadraey Eq. (12.105): the wind sets the sideslip, nothing else does.
+    expect(beta).toBeCloseTo(Math.atan(wind / approach), 12);
+    // The crab angle is solved, and is not that number.
+    expect(Math.abs(result.solvedCrabRad - beta)).toBeGreaterThan(0.05);
+  });
+
+  /*
+   * The figures used to be drawn over the whole search bracket, where the
+   * side-force balance asks for 146 degrees of rudder. They are drawn about
+   * the answer now, so what is checked is that the window still brackets the
+   * crossing and that the curve runs the right way through it.
+   */
+  it("draws a window that brackets the answer", () => {
+    const sweep = result.crabSweep;
+    const first = sweep[0];
+    const last = sweep[sweep.length - 1];
+
+    expect(first.crabRad).toBeLessThan(result.solvedCrabRad);
+    expect(last.crabRad).toBeGreaterThan(result.solvedCrabRad);
+
+    // The residual changes sign across the window, and the rudder falls.
+    expect(first.residualNm * last.residualNm).toBeLessThan(0);
+    expect(last.rudderRad).toBeLessThan(first.rudderRad);
+
+    // Every angle drawn asks for a rudder a real aeroplane could have.
+    for (const point of sweep) {
+      expect(Math.abs(point.rudderRad * (180 / Math.PI))).toBeLessThan(90);
+    }
   });
 
   it("holds the engine-out case on C34 and F36", () => {
@@ -187,7 +213,7 @@ describe("a different aeroplane", () => {
 
   it("says nothing rather than half an answer when the crosswind cannot be held", () => {
     const gale = rudder({ ...WORKBOOK_INPUTS, crosswindKnots: 400 });
-    if (!Number.isFinite(gale.solvedSideslipRad)) {
+    if (!Number.isFinite(gale.solvedCrabRad)) {
       expect(
         rudderWarnings({ ...WORKBOOK_INPUTS, crosswindKnots: 400 }, gale).map(
           (warning) => warning.key
@@ -209,9 +235,9 @@ describe("rudderWarnings", () => {
     expect(keys).toContain("vmc-engine-offset");
   });
 
-  it("names the fin root chord and the hand-searched sideslip", () => {
+  it("names the fin root chord and the hand-searched crab angle", () => {
     expect(keys).toContain("fin-root-chord");
-    expect(keys).toContain("sideslip-solved-not-typed");
+    expect(keys).toContain("crab-solved-not-typed");
   });
 
   it("flags how little is left in the engine-out case", () => {

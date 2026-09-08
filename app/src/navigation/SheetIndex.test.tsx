@@ -12,7 +12,7 @@ test("cost sheet is reachable from the sheet navbar", () => {
     </MemoryRouter>
   );
 
-  const link = screen.getByRole("link", { name: "09 COST" });
+  const link = screen.getByRole("link", { name: "10 COST" });
   expect(link).toHaveAttribute("href", "/projects/project1/cost-analysis");
   expect(link).toHaveClass("border-accent");
 });
@@ -33,7 +33,7 @@ test("the performance group shows its own sheets", () => {
   );
   expect(link).toHaveClass("border-accent");
   // Sizing sheets are not in this index.
-  expect(screen.queryByText("09 COST")).toBeNull();
+  expect(screen.queryByText("10 COST")).toBeNull();
 });
 
 test("climb is reachable from the performance index", () => {

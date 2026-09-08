@@ -111,7 +111,11 @@ describe("Cruise", () => {
   it("exposes the Cruise-owned power setting and labels CG as a fraction", () => {
     renderConfirmedCruise();
     expect(screen.getByText("Cruise power fraction")).toBeInTheDocument();
-    expect(screen.getAllByText("[fraction MAC]")).toHaveLength(2);
+    // The seeded stations carry the same unit, so name the CG rows directly.
+    for (const field of ["forwardCgMac", "aftCgMac"]) {
+      const label = document.querySelector(`label[for="cr-${field}"]`)!;
+      expect(label).toHaveTextContent("[fraction MAC]");
+    }
   });
 
   it("shows four live-envelope figures after all choices are resolved", () => {

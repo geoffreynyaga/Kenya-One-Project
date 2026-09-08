@@ -2,11 +2,21 @@
  * Sheet 06 — Wing & Airfoil. Planform, flow conditions, 3-D corrections and
  * the four span-efficiency estimates, all from aerofoilCompute.
  */
+import { useAtom, useSetAtom } from "jotai";
 import { useMemo } from "react";
 
+import {
+  sectionMomentCoefficientAtom,
+  taperRatioAtom,
+  wingMaxThicknessStationAtom,
+} from "../../domain/atoms";
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { InputSection } from "../../components/sheet/InputSection";
 import { Hint, HintSpec } from "../../components/sheet/Hint";
+import {
+  StageCommitBar,
+  useStageCommit,
+} from "../../components/sheet/StageCommit";
 import { ValueRow } from "../../components/sheet/ValueRow";
 import {
   aerofoil,
@@ -60,6 +70,17 @@ const CARRIED_FIELDS: EntrySpec[] = [
   { field: "fuselageWidthFt", label: "Fuselage width", unit: "ft", cell: "S9", origin: "SHEET 04", body: "Fuselage width from Sheet 04. The Douglas method penalises span efficiency for the span the fuselage occupies." },
   { field: "liftoffSpeedKt", label: "Lift-off speed", unit: "kt", cell: "S26", origin: "SEED · TAKE-OFF WB", body: "Lift-off speed, for the take-off Reynolds number. Seeded until the take-off sheet is ported." },
   { field: "cruiseSpeedKt", label: "Cruise speed", unit: "kt", cell: "B11", origin: "SEED · CRUISE WB", body: "Cruise speed, for the cruise Reynolds number. Seeded until the cruise sheet is ported." },
+];
+
+/*
+ * The shared quantities this sheet owns. Confirming the sheet confirms them,
+ * so a reader who agrees with the values on screen can say so without having
+ * to retype them.
+ */
+const OWNED_QUANTITIES = [
+  "taperRatio",
+  "sectionMomentCoefficient",
+  "wingMaxThicknessStation",
 ];
 
 interface ViewState {
@@ -149,7 +170,27 @@ export default function WingAndAirfoil() {
     "kenya-one:aerofoil:view",
     DEFAULT_VIEW
   );
-  const { inputs } = view;
+  const { withdraw } = useStageCommit("wingAndAirfoil");
+
+  /*
+   * Two of this sheet's entries are read by other sheets — the aileron and the
+   * detailed weights take the taper ratio, and Cruise takes the section moment
+   * slope — so they are held in the shared quantities rather than in this
+   * sheet's own view state. They used to live here alone, which meant nothing
+   * ever published them and Cruise blocked forever on "confirm it in its
+   * owning stage". Writing one is what marks it decided.
+   */
+  const [taperRatio, setTaperRatio] = useAtom(taperRatioAtom);
+  const [sectionMomentSlope, setSectionMomentSlope] = useAtom(
+    sectionMomentCoefficientAtom
+  );
+  // The picker shows (x/c)m for the chosen section; the drag build-up needs it.
+  const setMaxThicknessStation = useSetAtom(wingMaxThicknessStationAtom);
+
+  const inputs = useMemo<AerofoilInputs>(
+    () => ({ ...view.inputs, taperRatio, sectionMomentSlope }),
+    [sectionMomentSlope, taperRatio, view.inputs]
+  );
 
   const result = useMemo(() => aerofoil(inputs), [inputs]);
   const warnings = useMemo(
@@ -157,7 +198,10 @@ export default function WingAndAirfoil() {
     [inputs, result]
   );
 
-  const applySection = (selection: AirfoilSelection, name: string) =>
+  const applySection = (selection: AirfoilSelection, name: string) => {
+    withdraw();
+    setSectionMomentSlope(selection.sectionMomentSlope);
+    setMaxThicknessStation(selection.maxThicknessStation);
     setView((current) => ({
       ...current,
       sectionName: name,
@@ -165,7 +209,6 @@ export default function WingAndAirfoil() {
         ...current.inputs,
         sectionLiftSlopePerDeg: selection.sectionLiftSlopePerDeg,
         zeroLiftAlphaDeg: selection.zeroLiftAlphaDeg,
-        sectionMomentSlope: selection.sectionMomentSlope,
         thicknessToChord: selection.thicknessToChord,
         // The workbook keeps the tail's (x/c)m separately; this is the wing's.
         ...(selection.clmaxAtRe3M === undefined
@@ -176,12 +219,17 @@ export default function WingAndAirfoil() {
           : { clmaxAtRe6M: selection.clmaxAtRe6M }),
       },
     }));
+  };
 
-  const setField = (field: keyof AerofoilInputs, next: number) =>
+  const setField = (field: keyof AerofoilInputs, next: number) => {
+    withdraw();
+    if (field === "taperRatio") return setTaperRatio(next);
+    if (field === "sectionMomentSlope") return setSectionMomentSlope(next);
     setView((current) => ({
       ...current,
       inputs: { ...current.inputs, [field]: next },
     }));
+  };
 
   const toggle = (key: string, open: boolean) =>
     setView((current) => {
@@ -251,6 +299,7 @@ export default function WingAndAirfoil() {
           {section("planform", "ENTRY · PLANFORM", PLANFORM_FIELDS)}
           {section("section", "ENTRY · SECTION 2-D", SECTION_FIELDS)}
           {section("carried", "CARRIED · UPSTREAM", CARRIED_FIELDS)}
+          <StageCommitBar quantities={OWNED_QUANTITIES} stage="wingAndAirfoil" />
           <button
             className="mt-4 w-full border border-rule bg-panel px-4 py-3 font-mono text-meta tracking-tab text-ink-faint hover:text-ink"
             onClick={() => setView({ ...DEFAULT_VIEW })}

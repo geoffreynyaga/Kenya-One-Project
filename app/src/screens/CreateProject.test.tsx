@@ -106,7 +106,7 @@ test("requires a project name before showing the category catalogue", async () =
   ).toBeVisible();
   expect(screen.getAllByRole("radio")).toHaveLength(16);
   expect(
-    screen.getByText(/You can change it later on the MTOW sheet/i)
+    screen.getByText(/Unmanned categories are sized by fixed weights and mass fractions/i)
   ).toBeVisible();
   expect(screen.getByText("PROJECT ·").parentElement).toHaveTextContent(
     "PROJECT · KENYA ONE"

@@ -6,11 +6,19 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from aircraft_design.aero_classes import AERO_CLASSES
 from aircraft_design.airfoils import AirfoilNotFound, get_airfoil, list_airfoils
+from aircraft_design.control_references import RUDDER_REFERENCE_CATALOG
 from aircraft_design.costs import CostCalculationError, calculate_costs
 from aircraft_design.sref import ENGINE_CATALOG, SrefCalculationError, calculate_sref
+from aircraft_design.stall_limits import STALL_LIMITS
+from aircraft_design.uas_sizing import UasSizingError, calculate_uas_sizing
 
-from .serializers import CostAnalysisRequestSerializer, SrefSizingRequestSerializer
+from .serializers import (
+    CostAnalysisRequestSerializer,
+    SrefSizingRequestSerializer,
+    UasSizingRequestSerializer,
+)
 
 
 class CostAnalysisAPIView(APIView):
@@ -69,6 +77,34 @@ class SrefSizingAPIView(APIView):
         return Response({"status": "success", "data": asdict(result)})
 
 
+class UasSizingAPIView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = UasSizingRequestSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(
+                {
+                    "status": "error",
+                    "message": "Check the highlighted sizing inputs and try again.",
+                    "errors": serializer.errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            result = calculate_uas_sizing(serializer.to_domain())
+        except UasSizingError as error:
+            return Response(
+                {
+                    "status": "error",
+                    "code": "INVALID_UAS_INPUTS",
+                    "message": str(error),
+                },
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        return Response({"status": "success", "data": asdict(result)})
+
+
 class SrefEngineCatalogAPIView(APIView):
     """The engine reference table.
 
@@ -82,6 +118,63 @@ class SrefEngineCatalogAPIView(APIView):
             {
                 "status": "success",
                 "data": [asdict(engine) for engine in ENGINE_CATALOG],
+            }
+        )
+
+
+class AeroClassCatalogAPIView(APIView):
+    """Gundmundsson Table 3-1 — typical drag and lift by aircraft class.
+
+    Advisory ranges the sheets show in their hints so a reviewer can tell
+    whether a typed coefficient is plausible for the class being designed.
+    They are never written into a field: the book offers them in place of a
+    study of comparable aircraft, not in place of a decision.
+    """
+
+    @method_decorator(cache_control(max_age=60 * 60 * 24, public=True))
+    def get(self, request, *args, **kwargs):
+        return Response(
+            {
+                "status": "success",
+                "data": [asdict(aero_class) for aero_class in AERO_CLASSES],
+            }
+        )
+
+
+class StallLimitCatalogAPIView(APIView):
+    """The stall speed ceiling each certification basis imposes.
+
+    Fig. 3-5 draws 45 and 61 KCAS because those certify a light general
+    aviation aeroplane in the United States, and the figure does not say so.
+    This is the rest of the answer: which rule applies, what it caps, and —
+    for transport category and for small unmanned aircraft — that it caps
+    nothing, so the wing loading is bounded by something else.
+    """
+
+    @method_decorator(cache_control(max_age=60 * 60 * 24, public=True))
+    def get(self, request, *args, **kwargs):
+        return Response(
+            {
+                "status": "success",
+                "data": [asdict(limit) for limit in STALL_LIMITS],
+            }
+        )
+
+
+class RudderReferenceCatalogAPIView(APIView):
+    """Selected Sadraey Table 12.20 rudder examples.
+
+    Comparable-aircraft records for choosing preliminary rudder geometry. They
+    are static reference data, not field defaults, so they are served once and
+    cached like the other reference tables.
+    """
+
+    @method_decorator(cache_control(max_age=60 * 60 * 24, public=True))
+    def get(self, request, *args, **kwargs):
+        return Response(
+            {
+                "status": "success",
+                "data": asdict(RUDDER_REFERENCE_CATALOG),
             }
         )
 
@@ -125,4 +218,3 @@ class AirfoilDetailAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         return Response({"status": "success", "data": asdict(airfoil)})
-

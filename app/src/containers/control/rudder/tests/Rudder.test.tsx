@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { Provider, createStore } from "jotai";
 
+import { tailArmFtAtom } from "../../../../domain/atoms";
 import Rudder from "../Rudder";
 
 vi.mock("plotly.js-basic-dist", () => ({ default: {} }));
@@ -11,11 +13,42 @@ vi.mock("react-plotly.js/factory", () => ({
 beforeEach(() => window.localStorage.clear());
 
 describe("Rudder", () => {
-  it("shows both figures without opening anything", () => {
+  /*
+   * The fin arm was typed in here as 4.299 m while the elevator sheet held
+   * 5.100 m for the same aeroplane. It is now carried from Control 01, so
+   * moving it there has to move this sheet.
+   */
+  it("carries the fin arm from the tail arm sheet", () => {
+    const armShown = () =>
+      screen.getByText("Fin arm").closest("div")!.lastElementChild!.textContent;
+
+    const store = createStore();
+    const { rerender } = render(
+      <Provider store={store}>
+        <Rudder />
+      </Provider>
+    );
+    const before = armShown();
+
+    store.set(tailArmFtAtom, store.get(tailArmFtAtom) + 4.5);
+    rerender(
+      <Provider store={store}>
+        <Rudder />
+      </Provider>
+    );
+
+    // The row prints three decimals, so compare at that resolution.
+    expect(parseFloat(armShown()!)).toBeCloseTo(
+      parseFloat(before!) + 4.5 * 0.3048,
+      2
+    );
+  });
+
+  it("shows the geometry guide and both figures without opening anything", () => {
     const { container } = render(<Rudder />);
 
     const figures = container.querySelectorAll("figure");
-    expect(figures).toHaveLength(2);
+    expect(figures).toHaveLength(3);
     figures.forEach((figure) => expect(figure.closest("details")).toBeNull());
   });
 
@@ -46,6 +79,25 @@ describe("Rudder", () => {
       target: { value: "20" },
     });
     expect(band().className).toContain("accent-dark");
+  });
+
+  it("resizes the fin when the fin area is edited", () => {
+    const { container } = render(<Rudder />);
+
+    const finSpan = () =>
+      parseFloat(
+        screen.getByText("Fin span").closest("div")!.lastElementChild!
+          .textContent!,
+      );
+    const before = finSpan();
+
+    fireEvent.click(screen.getByText("ENTRY · THE FIN"));
+    fireEvent.change(container.querySelector("#ru-verticalTailAreaM2")!, {
+      target: { value: "6" },
+    });
+
+    // Span goes as the root of the area, so a bigger fin is a taller one.
+    expect(finSpan()).toBeGreaterThan(before);
   });
 
   it("keeps every cell reference inside a tooltip", () => {

@@ -9,9 +9,27 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+
+import {
+  cd0Atom,
+  committedStagesAtom,
+  cruiseSpeedKnotsAtom,
+  fuselageDiameterMAtom,
+  fuselageLengthMAtom,
+  meanChordMAtom,
+  thicknessToChordAtom,
+  wingAreaM2Atom,
+  wingMaxThicknessStationAtom,
+} from "../../domain/atoms";
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { InputSection } from "../../components/sheet/InputSection";
 import { Hint, HintSpec } from "../../components/sheet/Hint";
+import { UntilDrawnTag } from "../../components/sheet/UntilDrawnTag";
+import {
+  StageCommitBar,
+  useStageCommit,
+} from "../../components/sheet/StageCommit";
 import { ValueRow } from "../../components/sheet/ValueRow";
 import { dragBuildUp, DragInputs, dragWarnings, SurfaceDrag } from "./dragCompute";
 import { WORKBOOK_INPUTS } from "./dragFixture";
@@ -59,15 +77,30 @@ const GEAR_FIELDS: EntrySpec[] = [
   { field: "strutDiameterIn", label: "Strut diameter", unit: "in", cell: "L6", body: "Strut diameter. Struts are charged a higher coefficient than tyres because they are less streamlined." },
 ];
 
+/**
+ * Read live from the stage that owns them.
+ *
+ * These rows carried the workbook's own numbers and an origin label saying
+ * which sheet they came from, which read as though the sheet were connected.
+ * It was not: the wing area here stayed at the workbook's 23.95 m² whatever
+ * Sref solved, and every CD0 on the sheet is divided by it.
+ */
 const CARRIED_FIELDS: EntrySpec[] = [
   { field: "wingAreaM2", label: "Wing area", unit: "m²", cell: "H80", origin: "SHEET 02", body: "Reference area every CD0 on this sheet is divided by." },
   { field: "meanChordM", label: "Mean chord", unit: "m", cell: "B7", origin: "SHEET 06", body: "Reference length for the wing Reynolds number." },
   { field: "wingThicknessToChord", label: "Wing t/c", cell: "B32", origin: "SHEET 06", body: "Wing thickness ratio, which drives the lifting-surface form factor." },
-  { field: "wingMaxThicknessStation", label: "Wing (x/c)m", cell: "B33", origin: "SHEET 06", body: "Chordwise station of maximum thickness on the wing." },
-  { field: "fuselageWettedM2", label: "Fuselage wetted", unit: "m²", cell: "S4", origin: "SHEET 04", body: "Fuselage wetted area, typed on Sheet 04 and read back here." },
-  { field: "cruiseSpeedKt", label: "Cruise speed", unit: "kt", cell: "B16", origin: "SEED · TAKE-OFF WB", body: "The speed every Reynolds number and the cruise Mach are taken at. Seeded until the take-off sheet is ported." },
-  { field: "fuselageLengthM", label: "Fuselage length", unit: "m", cell: "B4", origin: "SEED · ELEVATOR WB", body: "Reference length for the fuselage Reynolds number and, with the diameter, the fineness ratio." },
-  { field: "fuselageDiameterM", label: "Fuselage diameter", unit: "m", cell: "B3", origin: "SEED · ELEVATOR WB", body: "Maximum fuselage diameter." },
+  { field: "wingMaxThicknessStation", label: "Wing (x/c)m", cell: "B33", origin: "SHEET 06", body: "Chordwise station of maximum thickness, a property of the section the wing sheet picked." },
+  { field: "cruiseSpeedKt", label: "Cruise speed", unit: "kt", cell: "B16", origin: "SHEET 02", body: "The speed every Reynolds number and the cruise Mach are taken at." },
+  { field: "fuselageLengthM", label: "Fuselage length", unit: "m", cell: "B4", origin: "RAYMER 6.3", untilDrawn: "fuselageLengthM", body: "Reference length for the fuselage Reynolds number and, with the diameter, the fineness ratio." },
+  { field: "fuselageDiameterM", label: "Fuselage diameter", unit: "m", cell: "B3", origin: "SEED · LAYOUT", untilDrawn: "fuselageDiameterM", body: "Maximum fuselage diameter." },
+];
+
+/**
+ * Still the workbook's, because no stage owns them yet. The label says so
+ * rather than naming a sheet that is not feeding them.
+ */
+const SEED_FIELDS: EntrySpec[] = [
+  { field: "fuselageWettedM2", label: "Fuselage wetted", unit: "m²", cell: "S4", origin: "SEED · WEIGHTS WB", body: "Fuselage wetted area. Seeded until Sheet 04 owns the fuselage layout." },
   { field: "horizontalTailChordM", label: "H-tail chord", unit: "m", cell: "L5", origin: "SEED · AILERON WB", body: "Reference chord for the tailplane Reynolds number." },
   { field: "verticalTailChordM", label: "V-tail chord", unit: "m", cell: "K6", origin: "SEED · RUDDER WB", body: "Reference chord for the fin Reynolds number." },
   { field: "engineWeightLb", label: "Engine weight", unit: "lb", cell: "C7", origin: "SEED · TAKE-OFF WB", body: "Installed engine weight. Both the cooling and the miscellaneous allowances scale on it." },
@@ -177,16 +210,72 @@ export default function DragAnalysis() {
     "kenya-one:drag:view",
     DEFAULT_VIEW
   );
-  const { inputs } = view;
+  const { withdraw } = useStageCommit("drag");
+
+  /*
+   * The quantities other stages own, read live. The sheet used to hold the
+   * workbook's copy of each and only claim they were carried.
+   */
+  const wingAreaM2 = useAtomValue(wingAreaM2Atom);
+  const meanChordM = useAtomValue(meanChordMAtom);
+  const wingThicknessToChord = useAtomValue(thicknessToChordAtom);
+  const wingMaxThicknessStation = useAtomValue(wingMaxThicknessStationAtom);
+  const cruiseSpeedKt = useAtomValue(cruiseSpeedKnotsAtom);
+  const fuselageLengthM = useAtomValue(fuselageLengthMAtom);
+  const fuselageDiameterM = useAtomValue(fuselageDiameterMAtom);
+
+  const inputs = useMemo<DragInputs>(
+    () => ({
+      ...view.inputs,
+      wingAreaM2,
+      meanChordM,
+      wingThicknessToChord,
+      wingMaxThicknessStation,
+      cruiseSpeedKt,
+      fuselageLengthM,
+      fuselageDiameterM,
+    }),
+    [
+      cruiseSpeedKt,
+      fuselageDiameterM,
+      fuselageLengthM,
+      meanChordM,
+      view.inputs,
+      wingAreaM2,
+      wingMaxThicknessStation,
+      wingThicknessToChord,
+    ]
+  );
 
   const result = useMemo(() => dragBuildUp(inputs), [inputs]);
+
+  /*
+   * DESIGN_LOOPS.cd0Area. The build-up is divided by the wing area Sref
+   * solved, and Sref's constraint curves are drawn with CD0 — so publishing a
+   * new one means the wing was sized against a drag figure that no longer
+   * holds, and Sref has to be solved again. Publishing on the confirm click
+   * rather than on every render is what keeps the circle from spinning.
+   */
+  const [carriedCd0, publishCd0] = useAtom(cd0Atom);
+  const setCommittedStages = useSetAtom(committedStagesAtom);
+  const publish = () => {
+    const changed = Math.abs(result.totalCd0 - carriedCd0) > 1e-9;
+    publishCd0(result.totalCd0);
+    if (changed) {
+      setCommittedStages((current) =>
+        current.sref ? { ...current, sref: false } : current
+      );
+    }
+  };
   const warnings = useMemo(() => dragWarnings(result), [result]);
 
-  const setField = (field: keyof DragInputs, next: number) =>
+  const setField = (field: keyof DragInputs, next: number) => {
+    withdraw();
     setView((current) => ({
       ...current,
       inputs: { ...current.inputs, [field]: next },
     }));
+  };
 
   const toggle = (key: string, open: boolean) =>
     setView((current) => {
@@ -208,13 +297,14 @@ export default function DragAnalysis() {
       key={spec.field}
       title={spec.label}
     >
-      <span className="min-w-0 flex-1 truncate text-note text-ink-body">
+      <span className="min-w-0 flex-1 text-note text-ink-body">
         {spec.label}
         {spec.unit ? (
           <span className="ml-[5px] font-mono text-label text-ink-faint">
             [{spec.unit}]
           </span>
         ) : null}
+        {spec.untilDrawn ? <UntilDrawnTag quantity={spec.untilDrawn} /> : null}
       </span>
       <Hint inputId={`drag-${spec.field}`} spec={spec} />
       <input
@@ -290,6 +380,8 @@ export default function DragAnalysis() {
           {section("shape", "ENTRY · SHAPE", SHAPE_FIELDS)}
           {section("gear", "ENTRY · LANDING GEAR", GEAR_FIELDS)}
           {section("carried", "CARRIED · UPSTREAM", CARRIED_FIELDS)}
+          {section("seeded", "SEEDED · NO OWNING STAGE", SEED_FIELDS)}
+          <StageCommitBar onConfirm={publish} quantities={["cd0"]} stage="drag" />
           <button
             className="mt-4 w-full border border-rule bg-panel px-4 py-3 font-mono text-meta tracking-tab text-ink-faint hover:text-ink"
             onClick={() => setView({ ...DEFAULT_VIEW })}
