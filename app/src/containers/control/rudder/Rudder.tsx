@@ -2,16 +2,30 @@
  * Control 03 — Rudder. Sized by the two cases it has to hold: landing straight
  * in a crosswind, and keeping the nose where it belongs with an engine out.
  */
-import { ReactNode, useMemo } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
 import { Hint, HintSpec } from "../../../components/sheet/Hint";
 import { InputSection } from "../../../components/sheet/InputSection";
+import {
+  RudderReferenceGuide,
+  RudderReferenceGuideField,
+} from "../../../components/sheet/RudderReferenceGuide";
 import { ValueRow } from "../../../components/sheet/ValueRow";
 import tokens from "../../../design-tokens";
+import { ControlEffectivenessGuide } from "../ControlEffectivenessGuide";
+import {
+  GeometryFrame,
+  annotationField,
+  dimensionBar,
+  dimensionLabel,
+  geometryLayout,
+  witnessLine,
+} from "../GeometryPlot";
 import { rudder, rudderWarnings } from "./rudderCompute";
-import { EntryField, useRudderSheet } from "./useRudderSheet";
+import { EntryField, FinField, useRudderSheet } from "./useRudderSheet";
+import { RudderInputs, RudderResult } from "./utils";
 
 const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
@@ -73,6 +87,48 @@ interface EntrySpec extends HintSpec {
   field: EntryField;
   unit?: string;
 }
+
+interface FinSpec extends HintSpec {
+  field: FinField;
+  unit?: string;
+}
+
+/*
+ * The fin the rudder hinges off. These are shared quantities the workbook types
+ * in by hand — they come off a drawing or an iteration, not out of a formula —
+ * and no upstream stage owns them yet, so the rudder sheet does.
+ */
+const FIN_FIELDS: FinSpec[] = [
+  {
+    field: "verticalTailAreaM2",
+    label: "Fin area",
+    unit: "m²",
+    cell: "B2",
+    body: "Vertical tail area. The rudder is a fraction of it, and both sizing cases scale with it. The workbook types this twice and the two do not agree; this sheet's own value is the one used here.",
+  },
+  {
+    field: "verticalTailAspectRatio",
+    label: "Fin aspect ratio",
+    cell: "K3",
+    body: "With the area it sets the fin span, and so the height of the drawing. Low, as fins are, which is why the fin lifts so much less per degree than a wing would.",
+    typical: "1.2–1.8.",
+  },
+  {
+    field: "verticalTailTaper",
+    label: "Fin taper",
+    cell: "K8",
+    body: "Fin tip chord over root chord. It sets the sweep the leading edge carries in the drawing.",
+    typical: "0.7–0.9.",
+  },
+  {
+    field: "finSectionLiftSlopePerDeg",
+    label: "Clα fin section",
+    unit: "1/°",
+    cell: "N3",
+    body: "Section lift slope of the fin, a symmetric section.",
+    typical: "0.10–0.11 per degree.",
+  },
+];
 
 const SURFACE_FIELDS: EntrySpec[] = [
   {
@@ -174,51 +230,336 @@ interface CarriedSpec extends HintSpec {
   digits?: number;
 }
 
+/**
+ * The fin in side view, to scale. The trailing edge is vertical and the
+ * leading edge carries the sweep the taper ratio implies, which is how
+ * Sadraey's Fig. 12.25 draws it. The rudder is the constant-chord strip on the
+ * trailing edge, from the root up to its span.
+ */
+function finPlanform(inputs: RudderInputs, result: RudderResult) {
+  const { rootChordM, spanM } = result.fin;
+  const tipChordM = rootChordM * inputs.verticalTailTaper;
+  const sweep = rootChordM - tipChordM;
+
+  return {
+    rootChordM,
+    spanM,
+    rudderChordM: result.rudderChordM,
+    rudderSpanM: result.rudderSpanM,
+    fin: {
+      x: [0, sweep, rootChordM, rootChordM, 0],
+      y: [0, spanM, spanM, 0, 0],
+    },
+    rudder: {
+      x: [
+        rootChordM - result.rudderChordM,
+        rootChordM - result.rudderChordM,
+        rootChordM,
+        rootChordM,
+      ],
+      y: [0, result.rudderSpanM, result.rudderSpanM, 0],
+    },
+  };
+}
+
+/** The dimensions drawn on the fin, in the same metres as the fin itself. */
+function finDimensions(
+  view: ReturnType<typeof finPlanform>,
+  active: EntryField | null,
+) {
+  const { rootChordM, spanM, rudderChordM, rudderSpanM } = view;
+  if (!Number.isFinite(rootChordM) || !Number.isFinite(spanM)) {
+    return { shapes: [], annotations: [] };
+  }
+
+  const step = rootChordM * 0.28;
+  const tick = step * 0.28;
+  const spanColumn = rootChordM + step;
+  const chordRow = -step;
+
+  const shapes = [
+    ...witnessLine({
+      from: rootChordM,
+      to: spanColumn,
+      at: rudderSpanM,
+      active: active === "spanFraction",
+    }),
+    ...dimensionBar({
+      from: 0,
+      to: rudderSpanM,
+      at: spanColumn,
+      tick,
+      vertical: true,
+      active: active === "spanFraction",
+    }),
+    ...dimensionBar({
+      from: rootChordM - rudderChordM,
+      to: rootChordM,
+      at: chordRow,
+      tick,
+      active: active === "chordFraction",
+    }),
+  ];
+
+  const annotations = [
+    ...dimensionLabel({
+      field: "spanFraction",
+      symbol: "bᵣ",
+      x: spanColumn,
+      xShift: 16,
+      y: rudderSpanM / 2,
+      active: active === "spanFraction",
+    }),
+    ...dimensionLabel({
+      field: "chordFraction",
+      symbol: "Cᵣ",
+      x: rootChordM - rudderChordM / 2,
+      y: chordRow,
+      yShift: -14,
+      active: active === "chordFraction",
+    }),
+  ];
+
+  return { shapes, annotations };
+}
+
+/** The two levers the sizing cases turn on, measured from the centre of gravity. */
+function armDimensions(inputs: RudderInputs, active: EntryField | null) {
+  const { finArmM, crosswindArmM } = inputs;
+  const longest = Math.max(finArmM, crosswindArmM);
+  if (!Number.isFinite(longest) || longest <= 0) {
+    return { shapes: [], annotations: [] };
+  }
+
+  const shapes = [
+    ...dimensionBar({
+      from: 0,
+      to: finArmM,
+      at: 0.62,
+      tick: 0.1,
+      active: active === "finArmM",
+    }),
+    ...dimensionBar({
+      from: 0,
+      to: crosswindArmM,
+      at: 0.24,
+      tick: 0.1,
+      active: active === "crosswindArmM",
+    }),
+    ...witnessLine({ from: 0.08, to: 0.78, at: 0, vertical: true }),
+  ];
+
+  const annotations = [
+    ...dimensionLabel({ symbol: "CG", x: 0, y: 0.9 }),
+    ...dimensionLabel({
+      field: "finArmM",
+      symbol: "lv",
+      x: finArmM / 2,
+      y: 0.62,
+      yShift: 13,
+      active: active === "finArmM",
+    }),
+    ...dimensionLabel({
+      field: "crosswindArmM",
+      symbol: "ls",
+      x: crosswindArmM / 2,
+      y: 0.24,
+      yShift: 13,
+      active: active === "crosswindArmM",
+    }),
+  ];
+
+  return { shapes, annotations };
+}
+
 export default function Rudder() {
   const sheet = useRudderSheet();
   const { inputs } = sheet;
+  const [activeField, setActiveField] = useState<EntryField | null>(null);
 
   const result = useMemo(() => rudder(inputs), [inputs]);
   const warnings = useMemo(
     () => rudderWarnings(inputs, result),
-    [inputs, result]
+    [inputs, result],
+  );
+  const guideEntries = useMemo(
+    () => [
+      {
+        field: "spanFraction",
+        symbol: "bᵣ",
+        name: "rudder span",
+        value: `${nf(inputs.spanFraction, 2)} bv · ${q(result.rudderSpanM, "m", 2)}`,
+      },
+      {
+        field: "chordFraction",
+        symbol: "Cᵣ",
+        name: "rudder chord",
+        value: `${nf(inputs.chordFraction, 2)} Cv · ${q(result.rudderChordM, "m", 2)}`,
+      },
+      {
+        field: "maxDeflectionDeg",
+        symbol: "δᵣmax",
+        name: "max deflection",
+        value: q(inputs.maxDeflectionDeg, "°", 0),
+      },
+      {
+        field: "tauEffectiveness",
+        symbol: "τ",
+        name: "effectiveness",
+        value: nf(inputs.tauEffectiveness, 2),
+      },
+      {
+        field: "finArmM",
+        symbol: "lv",
+        name: "fin arm",
+        value: q(inputs.finArmM, "m", 2),
+      },
+      {
+        field: "crosswindArmM",
+        symbol: "ls",
+        name: "crosswind arm",
+        value: q(inputs.crosswindArmM, "m", 2),
+      },
+    ],
+    [inputs, result],
   );
 
+  const finView = useMemo(() => finPlanform(inputs, result), [inputs, result]);
+  const finDims = useMemo(
+    () => finDimensions(finView, activeField),
+    [finView, activeField],
+  );
+  const armDims = useMemo(
+    () => armDimensions(inputs, activeField),
+    [inputs, activeField],
+  );
+
+  const focusField = (field: string) => {
+    const entryField = field as EntryField;
+    setActiveField(entryField);
+    const section = SURFACE_FIELDS.some((spec) => spec.field === entryField)
+      ? "surface"
+      : "cases";
+    sheet.toggleSection(section, true);
+    requestAnimationFrame(() => {
+      document.getElementById(`ru-${entryField}`)?.focus();
+    });
+  };
+
+  const onAnnotation = (event: unknown) => {
+    const field = annotationField(event);
+    if (field) focusField(field);
+  };
+
+  const geometryGuide = (
+    <GeometryFrame
+      activeField={activeField}
+      entries={guideEntries}
+      onSelect={focusField}
+      scaleNote="to scale · metres on both axes"
+      title="FIN AND RUDDER"
+    >
+      <Plot
+        config={{ displayModeBar: false, responsive: true }}
+        data={[
+          {
+            x: finView.fin.x,
+            y: finView.fin.y,
+            mode: "lines",
+            fill: "toself",
+            fillcolor: tokens.colors.rule.grid,
+            line: { color: tokens.colors.ink.muted, width: 1 },
+            name: "FIN",
+          },
+          {
+            x: finView.rudder.x,
+            y: finView.rudder.y,
+            mode: "lines",
+            fill: "toself",
+            fillcolor: tokens.colors.accent.DEFAULT,
+            opacity: 0.35,
+            line: { color: tokens.colors.accent.DEFAULT, width: 1 },
+            name: "RUDDER",
+          },
+        ]}
+        layout={geometryLayout({
+          annotations: finDims.annotations,
+          height: 420,
+          shapes: finDims.shapes,
+          x: "CHORD  [M]",
+          y: "FIN HEIGHT  [M]",
+        })}
+        onClickAnnotation={onAnnotation}
+        style={{ width: "100%" }}
+        useResizeHandler
+      />
+      <Plot
+        config={{ displayModeBar: false, responsive: true }}
+        data={[
+          {
+            x: [0],
+            y: [0.43],
+            mode: "markers",
+            marker: { color: tokens.colors.ink.DEFAULT, size: 8 },
+            name: "CG",
+          },
+        ]}
+        layout={geometryLayout({
+          anchored: false,
+          annotations: armDims.annotations,
+          height: 180,
+          shapes: armDims.shapes,
+          showY: false,
+          x: "FROM THE CENTRE OF GRAVITY  [M]",
+          y: "",
+          yRange: [0, 1.1],
+        })}
+        onClickAnnotation={onAnnotation}
+        style={{ width: "100%" }}
+        useResizeHandler
+      />
+    </GeometryFrame>
+  );
+  const referenceActiveField: RudderReferenceGuideField | null =
+    activeField === "spanFraction" ||
+    activeField === "chordFraction" ||
+    activeField === "maxDeflectionDeg"
+      ? activeField
+      : null;
+  const surfaceGuide = (
+    <div className="space-y-5">
+      {geometryGuide}
+      <RudderReferenceGuide
+        activeField={referenceActiveField}
+        onFieldFocus={focusField}
+      />
+    </div>
+  );
+
+  const effectivenessGuide = (
+    <ControlEffectivenessGuide
+      chordRatio={inputs.chordFraction}
+      onApplyChordRatio={(ratio) => sheet.setEntry("chordFraction", ratio)}
+      onApplyTau={(value) => sheet.setEntry("tauEffectiveness", value)}
+      tau={inputs.tauEffectiveness}
+      tauLabel="τ"
+    />
+  );
+
+  const withGeometryGuide = (spec: EntrySpec): EntrySpec => {
+    if (spec.field === "tauEffectiveness") {
+      return { ...spec, guide: effectivenessGuide };
+    }
+    if (SURFACE_FIELDS.some((surface) => surface.field === spec.field)) {
+      return { ...spec, guide: surfaceGuide };
+    }
+    if (spec.field === "finArmM" || spec.field === "crosswindArmM") {
+      return { ...spec, guide: geometryGuide };
+    }
+    return spec;
+  };
+
   const carried: CarriedSpec[] = [
-    {
-      label: "Fin area",
-      unit: "m²",
-      value: inputs.verticalTailAreaM2,
-      digits: 4,
-      cell: "B2",
-      origin: "AIRFRAME",
-      body: "Vertical tail area. The rudder is a fraction of it, and both sizing cases scale with it.",
-    },
-    {
-      label: "Fin aspect ratio",
-      value: inputs.verticalTailAspectRatio,
-      digits: 2,
-      cell: "K3",
-      origin: "AIRFRAME",
-      body: "Low, as fins are, which is why the fin lifts so much less per degree than a wing would.",
-    },
-    {
-      label: "Fin taper",
-      value: inputs.verticalTailTaper,
-      digits: 2,
-      cell: "K8",
-      origin: "AIRFRAME",
-      body: "Fin tip chord over root chord.",
-    },
-    {
-      label: "Clα fin section",
-      unit: "1/°",
-      value: inputs.finSectionLiftSlopePerDeg,
-      digits: 4,
-      cell: "N3",
-      origin: "AIRFRAME",
-      body: "Section lift slope of the fin, a symmetric section.",
-    },
     {
       label: "Fin efficiency",
       value: inputs.finEfficiency,
@@ -292,7 +633,39 @@ export default function Rudder() {
     },
   ];
 
-  const entryRow = (spec: EntrySpec) => (
+  const entryRow = (spec: EntrySpec) => {
+    const guideSpec = withGeometryGuide(spec);
+    return (
+      <label
+        className="flex items-baseline gap-2 py-[5px] pl-[18px] pr-[18px]"
+        htmlFor={`ru-${spec.field}`}
+        key={spec.field}
+        title={spec.label}
+      >
+        <span className="min-w-0 flex-1 truncate text-note text-ink-body">
+          {spec.label}
+          {spec.unit ? (
+            <span className="ml-[5px] font-mono text-label text-ink-faint">
+              [{spec.unit}]
+            </span>
+          ) : null}
+        </span>
+        <Hint inputId={`ru-${spec.field}`} spec={guideSpec} />
+        <input
+          className="w-[104px] shrink-0 border-b border-dashed border-rule bg-transparent pb-[2px] text-right font-mono text-value text-ink outline-none focus:border-solid focus:border-accent"
+          id={`ru-${spec.field}`}
+          inputMode="decimal"
+          onChange={(event) =>
+            sheet.setEntry(spec.field, Number(event.target.value))
+          }
+          onFocus={() => setActiveField(spec.field)}
+          value={inputs[spec.field]}
+        />
+      </label>
+    );
+  };
+
+  const finRow = (spec: FinSpec) => (
     <label
       className="flex items-baseline gap-2 py-[5px] pl-[18px] pr-[18px]"
       htmlFor={`ru-${spec.field}`}
@@ -312,9 +685,7 @@ export default function Rudder() {
         className="w-[104px] shrink-0 border-b border-dashed border-rule bg-transparent pb-[2px] text-right font-mono text-value text-ink outline-none focus:border-solid focus:border-accent"
         id={`ru-${spec.field}`}
         inputMode="decimal"
-        onChange={(event) =>
-          sheet.setEntry(spec.field, Number(event.target.value))
-        }
+        onChange={(event) => sheet.setFin(spec.field, Number(event.target.value))}
         value={inputs[spec.field]}
       />
     </label>
@@ -495,7 +866,7 @@ export default function Rudder() {
   ];
 
   const sweepAngles = result.sideslipSweep.map(
-    (point) => point.sideslipRad * DEG_PER_RAD
+    (point) => point.sideslipRad * DEG_PER_RAD,
   );
 
   return (
@@ -552,6 +923,14 @@ export default function Rudder() {
             {CASE_FIELDS.map(entryRow)}
           </InputSection>
           <InputSection
+            count={FIN_FIELDS.length}
+            open={sheet.openSections.fin}
+            title="ENTRY · THE FIN"
+            onToggle={(open) => sheet.toggleSection("fin", open)}
+          >
+            {FIN_FIELDS.map(finRow)}
+          </InputSection>
+          <InputSection
             count={carried.length}
             open={sheet.openSections.carried}
             title="CARRIED · UPSTREAM"
@@ -576,6 +955,8 @@ export default function Rudder() {
             <h2 className="text-sheet">Crosswind, and an engine out</h2>
           </div>
 
+          <div className="mb-4">{geometryGuide}</div>
+
           <div className="grid gap-4 xl:grid-cols-2">
             <Figure
               caption="Side force can be balanced at any sideslip, but only one of them closes the yawing moment as well. That is where the curve crosses zero, and the sheet finds it by typing angles into a column until the number looks small enough."
@@ -588,7 +969,10 @@ export default function Rudder() {
                     x: sweepAngles,
                     y: result.sideslipSweep.map((point) => point.residualNm),
                     mode: "lines+markers",
-                    line: { color: tokens.colors.ink.DEFAULT, width: 2 },
+                    line: {
+                      color: tokens.colors.ink.DEFAULT,
+                      width: 2,
+                    },
                     marker: { size: 5 },
                     name: "RESIDUAL",
                   },
@@ -599,10 +983,10 @@ export default function Rudder() {
                     ],
                     y: [
                       Math.min(
-                        ...result.sideslipSweep.map((p) => p.residualNm)
+                        ...result.sideslipSweep.map((p) => p.residualNm),
                       ),
                       Math.max(
-                        ...result.sideslipSweep.map((p) => p.residualNm)
+                        ...result.sideslipSweep.map((p) => p.residualNm),
                       ),
                     ],
                     mode: "lines",
@@ -630,10 +1014,13 @@ export default function Rudder() {
                   {
                     x: sweepAngles,
                     y: result.sideslipSweep.map(
-                      (point) => point.rudderRad * DEG_PER_RAD
+                      (point) => point.rudderRad * DEG_PER_RAD,
                     ),
                     mode: "lines+markers",
-                    line: { color: tokens.colors.ink.DEFAULT, width: 2 },
+                    line: {
+                      color: tokens.colors.ink.DEFAULT,
+                      width: 2,
+                    },
                     marker: { size: 5 },
                     name: "RUDDER",
                   },
@@ -656,8 +1043,8 @@ export default function Rudder() {
                     y: [
                       Math.min(
                         ...result.sideslipSweep.map(
-                          (p) => p.rudderRad * DEG_PER_RAD
-                        )
+                          (p) => p.rudderRad * DEG_PER_RAD,
+                        ),
                       ),
                       inputs.maxDeflectionDeg,
                     ],

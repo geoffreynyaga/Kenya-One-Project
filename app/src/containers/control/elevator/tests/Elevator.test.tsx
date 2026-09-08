@@ -11,11 +11,11 @@ vi.mock("react-plotly.js/factory", () => ({
 beforeEach(() => window.localStorage.clear());
 
 describe("Elevator", () => {
-  it("shows both trim curves without opening anything", () => {
+  it("shows the geometry guide and both trim curves without opening anything", () => {
     const { container } = render(<Elevator />);
 
     const figures = container.querySelectorAll("figure");
-    expect(figures).toHaveLength(2);
+    expect(figures).toHaveLength(3);
     figures.forEach((figure) => expect(figure.closest("details")).toBeNull());
   });
 
@@ -42,6 +42,25 @@ describe("Elevator", () => {
     render(<Elevator />);
     expect(screen.getByText("DOES THE TAIL STILL FLY?")).toBeInTheDocument();
     expect(screen.getByText(/well short of its own stall/)).toBeInTheDocument();
+  });
+
+  it("resizes the tailplane when the tail area is edited", () => {
+    const { container } = render(<Elevator />);
+
+    const elevatorSpan = () =>
+      parseFloat(
+        screen.getByText("Elevator span").closest("div")!.lastElementChild!
+          .textContent!,
+      );
+    const before = elevatorSpan();
+
+    fireEvent.click(screen.getByText("ENTRY · THE TAILPLANE"));
+    fireEvent.change(container.querySelector("#el-horizontalTailAreaM2")!, {
+      target: { value: "9" },
+    });
+
+    // Tail span goes as the root of the area, and the elevator spans all of it.
+    expect(elevatorSpan()).toBeGreaterThan(before);
   });
 
   it("keeps every cell reference inside a tooltip", () => {

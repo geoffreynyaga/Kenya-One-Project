@@ -2,7 +2,7 @@
  * Control 02 — Elevator. Sized to rotate the aeroplane at take-off, then
  * checked against the elevator needed to trim it at every speed and loading.
  */
-import { ReactNode, useMemo } from "react";
+import { ReactNode, useMemo, useState } from "react";
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
@@ -10,9 +10,18 @@ import { Hint, HintSpec } from "../../../components/sheet/Hint";
 import { InputSection } from "../../../components/sheet/InputSection";
 import { ValueRow } from "../../../components/sheet/ValueRow";
 import tokens from "../../../design-tokens";
+import { ControlEffectivenessGuide } from "../ControlEffectivenessGuide";
+import {
+  GeometryFrame,
+  annotationField,
+  dimensionBar,
+  dimensionLabel,
+  geometryLayout,
+  witnessLine,
+} from "../GeometryPlot";
 import { elevator, elevatorWarnings } from "./elevatorCompute";
-import { EntryField, useElevatorSheet } from "./useElevatorSheet";
-import { TrimPoint } from "./utils";
+import { EntryField, TailField, useElevatorSheet } from "./useElevatorSheet";
+import { ElevatorInputs, ElevatorResult, TrimPoint } from "./utils";
 
 const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
@@ -73,6 +82,41 @@ interface EntrySpec extends HintSpec {
   field: EntryField;
   unit?: string;
 }
+
+interface TailSpec extends HintSpec {
+  field: TailField;
+  unit?: string;
+}
+
+/*
+ * The tailplane the elevator hinges off. These are shared quantities the
+ * workbook types in by hand — they come off a drawing or an iteration, not out
+ * of a formula — and no upstream stage owns them yet, so the elevator sheet
+ * does. The aileron sheet reads them for its roll damping.
+ */
+const TAIL_FIELDS: TailSpec[] = [
+  {
+    field: "horizontalTailAreaM2",
+    label: "Tail area",
+    unit: "m²",
+    cell: "Aileron!B8",
+    body: "Horizontal tail area. The elevator is a fraction of it, and with the aspect ratio it sets the span and chords the drawing is built from.",
+  },
+  {
+    field: "horizontalTailAspectRatio",
+    label: "Tail aspect ratio",
+    cell: "Aileron!B17",
+    body: "Sets the tail's own lift-curve slope and, with the area, its span.",
+    typical: "3–5.",
+  },
+  {
+    field: "horizontalTailTaper",
+    label: "Tail taper",
+    cell: "Aileron!B20",
+    body: "Tail tip chord over root chord. It sets the sweep the trailing edge carries in the drawing. The elevator's own sizing does not use it; the aileron's roll damping and the weight estimate do.",
+    typical: "0.7–1.0.",
+  },
+];
 
 const SURFACE_FIELDS: EntrySpec[] = [
   {
@@ -212,15 +256,453 @@ interface CarriedSpec extends HintSpec {
   digits?: number;
 }
 
+/**
+ * The tailplane in plan, to scale. The leading edge is straight and at the top,
+ * as the wing is drawn on the aileron sheet, and the taper ratio puts the sweep
+ * on the trailing edge. The tail chord this sheet reports is the mean geometric
+ * chord, so the root chord comes back from it the way a mean geometric chord
+ * does, not through the mean aerodynamic chord relation. The elevator is the
+ * constant-chord strip on the trailing edge.
+ */
+function tailPlanform(inputs: ElevatorInputs, result: ElevatorResult) {
+  const spanM = result.tailSpanM;
+  const taper = inputs.horizontalTailTaper;
+  const semi = spanM / 2;
+  const rootChordM = (2 * result.tailChordM) / (1 + taper);
+  const tipChordM = rootChordM * taper;
+  const chordAt = (y: number) =>
+    rootChordM + ((tipChordM - rootChordM) * Math.abs(y)) / semi;
+
+  const elevatorSemi = result.elevatorSpanM / 2;
+  const hingeAt = (y: number) => chordAt(y) - result.elevatorChordM;
+  const surface = [-elevatorSemi, 0, elevatorSemi];
+
+  return {
+    semi,
+    rootChordM,
+    elevatorSemi,
+    elevatorChordM: result.elevatorChordM,
+    tipChordM,
+    hingeAtRoot: hingeAt(0),
+    hingeAtTip: hingeAt(semi),
+    tail: {
+      x: [-semi, semi, semi, 0, -semi, -semi],
+      y: [0, 0, tipChordM, rootChordM, tipChordM, 0],
+    },
+    elevator: {
+      x: [...surface, ...[...surface].reverse()],
+      y: [
+        ...surface.map(hingeAt),
+        ...[...surface].reverse().map(chordAt),
+      ],
+    },
+  };
+}
+
+/** The dimensions drawn on the tailplane, in the same metres as the tail. */
+function tailDimensions(
+  view: ReturnType<typeof tailPlanform>,
+  active: EntryField | null,
+) {
+  const { semi, rootChordM, tipChordM, hingeAtTip, elevatorSemi } = view;
+  if (!Number.isFinite(semi) || !Number.isFinite(rootChordM)) {
+    return { shapes: [], annotations: [] };
+  }
+
+  const step = rootChordM * 0.35;
+  const tick = step * 0.26;
+  const spanRow = rootChordM + step;
+  const chordColumn = semi + step;
+
+  const shapes = [
+    ...witnessLine({
+      from: rootChordM,
+      to: spanRow,
+      at: elevatorSemi,
+      vertical: true,
+      active: active === "spanFraction",
+    }),
+    ...witnessLine({
+      from: rootChordM,
+      to: spanRow,
+      at: -elevatorSemi,
+      vertical: true,
+      active: active === "spanFraction",
+    }),
+    ...dimensionBar({
+      from: -elevatorSemi,
+      to: elevatorSemi,
+      at: spanRow,
+      tick,
+      active: active === "spanFraction",
+    }),
+    ...dimensionBar({
+      from: hingeAtTip,
+      to: tipChordM,
+      at: chordColumn,
+      tick,
+      vertical: true,
+      active: active === "chordFraction",
+    }),
+  ];
+
+  const annotations = [
+    ...dimensionLabel({
+      field: "spanFraction",
+      symbol: "bₑ",
+      x: 0,
+      y: spanRow,
+      yShift: 13,
+      active: active === "spanFraction",
+    }),
+    ...dimensionLabel({
+      field: "chordFraction",
+      symbol: "Cₑ",
+      x: chordColumn,
+      xShift: 16,
+      y: (hingeAtTip + tipChordM) / 2,
+      active: active === "chordFraction",
+    }),
+  ];
+
+  return { shapes, annotations };
+}
+
+/**
+ * The stations the rotation is worked out about, on true metre axes. Only the
+ * quantities measured from the nose are drawn; the arms this sheet keeps from
+ * the leading edge are a different datum and stay in the key.
+ */
+function stationDimensions(inputs: ElevatorInputs, active: EntryField | null) {
+  const { cgXM, mainGearXM, wingAcXM, tailAcXM } = inputs;
+  if (![cgXM, mainGearXM, wingAcXM, tailAcXM].every(Number.isFinite)) {
+    return { shapes: [], annotations: [], points: { x: [], y: [] } };
+  }
+
+  const spread = Math.max(tailAcXM - cgXM, 1);
+  const armRow = -spread * 0.12;
+  const tick = spread * 0.02;
+
+  const shapes = [
+    ...witnessLine({ from: armRow, to: inputs.cgZM, at: cgXM, vertical: true }),
+    ...witnessLine({ from: armRow, to: 0, at: tailAcXM, vertical: true }),
+    ...dimensionBar({
+      from: cgXM,
+      to: tailAcXM,
+      at: armRow,
+      tick,
+      active: active === "tailAcXM",
+    }),
+    ...dimensionBar({
+      from: mainGearXM,
+      to: cgXM,
+      at: inputs.mainGearZM - spread * 0.06,
+      tick,
+      active: active === "mainGearXM",
+    }),
+  ];
+
+  const annotations = [
+    ...dimensionLabel({
+      field: "cgXM",
+      symbol: "CG",
+      x: cgXM,
+      y: inputs.cgZM,
+      yShift: 15,
+      active: active === "cgXM",
+    }),
+    ...dimensionLabel({
+      field: "mainGearXM",
+      symbol: "gear",
+      x: mainGearXM,
+      y: inputs.mainGearZM,
+      yShift: -15,
+      active: active === "mainGearXM",
+    }),
+    ...dimensionLabel({
+      field: "wingAcXM",
+      symbol: "acw",
+      x: wingAcXM,
+      y: 0,
+      yShift: 15,
+      active: active === "wingAcXM",
+    }),
+    ...dimensionLabel({
+      field: "tailAcXM",
+      symbol: "ach",
+      x: tailAcXM,
+      y: 0,
+      yShift: 15,
+      active: active === "tailAcXM",
+    }),
+    ...dimensionLabel({
+      field: "thrustZM",
+      symbol: "T",
+      x: cgXM - spread * 0.1,
+      y: inputs.thrustZM,
+      active: active === "thrustZM" || active === "thrustN",
+    }),
+    ...dimensionLabel({
+      field: "dragZM",
+      symbol: "D",
+      x: wingAcXM,
+      y: inputs.dragZM,
+      yShift: 14,
+      active: active === "dragZM",
+    }),
+    ...dimensionLabel({
+      field: "tailAcXM",
+      symbol: "tail arm",
+      x: (cgXM + tailAcXM) / 2,
+      y: armRow,
+      yShift: -14,
+      active: active === "tailAcXM",
+    }),
+  ];
+
+  return {
+    shapes,
+    annotations,
+    points: {
+      x: [cgXM, mainGearXM, wingAcXM, tailAcXM],
+      y: [inputs.cgZM, inputs.mainGearZM, 0, 0],
+    },
+  };
+}
+
 export default function Elevator() {
   const sheet = useElevatorSheet();
   const { inputs } = sheet;
+  const [activeField, setActiveField] = useState<EntryField | null>(null);
 
   const result = useMemo(() => elevator(inputs), [inputs]);
   const warnings = useMemo(
     () => elevatorWarnings(inputs, result),
-    [inputs, result]
+    [inputs, result],
   );
+  const guideEntries = useMemo(
+    () => [
+      {
+        field: "chordFraction",
+        symbol: "Cₑ",
+        name: "elevator chord",
+        value: `${nf(inputs.chordFraction, 2)} Ch · ${q(result.elevatorChordM, "m", 2)}`,
+      },
+      {
+        field: "spanFraction",
+        symbol: "bₑ",
+        name: "elevator span",
+        value: `${nf(inputs.spanFraction, 2)} bh · ${q(result.elevatorSpanM, "m", 2)}`,
+      },
+      {
+        field: "maxDeflectionDeg",
+        symbol: "δₑmax",
+        name: "max deflection",
+        value: q(Math.abs(inputs.maxDeflectionDeg), "°", 0),
+      },
+      {
+        field: "cgXM",
+        symbol: "CG",
+        name: "cg station",
+        value: q(inputs.cgXM, "m", 2),
+      },
+      {
+        field: "mainGearXM",
+        symbol: "gear",
+        name: "main gear station",
+        value: q(inputs.mainGearXM, "m", 2),
+      },
+      {
+        field: "wingAcXM",
+        symbol: "acw",
+        name: "wing ac station",
+        value: q(inputs.wingAcXM, "m", 2),
+      },
+      {
+        field: "tailAcXM",
+        symbol: "ach",
+        name: `tail ac station · arm ${q(inputs.tailAcXM - inputs.cgXM, "m", 2)}`,
+        value: q(inputs.tailAcXM, "m", 2),
+      },
+      {
+        field: "cgZM",
+        symbol: "zCG",
+        name: "cg height",
+        value: q(inputs.cgZM, "m", 2),
+      },
+      {
+        field: "mainGearZM",
+        symbol: "z gear",
+        name: "gear height",
+        value: q(inputs.mainGearZM, "m", 2),
+      },
+      {
+        field: "thrustZM",
+        symbol: "zT",
+        name: "thrust line height",
+        value: q(inputs.thrustZM, "m", 2),
+      },
+      {
+        field: "dragZM",
+        symbol: "zD",
+        name: "drag line height",
+        value: q(inputs.dragZM, "m", 2),
+      },
+      {
+        field: "thrustN",
+        symbol: "T",
+        name: "take-off thrust",
+        value: q(inputs.thrustN, "N", 0),
+      },
+      {
+        field: "cgArmM",
+        symbol: "xCG",
+        name: "cg from the leading edge",
+        value: q(inputs.cgArmM, "m", 2),
+      },
+      {
+        field: "acArmM",
+        symbol: "xAC",
+        name: "ac from the leading edge",
+        value: q(inputs.acArmM, "m", 2),
+      },
+      {
+        field: "forwardTailArmM",
+        symbol: "lh fwd",
+        name: "forward tail arm",
+        value: q(inputs.forwardTailArmM, "m", 2),
+      },
+      {
+        field: "forwardCgToAcM",
+        symbol: "fwd CG→AC",
+        name: "forward cg to ac",
+        value: q(inputs.forwardCgToAcM, "m", 2),
+      },
+    ],
+    [inputs, result],
+  );
+
+  const tailView = useMemo(
+    () => tailPlanform(inputs, result),
+    [inputs, result],
+  );
+  const tailDims = useMemo(
+    () => tailDimensions(tailView, activeField),
+    [tailView, activeField],
+  );
+  const stationDims = useMemo(
+    () => stationDimensions(inputs, activeField),
+    [inputs, activeField],
+  );
+
+  const focusField = (field: string) => {
+    const entryField = field as EntryField;
+    setActiveField(entryField);
+    let section: "geometry" | "surface" | "rotation" = "geometry";
+    if (SURFACE_FIELDS.some((spec) => spec.field === entryField)) {
+      section = "surface";
+    } else if (ROTATION_FIELDS.some((spec) => spec.field === entryField)) {
+      section = "rotation";
+    }
+    sheet.toggleSection(section, true);
+    requestAnimationFrame(() => {
+      document.getElementById(`el-${entryField}`)?.focus();
+    });
+  };
+
+  const onAnnotation = (event: unknown) => {
+    const field = annotationField(event);
+    if (field) focusField(field);
+  };
+
+  const geometryGuide = (
+    <GeometryFrame
+      activeField={activeField}
+      entries={guideEntries}
+      onSelect={focusField}
+      scaleNote="to scale · metres on both axes"
+      title="TAILPLANE, ELEVATOR AND THE STATIONS"
+    >
+      <Plot
+        config={{ displayModeBar: false, responsive: true }}
+        data={[
+          {
+            x: tailView.tail.x,
+            y: tailView.tail.y,
+            mode: "lines",
+            fill: "toself",
+            fillcolor: tokens.colors.rule.grid,
+            line: { color: tokens.colors.ink.muted, width: 1 },
+            name: "TAILPLANE",
+          },
+          {
+            x: tailView.elevator.x,
+            y: tailView.elevator.y,
+            mode: "lines",
+            fill: "toself",
+            fillcolor: tokens.colors.accent.DEFAULT,
+            opacity: 0.35,
+            line: { color: tokens.colors.accent.DEFAULT, width: 1 },
+            name: "ELEVATOR",
+          },
+        ]}
+        layout={geometryLayout({
+          annotations: tailDims.annotations,
+          height: 340,
+          reversed: true,
+          shapes: tailDims.shapes,
+          x: "SPANWISE STATION  [M]",
+          y: "CHORD  [M]",
+        })}
+        onClickAnnotation={onAnnotation}
+        style={{ width: "100%" }}
+        useResizeHandler
+      />
+      <Plot
+        config={{ displayModeBar: false, responsive: true }}
+        data={[
+          {
+            x: stationDims.points.x,
+            y: stationDims.points.y,
+            mode: "markers",
+            marker: { color: tokens.colors.ink.DEFAULT, size: 8 },
+            name: "STATIONS",
+          },
+        ]}
+        layout={geometryLayout({
+          annotations: stationDims.annotations,
+          height: 300,
+          shapes: stationDims.shapes,
+          x: "STATION FROM THE NOSE  [M]",
+          y: "HEIGHT  [M]",
+        })}
+        onClickAnnotation={onAnnotation}
+        style={{ width: "100%" }}
+        useResizeHandler
+      />
+    </GeometryFrame>
+  );
+
+  /*
+   * The elevator does not type τ in: it back-solves the effectiveness the
+   * rotation demands. So the chord fraction is where this figure belongs, and
+   * the reading that matters is the chord ratio that would deliver that τ —
+   * which is the disagreement the sheet already warns about.
+   */
+  const effectivenessGuide = (
+    <ControlEffectivenessGuide
+      chordRatio={inputs.chordFraction}
+      onApplyChordRatio={(ratio) => sheet.setEntry("chordFraction", ratio)}
+      requiredTau={result.requiredEffectiveness}
+      tau={result.requiredEffectiveness}
+      tauLabel="the effectiveness the rotation demands"
+    />
+  );
+
+  const withGeometryGuide = (spec: EntrySpec): EntrySpec =>
+    spec.field === "chordFraction"
+      ? { ...spec, guide: effectivenessGuide }
+      : { ...spec, guide: geometryGuide };
 
   const carried: CarriedSpec[] = [
     {
@@ -326,23 +808,6 @@ export default function Elevator() {
       body: "What the tyres actually resist with, for comparison with the line above.",
     },
     {
-      label: "Tail area",
-      unit: "m²",
-      value: inputs.horizontalTailAreaM2,
-      digits: 3,
-      cell: "Aileron!B8",
-      origin: "AIRFRAME",
-      body: "Horizontal tail area. The elevator is a fraction of it.",
-    },
-    {
-      label: "Tail aspect ratio",
-      value: inputs.horizontalTailAspectRatio,
-      digits: 2,
-      cell: "Aileron!B17",
-      origin: "AIRFRAME",
-      body: "Sets the tail's own lift-curve slope and its span.",
-    },
-    {
       label: "Clα tail section",
       unit: "1/°",
       value: inputs.tailSectionLiftSlopePerDeg,
@@ -397,7 +862,39 @@ export default function Elevator() {
     },
   ];
 
-  const entryRow = (spec: EntrySpec) => (
+  const entryRow = (spec: EntrySpec) => {
+    const guideSpec = withGeometryGuide(spec);
+    return (
+      <label
+        className="flex items-baseline gap-2 py-[5px] pl-[18px] pr-[18px]"
+        htmlFor={`el-${spec.field}`}
+        key={spec.field}
+        title={spec.label}
+      >
+        <span className="min-w-0 flex-1 truncate text-note text-ink-body">
+          {spec.label}
+          {spec.unit ? (
+            <span className="ml-[5px] font-mono text-label text-ink-faint">
+              [{spec.unit}]
+            </span>
+          ) : null}
+        </span>
+        <Hint inputId={`el-${spec.field}`} spec={guideSpec} />
+        <input
+          className="w-[104px] shrink-0 border-b border-dashed border-rule bg-transparent pb-[2px] text-right font-mono text-value text-ink outline-none focus:border-solid focus:border-accent"
+          id={`el-${spec.field}`}
+          inputMode="decimal"
+          onChange={(event) =>
+            sheet.setEntry(spec.field, Number(event.target.value))
+          }
+          onFocus={() => setActiveField(spec.field)}
+          value={inputs[spec.field]}
+        />
+      </label>
+    );
+  };
+
+  const tailRow = (spec: TailSpec) => (
     <label
       className="flex items-baseline gap-2 py-[5px] pl-[18px] pr-[18px]"
       htmlFor={`el-${spec.field}`}
@@ -418,7 +915,7 @@ export default function Elevator() {
         id={`el-${spec.field}`}
         inputMode="decimal"
         onChange={(event) =>
-          sheet.setEntry(spec.field, Number(event.target.value))
+          sheet.setTail(spec.field, Number(event.target.value))
         }
         value={inputs[spec.field]}
       />
@@ -448,7 +945,7 @@ export default function Elevator() {
   const worstTrim = [...result.trimSeaLevel, ...result.trimCruise].reduce(
     (most, point) =>
       Math.max(most, Math.abs(point.aftDeg), Math.abs(point.forwardDeg)),
-    0
+    0,
   );
 
   const summary: Array<[string, string]> = [
@@ -728,6 +1225,14 @@ export default function Elevator() {
             {SURFACE_FIELDS.map(entryRow)}
           </InputSection>
           <InputSection
+            count={TAIL_FIELDS.length}
+            open={sheet.openSections.tail}
+            title="ENTRY · THE TAILPLANE"
+            onToggle={(open) => sheet.toggleSection("tail", open)}
+          >
+            {TAIL_FIELDS.map(tailRow)}
+          </InputSection>
+          <InputSection
             count={ROTATION_FIELDS.length}
             open={sheet.openSections.rotation}
             title="ENTRY · ROTATION"
@@ -767,6 +1272,8 @@ export default function Elevator() {
             </div>
             <h2 className="text-sheet">Rotating the nose, and holding it</h2>
           </div>
+
+          <div className="mb-4">{geometryGuide}</div>
 
           <div className="grid gap-4 xl:grid-cols-2">
             <Figure

@@ -29,6 +29,7 @@ export const WORKBOOK_INPUTS: ElevatorInputs = {
   tailSectionLiftSlopePerDeg: 0.101,
   horizontalTailAspectRatio: 3.8,
   horizontalTailAreaM2: 6.343,
+  horizontalTailTaper: 0.8,
   tailIncidenceDeg: -0.35661,
   tailEfficiency: 0.98,
   tailStallAngleDeg: 14,

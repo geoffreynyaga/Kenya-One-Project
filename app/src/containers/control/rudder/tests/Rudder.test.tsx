@@ -11,11 +11,11 @@ vi.mock("react-plotly.js/factory", () => ({
 beforeEach(() => window.localStorage.clear());
 
 describe("Rudder", () => {
-  it("shows both figures without opening anything", () => {
+  it("shows the geometry guide and both figures without opening anything", () => {
     const { container } = render(<Rudder />);
 
     const figures = container.querySelectorAll("figure");
-    expect(figures).toHaveLength(2);
+    expect(figures).toHaveLength(3);
     figures.forEach((figure) => expect(figure.closest("details")).toBeNull());
   });
 
@@ -46,6 +46,25 @@ describe("Rudder", () => {
       target: { value: "20" },
     });
     expect(band().className).toContain("accent-dark");
+  });
+
+  it("resizes the fin when the fin area is edited", () => {
+    const { container } = render(<Rudder />);
+
+    const finSpan = () =>
+      parseFloat(
+        screen.getByText("Fin span").closest("div")!.lastElementChild!
+          .textContent!,
+      );
+    const before = finSpan();
+
+    fireEvent.click(screen.getByText("ENTRY · THE FIN"));
+    fireEvent.change(container.querySelector("#ru-verticalTailAreaM2")!, {
+      target: { value: "6" },
+    });
+
+    // Span goes as the root of the area, so a bigger fin is a taller one.
+    expect(finSpan()).toBeGreaterThan(before);
   });
 
   it("keeps every cell reference inside a tooltip", () => {

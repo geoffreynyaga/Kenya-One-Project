@@ -7,8 +7,8 @@
  * belong upstream.
  */
 
-import { useAtomValue } from "jotai";
-import { useMemo } from "react";
+import { useAtomValue, useSetAtom } from "jotai";
+import { useCallback, useMemo } from "react";
 
 import {
   engineLateralOffsetMAtom,
@@ -44,6 +44,17 @@ export type CaseField =
 
 export type EntryField = SurfaceField | CaseField;
 
+/**
+ * The fin itself. These are shared quantities, not rudder entries: the rudder
+ * sheet owns them because it is the only stage that draws the fin, and nothing
+ * upstream claims them yet.
+ */
+export type FinField =
+  | "verticalTailAreaM2"
+  | "verticalTailAspectRatio"
+  | "verticalTailTaper"
+  | "finSectionLiftSlopePerDeg";
+
 const ENTRY_DEFAULTS: Record<EntryField, number> = {
   spanFraction: 1,
   chordFraction: 0.3,
@@ -62,6 +73,7 @@ const ENTRY_DEFAULTS: Record<EntryField, number> = {
 
 const SECTION_DEFAULTS = {
   surface: true,
+  fin: false,
   cases: false,
   carried: false,
 };
@@ -74,6 +86,7 @@ const SECTIONS_KEY = "kenya-one:rudder:sections:v1";
 export interface RudderSheet {
   inputs: RudderInputs;
   setEntry: (field: EntryField, value: number) => void;
+  setFin: (field: FinField, value: number) => void;
   openSections: Record<SectionKey, boolean>;
   toggleSection: (key: SectionKey, open: boolean) => void;
   reset: () => void;
@@ -93,6 +106,28 @@ export function useRudderSheet(): RudderSheet {
   const fuselageLengthM = useAtomValue(fuselageLengthMAtom);
   const thrustN = useAtomValue(takeoffThrustNAtom);
   const engineOffsetM = useAtomValue(engineLateralOffsetMAtom);
+
+  const setVerticalTailAreaM2 = useSetAtom(verticalTailAreaM2Atom);
+  const setVerticalTailAspectRatio = useSetAtom(verticalTailAspectRatioAtom);
+  const setVerticalTailTaper = useSetAtom(verticalTailTaperAtom);
+  const setFinSectionLiftSlopePerDeg = useSetAtom(finSectionLiftSlopePerDegAtom);
+
+  const setFin = useCallback(
+    (field: FinField, value: number) => {
+      if (field === "verticalTailAreaM2") setVerticalTailAreaM2(value);
+      if (field === "verticalTailAspectRatio") setVerticalTailAspectRatio(value);
+      if (field === "verticalTailTaper") setVerticalTailTaper(value);
+      if (field === "finSectionLiftSlopePerDeg") {
+        setFinSectionLiftSlopePerDeg(value);
+      }
+    },
+    [
+      setVerticalTailAreaM2,
+      setVerticalTailAspectRatio,
+      setVerticalTailTaper,
+      setFinSectionLiftSlopePerDeg,
+    ],
+  );
 
   const [entry, setEntryState, resetEntry] = usePersistentState<
     Record<EntryField, number>
@@ -140,6 +175,7 @@ export function useRudderSheet(): RudderSheet {
     inputs,
     setEntry: (field, value) =>
       setEntryState((current) => ({ ...current, [field]: value })),
+    setFin,
     openSections,
     toggleSection: (key, open) =>
       setOpenSections((current) =>

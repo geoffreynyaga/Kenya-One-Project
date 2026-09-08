@@ -82,6 +82,8 @@ export interface ElevatorInputs {
   horizontalTailAspectRatio: number;
   /** Workbook Aileron!B8 — horizontal tail area, m². */
   horizontalTailAreaM2: number;
+  /** Workbook Aileron!B20 — horizontal tail taper ratio. */
+  horizontalTailTaper: number;
   /** Workbook H4 — tail rigging incidence, degrees. */
   tailIncidenceDeg: number;
   /** Workbook H6 — tail efficiency. */
