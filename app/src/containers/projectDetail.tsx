@@ -1,12 +1,4 @@
 /*
- * File: c:\Projects\KENYA ONE PROJECT\app\src\ProjectDetail.js
- * Project: c:\Projects\KENYA ONE PROJECT\app
- * Created Date: Sunday, January 12th 2020, 3:43:06 pm
- * Author: Geoffrey Nyaga Kinyua ( <info@geoffreynyaga.com> )
- * -----
- * Last Modified: Saturday April 11th 2020 11:54:41 pm
- * Modified By:  Geoffrey Nyaga Kinyua ( <geoffrey@mfuko.co.ke> )
- * -----
  * MIT License
  *
  * Copyright (c) 2020 KENYA ONE PROJECT
@@ -78,7 +70,6 @@ const ProjectDetail = () => {
     {
       path: "sref",
       component: SrefDesign,
-      // main: () => <SrefDesign />,
     },
     {
       path: "performance-constraints",
@@ -153,8 +144,6 @@ const ProjectDetail = () => {
       <SheetIndex />
       <Routes>
         {routes.map((route) => (
-          // Render more <Route>s with the same paths as
-          // above, but different components this time.
           <Route
             key={route.path}
             path={route.path}

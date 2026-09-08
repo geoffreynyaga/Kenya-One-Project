@@ -550,7 +550,7 @@ function CostResults({
           </summary>
           <div className="border-t border-rule-soft p-3">
             <p className="mb-3 text-note leading-5 text-ink-muted">
-              DAPCA labour costs apply the workbook factor and CPI to loaded rates. Crew cost is pilot-hours × crew rate.
+              DAPCA labour costs include the rate multiplier and CPI adjustment. Crew cost is pilot-hours × crew rate.
             </p>
             <LabourBasisTable rows={labourRows} />
           </div>
@@ -831,7 +831,7 @@ export default function CostAnalysis() {
   function renderModel() {
     if (query.isPending) {
       return (
-        <div className="m-5 border border-rule bg-field p-8 font-mono text-note text-ink-muted">Calculating the workbook model…</div>
+        <div className="m-5 border border-rule bg-field p-8 font-mono text-note text-ink-muted">Calculating costs…</div>
       );
     }
     if (query.isError) {
