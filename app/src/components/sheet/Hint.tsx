@@ -22,6 +22,7 @@ import "katex/dist/katex.min.css";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import type { ReactNode } from "react";
+import { untilDrawn, untilDrawnNote } from "../../domain/untilDrawn";
 import { FieldGuide } from "./FieldGuide";
 
 export interface HintSpec {
@@ -33,6 +34,12 @@ export interface HintSpec {
   body: string;
   /** The range a reviewer would expect, when one is known. */
   typical?: string;
+  /**
+   * The shared quantity this field holds, when it is one the app estimates
+   * until the geometry exists. The tooltip then says so, and says what will
+   * replace it. See `domain/untilDrawn`.
+   */
+  untilDrawn?: string;
   /** The workbook cell this field reproduces. Omit when there is none. */
   cell?: string;
   /** The sheet or workbook the value comes from, when it is not this one. */
@@ -84,6 +91,7 @@ export function Hint({ inputId, spec }: { inputId: string; spec: HintSpec }) {
   const tipRef = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const estimate = spec.untilDrawn ? untilDrawn(spec.untilDrawn) : undefined;
   const closeGuide = useCallback(() => setGuideOpen(false), []);
   const [position, setPosition] = useState<Position | null>(null);
 
@@ -171,6 +179,11 @@ export function Hint({ inputId, spec }: { inputId: string; spec: HintSpec }) {
               style={{ top: position?.top ?? 0, left: position?.left ?? 0 }}
             >
               {spec.body}
+              {estimate ? (
+                <span className="mt-2 block text-white/70">
+                  {untilDrawnNote(estimate)}
+                </span>
+              ) : null}
               {spec.guide ? <span className="mt-2 block text-white">Click or press Enter for a diagram and selection guide.</span> : null}
               {spec.typical ? (
                 <span className="mt-[6px] block text-white/70">

@@ -25,6 +25,7 @@ import {
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { InputSection } from "../../components/sheet/InputSection";
 import { Hint, HintSpec } from "../../components/sheet/Hint";
+import { UntilDrawnTag } from "../../components/sheet/UntilDrawnTag";
 import {
   StageCommitBar,
   useStageCommit,
@@ -90,8 +91,8 @@ const CARRIED_FIELDS: EntrySpec[] = [
   { field: "wingThicknessToChord", label: "Wing t/c", cell: "B32", origin: "SHEET 06", body: "Wing thickness ratio, which drives the lifting-surface form factor." },
   { field: "wingMaxThicknessStation", label: "Wing (x/c)m", cell: "B33", origin: "SHEET 06", body: "Chordwise station of maximum thickness, a property of the section the wing sheet picked." },
   { field: "cruiseSpeedKt", label: "Cruise speed", unit: "kt", cell: "B16", origin: "SHEET 02", body: "The speed every Reynolds number and the cruise Mach are taken at." },
-  { field: "fuselageLengthM", label: "Fuselage length", unit: "m", cell: "B4", origin: "RAYMER 6.3", body: "Reference length for the fuselage Reynolds number and, with the diameter, the fineness ratio. Raymer's statistical length for this aircraft type and take-off weight until a fuselage is drawn." },
-  { field: "fuselageDiameterM", label: "Fuselage diameter", unit: "m", cell: "B3", origin: "SEED · LAYOUT", body: "Maximum fuselage diameter. Seeded until a layout stage owns it." },
+  { field: "fuselageLengthM", label: "Fuselage length", unit: "m", cell: "B4", origin: "RAYMER 6.3", untilDrawn: "fuselageLengthM", body: "Reference length for the fuselage Reynolds number and, with the diameter, the fineness ratio." },
+  { field: "fuselageDiameterM", label: "Fuselage diameter", unit: "m", cell: "B3", origin: "SEED · LAYOUT", untilDrawn: "fuselageDiameterM", body: "Maximum fuselage diameter." },
 ];
 
 /**
@@ -296,13 +297,14 @@ export default function DragAnalysis() {
       key={spec.field}
       title={spec.label}
     >
-      <span className="min-w-0 flex-1 truncate text-note text-ink-body">
+      <span className="min-w-0 flex-1 text-note text-ink-body">
         {spec.label}
         {spec.unit ? (
           <span className="ml-[5px] font-mono text-label text-ink-faint">
             [{spec.unit}]
           </span>
         ) : null}
+        {spec.untilDrawn ? <UntilDrawnTag quantity={spec.untilDrawn} /> : null}
       </span>
       <Hint inputId={`drag-${spec.field}`} spec={spec} />
       <input
