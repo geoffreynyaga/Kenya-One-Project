@@ -455,7 +455,9 @@ export default function PerformanceConstraints() {
               curves={stallIsobars}
               desiredWingLoading={desired}
               figureLabel="FIG. 3.4 · STALL SPEED SENSITIVITY"
-              height={220}
+              // Three near-parallel isobars; they need less height than the
+              // constraint figures, but the default left them in a band.
+              height={340}
               title="The same isobars at full height: the lift coefficient the wing must deliver to stall at Vs, Vs+5 and Vs−5 across the wing-loading range."
               yTitle="REQUIRED  CL"
             />

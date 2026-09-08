@@ -14,6 +14,7 @@ import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
 import tokens from "../../design-tokens";
+import { Hint } from "./Hint";
 
 const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
@@ -40,6 +41,11 @@ export interface Series {
 }
 
 export interface FigureProps {
+  /**
+   * What the figure says, in prose. It reads on hover rather than under the
+   * plot: four of these stacked put a paragraph between every figure and the
+   * next, and the curves are what the reader came for.
+   */
   title: string;
   figureLabel: string;
   curves: Series[];
@@ -109,7 +115,7 @@ export function Figure({
   rightAxis,
   shadeRegions = false,
   yDtick,
-  height = 300,
+  height = 420,
 }: FigureProps) {
   // The legend's `y` is a fraction of the plotting area, so a taller figure
   // would push it further from the axis and eventually off the paper. Hold
@@ -162,8 +168,12 @@ export function Figure({
       className="relative mt-4 min-h-[240px] border border-rule bg-field px-2 pb-1 pt-3"
       style={{ minHeight: height + 40 }}
     >
-      <div className="absolute right-[14px] top-[10px] z-10 font-mono text-label text-ink-faint">
+      <div className="absolute right-[14px] top-[8px] z-10 flex items-center gap-2 font-mono text-label text-ink-faint">
         {figureLabel}
+        <Hint
+          inputId={figureLabel.toLowerCase().replace(/[^a-z0-9]+/g, "-")}
+          spec={{ body: title, label: figureLabel }}
+        />
       </div>
       <Plot
         className="w-full"
@@ -315,9 +325,6 @@ export function Figure({
         style={{ width: "100%", height }}
         useResizeHandler
       />
-      <div className="px-[2px] pb-1 pt-2 font-mono text-[10.5px] leading-[1.5] tracking-[0.08em] text-ink-faint">
-        {title}
-      </div>
     </div>
   );
 }
