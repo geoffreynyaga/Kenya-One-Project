@@ -16,7 +16,10 @@ import {
   SrefSizingResult,
 } from "../../api/srefDesign";
 import { getCalculationClient } from "../../api/client";
-import { usePersistentState } from "../../hooks/usePersistentState";
+import {
+  usePersistentState,
+  usePersistentValue,
+} from "../../hooks/usePersistentState";
 import { axisTitle } from "../../components/sheet/ConstraintFigure";
 import { FieldGuide } from "../../components/sheet/FieldGuide";
 import tokens from "../../design-tokens";
@@ -69,6 +72,12 @@ const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
 
 const STORAGE_KEY = "kenya-one:sref:v1";
+/**
+ * The solved request, kept apart from the sheet's inputs. Leaving this in
+ * component state meant the matching plot vanished the moment the reader
+ * looked at another sheet, and the solve had to be pressed again.
+ */
+const SOLVED_KEY = "kenya-one:sref:solved:v1";
 
 /**
  * Shown on this sheet but owned upstream: MTOW settles them and carries them
@@ -786,7 +795,10 @@ export default function SrefDesign() {
     [values, wingAreaM2]
   );
 
-  const [submitted, setSubmitted] = useState<SrefSizingRequest | null>(null);
+  const [submitted, setSubmitted] = usePersistentValue<SrefSizingRequest | null>(
+    SOLVED_KEY,
+    null
+  );
 
   const query = useQuery({
     queryKey: ["sref-sizing", submitted],
@@ -886,6 +898,7 @@ export default function SrefDesign() {
   const reset = () => {
     resetSheet();
     resetView();
+    setSubmitted(null);
     publishEngine(null);
     resetQuantities(SREF_QUANTITY_KEYS);
     setCommittedStages((current) => ({ ...current, sref: false }));
