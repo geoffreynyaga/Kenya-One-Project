@@ -11,6 +11,7 @@ import { useMemo } from "react";
 import {
   aircraftTypeAtom,
   confirmQuantitiesAtom,
+  fuselageDiameterMAtom,
   fuselageLengthMAtom,
   horizontalTailAreaM2Atom,
   meanChordMAtom,
@@ -31,14 +32,21 @@ import {
   armFraction,
   combinedTailSizing,
   horizontalTailSizing,
+  SADRAEY_KC,
   raymerTailArm,
+  sadraeyTailArm,
   surfaceFor,
   verticalTailSizing,
   wettedAreaAt,
 } from "../../../domain/tailSizing";
 import { usePersistentState } from "../../../hooks/usePersistentState";
 
-export type MethodKey = "raymer" | "horizontal" | "vertical" | "combined";
+export type MethodKey =
+  | "raymer"
+  | "sadraey"
+  | "horizontal"
+  | "vertical"
+  | "combined";
 
 export interface Method {
   key: MethodKey;
@@ -55,6 +63,8 @@ export interface TailArmView {
   htAspectRatio: number;
   vtAspectRatio: number;
   armFractionKey: string;
+  /** Sadraey's correction factor, Eq. (6.47). */
+  kc: number;
   /** Which method the reader carried forward, if any. */
   chosen: MethodKey | null;
   openSections: Record<SectionKey, boolean>;
@@ -77,6 +87,7 @@ function defaultsFor(aircraftType: string): TailArmView {
     vtVolume: volumes.vt,
     htAspectRatio: 4,
     vtAspectRatio: 1.5,
+    kc: SADRAEY_KC.gaProp,
     armFractionKey: aircraftType.startsWith("SailPlane")
       ? "sailplane"
       : "frontProp",
@@ -91,6 +102,7 @@ export function useTailArmSheet() {
   const meanChord = useAtomValue(meanChordMAtom);
   const span = useAtomValue(wingspanMAtom);
   const fuselageLength = useAtomValue(fuselageLengthMAtom);
+  const fuselageDiameter = useAtomValue(fuselageDiameterMAtom);
   const rootRadius = useAtomValue(tailConeRootRadiusMAtom);
   const tipRadius = useAtomValue(tailConeTipRadiusMAtom);
 
@@ -161,6 +173,16 @@ export function useTailArmSheet() {
         result: sizedAt(raymerTailArm(fuselageLength, fraction).arm),
       },
       {
+        key: "sadraey" as const,
+        label: "Sadraey · least wetted area aft",
+        cite: "Eq. (6.47)",
+        because:
+          "Gudmundsson's trade with a coarser fuselage: a cone as long as the arm, and no fin in the balance. K_c covers what those assumptions cost.",
+        result: sizedAt(
+          sadraeyTailArm(inputs, fuselageDiameter, view.kc).arm
+        ),
+      },
+      {
         key: "horizontal" as const,
         label: "Gudmundsson 1 · horizontal tail",
         cite: "Eq. (11-40)",
@@ -185,7 +207,7 @@ export function useTailArmSheet() {
         result: combinedTailSizing(inputs),
       },
     ];
-  }, [fraction, fuselageLength, inputs]);
+  }, [fraction, fuselageDiameter, fuselageLength, inputs, view.kc]);
 
   const chosen = methods.find((method) => method.key === view.chosen) ?? null;
 

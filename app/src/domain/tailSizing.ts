@@ -110,6 +110,52 @@ export function raymerTailArm(fuselageLength: number, fraction: ArmFraction) {
   };
 }
 
+/**
+ * Sadraey's correction factor K_c, §6.6. It absorbs two assumptions the
+ * derivation makes and then admits to: that the aft fuselage is a cone, and
+ * that its length equals the tail arm. He gives no table, only prose on
+ * p. 300 — 1.0 for a genuinely conical aft fuselage, 1.1 for a single-engine
+ * prop GA aeroplane, 1.4 for a transport, where most of the fuselage is a
+ * cylinder and only the very end tapers.
+ */
+export const SADRAEY_KC = {
+  low: 1.0,
+  gaProp: 1.1,
+  high: 1.4,
+} as const;
+
+/**
+ * Sadraey's optimum tail arm, Eq. (6.47).
+ *
+ * Same objective as Gudmundsson's — least wetted area aft, argued as least
+ * zero-lift drag — but a coarser model of it: the aft fuselage is a cone whose
+ * area grows as pi.D_f.l/2, the tailplane is 2.S_h shrinking as 1/l, and the
+ * fin does not enter at all. That collapses to a closed form, and K_c is
+ * bolted on afterwards to cover what the assumptions cost.
+ *
+ * Because K_c only ever multiplies upward, this runs long against a true
+ * wetted-area minimum, and walks towards Raymer's fraction as K_c approaches
+ * 1.4.
+ */
+export function sadraeyTailArm(
+  inputs: TailSizingInputs,
+  fuselageDiameter: number,
+  kc: number
+) {
+  const bare = Math.sqrt(
+    (4 * inputs.meanChord * inputs.wingArea * inputs.htVolume) /
+      (Math.PI * fuselageDiameter)
+  );
+  return { arm: kc * bare, bare };
+}
+
+/**
+ * Sadraey calls a tail short-coupled when the arm is under three mean chords,
+ * p. 300. It is a warning, not a limit.
+ */
+export const isShortCoupled = (arm: number, meanChord: number) =>
+  arm < 3 * meanChord;
+
 export interface TailSizingInputs {
   /** Wing reference area, S_REF. */
   wingArea: number;

@@ -70,7 +70,12 @@ export function TailArmGuide() {
         can be had from a small tail far back or a large tail close in. Moving
         it back costs fuselage: the tail cone’s wetted area grows with the arm
         while the tail’s own falls. The total passes through a minimum, and
-        Gudmundsson’s three methods solve for it.
+        Gudmundsson’s three methods solve for it. Sadraey solves the same
+        minimum, arguing it as least zero-lift drag rather than least area, but
+        models the aft fuselage as a cone exactly as long as the arm and leaves
+        the fin out of the balance. That collapses to one closed form, with an
+        empirical K_c between 1.0 and 1.4 added afterwards to cover the two
+        assumptions. Because K_c only multiplies upward, his answer runs long.
       </p>
       <h3>What the volume coefficients mean</h3>
       <p>
@@ -94,7 +99,17 @@ export function TailArmGuide() {
           Method 3 for a conventional tail, where both surfaces sit at nearly
           the same station.
         </li>
+        <li>
+          Sadraey as a cross-check on method 3. On a conventional single the
+          two land close together, and a wide gap between them says the fin is
+          carrying more of the balance than his derivation allows for.
+        </li>
       </ol>
+      <p>
+        Gudmundsson asks that one method be settled on and kept to rather than
+        averaged across. The comparison is here to make that choice, not to be
+        split down the middle.
+      </p>
       <h3>Limits</h3>
       <p>
         All of it assumes the fuselage aft of the wing is a frustum and the

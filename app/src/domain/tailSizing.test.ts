@@ -11,7 +11,9 @@ import {
   armFraction,
   combinedTailSizing,
   horizontalTailSizing,
+  isShortCoupled,
   raymerTailArm,
+  sadraeyTailArm,
   verticalTailSizing,
   wettedAreaAt,
   wettedAreaCurve,
@@ -168,5 +170,48 @@ describe("Table 11-4 tail volumes", () => {
     expect(TAIL_VOLUMES.GA_Single).toEqual({ ht: 0.7, vt: 0.04 });
     expect(TAIL_VOLUMES.Jet_Transport).toEqual({ ht: 1.0, vt: 0.09 });
     expect(Object.keys(TAIL_VOLUMES)).toHaveLength(13);
+  });
+});
+
+/*
+ * Sadraey works the same trade as Gudmundsson — least wetted area aft — but
+ * models the aft fuselage as a cone of length equal to the arm, and leaves the
+ * fin out. Checked against his two worked examples, §6.6 and §6.10.
+ */
+describe("Sadraey's optimum tail arm, Eq. (6.47)", () => {
+  const at = (
+    wingArea: number,
+    meanChord: number,
+    htVolume: number,
+    diameter: number,
+    kc: number
+  ) =>
+    sadraeyTailArm(
+      { ...EXAMPLE_11_9, wingArea, meanChord, htVolume },
+      diameter,
+      kc
+    ).arm;
+
+  it("matches Example 6.1, a twin-seat GA aeroplane", () => {
+    // S = 10 m², c = 1 m, V_H = 0.6, D_f = 1.17 m, K_c = 1.4.
+    expect(at(10, 1, 0.6, 1.17, 1.4)).toBeCloseTo(3.577, 3);
+  });
+
+  it("matches Example 6.2, the two-seat motor glider of §6.10", () => {
+    // S = 18 m², c = 0.8 m, V_H = 0.6, D_f = 1.1 m, K_c = 1.2.
+    const arm = at(18, 0.8, 0.6, 1.1, 1.2);
+    expect(arm).toBeCloseTo(3.795, 3);
+    // The tailplane that arm requires, Eq. (6.24).
+    expect((0.6 * 18 * 0.8) / arm).toBeCloseTo(2.277, 3);
+  });
+
+  it("scales with K_c and nothing else", () => {
+    const bare = at(18, 0.8, 0.6, 1.1, 1);
+    expect(at(18, 0.8, 0.6, 1.1, 1.4)).toBeCloseTo(bare * 1.4, 6);
+  });
+
+  it("calls a tail short-coupled under three mean chords", () => {
+    expect(isShortCoupled(4.0, 1.475)).toBe(true);
+    expect(isShortCoupled(4.5, 1.475)).toBe(false);
   });
 });

@@ -41,7 +41,7 @@ function sizedStore() {
 const rowFor = (name: RegExp) =>
   screen.getByText(name).closest("tr") as HTMLElement;
 
-test("offers Raymer and the three Gudmundsson methods", () => {
+test("offers Raymer, Sadraey and the three Gudmundsson methods", () => {
   render(
     <Provider store={sizedStore()}>
       <TailArm />
@@ -50,6 +50,7 @@ test("offers Raymer and the three Gudmundsson methods", () => {
 
   for (const method of [
     /Raymer · fraction of fuselage/,
+    /Sadraey · least wetted area aft/,
     /Gudmundsson 1 · horizontal tail/,
     /Gudmundsson 2 · vertical tail/,
     /Gudmundsson 3 · both surfaces/,
@@ -175,6 +176,7 @@ test("every method is costed with both surfaces at its own arm", () => {
 
   const rows = [
     /Raymer · fraction of fuselage/,
+    /Sadraey · least wetted area aft/,
     /Gudmundsson 1 · horizontal tail/,
     /Gudmundsson 2 · vertical tail/,
     /Gudmundsson 3 · both surfaces/,
@@ -188,10 +190,30 @@ test("every method is costed with both surfaces at its own arm", () => {
   }
 
   // Method 3 minimises that same curve, so no other arm can cost less.
-  const [, , , combinedWetted] = rows[3];
+  const [, , , combinedWetted] = rows[4];
   for (const [, , , wetted] of rows) {
     expect(wetted).toBeGreaterThanOrEqual(combinedWetted);
   }
   // Raymer's is a layout rule, not an optimum, so it must cost strictly more.
   expect(rows[0][3]).toBeGreaterThan(combinedWetted);
+});
+
+/*
+ * The figures fall back to method 3 before anything is carried. That used to
+ * be `methods[3]`, which quietly became Gudmundsson 2 the moment a fifth
+ * method was inserted above it.
+ */
+test("the figures default to the conventional-tail method", () => {
+  render(
+    <Provider store={sizedStore()}>
+      <TailArm />
+    </Provider>
+  );
+
+  const [, htArea] = numbersIn(/Gudmundsson 3 · both surfaces/);
+  // The sketch's caption reports the tailplane it drew, at the default AR of 4.
+  const span = Math.sqrt(4 * htArea);
+  expect(
+    screen.getByText(new RegExp(`Tailplane ${span.toFixed(2)} m span`))
+  ).toBeInTheDocument();
 });

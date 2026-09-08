@@ -15,7 +15,11 @@ import { Hint, HintSpec } from "../../../components/sheet/Hint";
 import { InputSection } from "../../../components/sheet/InputSection";
 import { UntilDrawnTag } from "../../../components/sheet/UntilDrawnTag";
 import tokens from "../../../design-tokens";
-import { RAYMER_ARM_FRACTIONS, wettedAreaCurve } from "../../../domain/tailSizing";
+import {
+  RAYMER_ARM_FRACTIONS,
+  isShortCoupled,
+  wettedAreaCurve,
+} from "../../../domain/tailSizing";
 import TailGeometry from "./TailGeometry";
 import { TailArmGuide, TailVolumeGuide } from "./TailArmGuides";
 import {
@@ -182,7 +186,9 @@ export default function TailArm() {
   const setNumber = (field: keyof TailArmView) => (next: number) =>
     sheet.setField(field, next as never);
 
-  const shown = chosen ?? methods[3];
+  // Before anything is carried the figures show the conventional-tail answer.
+  const shown =
+    chosen ?? methods.find((method) => method.key === "combined") ?? methods[0];
   const armRange: [number, number] = [
     Math.max(shown.result.arm * 0.25, 0.5),
     shown.result.arm * 2.2,
@@ -244,7 +250,7 @@ export default function TailArm() {
       </InputSection>
 
       <InputSection
-        count={3}
+        count={4}
         open={view.openSections.tails}
         title="ENTRY · TAIL PLANFORMS"
         onToggle={(open) => sheet.toggleSection("tails", open)}
@@ -268,6 +274,18 @@ export default function TailArm() {
             typical: "1.2 to 2.0.",
           }}
           value={view.vtAspectRatio}
+        />
+        <NumberField
+          id="tail-kc"
+          onChange={setNumber("kc")}
+          spec={{
+            label: "Correction factor, K_c",
+            body: "Sadraey's allowance for an aft fuselage that is not the cone his derivation assumes. It only ever lengthens the arm.",
+            typical:
+              "1.0 for a truly conical tail cone, 1.1 for a single-engine prop, 1.4 for a transport that is mostly cylinder.",
+            cite: "Sadraey Eq. (6.47)",
+          }}
+          value={view.kc}
         />
         <label
           className="flex flex-col gap-[6px] px-[18px] py-[7px]"
@@ -501,6 +519,13 @@ export default function TailArm() {
                 </tbody>
               </table>
             </div>
+            {chosen && isShortCoupled(chosen.result.arm, inputs.meanChord) ? (
+              <p className="border-t border-rule-hair px-4 py-[9px] font-mono text-meta leading-[1.6] text-accent">
+                The carried arm is under three mean chords, which Sadraey calls
+                short-coupled. It is not a limit, but the tailplane it needs is
+                large and the elevator will feel it.
+              </p>
+            ) : null}
             <p className="px-4 py-[9px] font-mono text-meta leading-[1.6] text-ink-muted">
               Every row is the tail cone plus both faces of both surfaces at
               that row’s arm, so the four are directly comparable. Gudmundsson
