@@ -302,6 +302,19 @@ export const fuselageLengthMAtom = atom(
 // Seeded until a layout stage owns it. @link Elevator!B3
 export const fuselageDiameterMAtom = provisional("fuselageDiameterM", 1.3462);
 
+/**
+ * Chordwise station of maximum thickness, fraction of chord.
+ *
+ * A property of the section, so picking an aerofoil settles it. The drag
+ * build-up's lifting-surface form factor divides by it, and was reading a
+ * number typed into the workbook rather than the one belonging to the section
+ * on the wing. @link Wing & Airfoil!B33
+ */
+export const wingMaxThicknessStationAtom = provisional(
+  "wingMaxThicknessStation",
+  0.291
+);
+
 // Owned by Wing & Airfoil. @link Wing & Airfoil!B24
 export const zeroLiftAlphaDegAtom = provisional("zeroLiftAlphaDeg", -4);
 

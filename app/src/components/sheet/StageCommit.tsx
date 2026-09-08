@@ -57,10 +57,13 @@ export function useStageCommit(
 export function StageCommitBar({
   stage,
   quantities,
+  onConfirm,
 }: {
   stage: Stage;
   /** Shared keys this stage owns, confirmed along with it. */
   quantities?: string[];
+  /** Publish whatever this sheet computed. Runs before the stage is marked. */
+  onConfirm?: () => void;
 }) {
   const { confirmed, confirm } = useStageCommit(stage, quantities);
   const label = STAGE_LABELS[stage];
@@ -74,7 +77,10 @@ export function StageCommitBar({
             ? "border-rule bg-panel text-ink-faint"
             : "border-accent bg-accent-wash text-accent hover:bg-accent hover:text-white"
         }`}
-        onClick={confirm}
+        onClick={() => {
+          onConfirm?.();
+          confirm();
+        }}
         type="button"
       >
         CONFIRM {label}

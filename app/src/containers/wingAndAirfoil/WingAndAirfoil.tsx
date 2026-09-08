@@ -2,12 +2,13 @@
  * Sheet 06 — Wing & Airfoil. Planform, flow conditions, 3-D corrections and
  * the four span-efficiency estimates, all from aerofoilCompute.
  */
-import { useAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { useMemo } from "react";
 
 import {
   sectionMomentCoefficientAtom,
   taperRatioAtom,
+  wingMaxThicknessStationAtom,
 } from "../../domain/atoms";
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { InputSection } from "../../components/sheet/InputSection";
@@ -76,7 +77,11 @@ const CARRIED_FIELDS: EntrySpec[] = [
  * so a reader who agrees with the values on screen can say so without having
  * to retype them.
  */
-const OWNED_QUANTITIES = ["taperRatio", "sectionMomentCoefficient"];
+const OWNED_QUANTITIES = [
+  "taperRatio",
+  "sectionMomentCoefficient",
+  "wingMaxThicknessStation",
+];
 
 interface ViewState {
   inputs: AerofoilInputs;
@@ -179,6 +184,8 @@ export default function WingAndAirfoil() {
   const [sectionMomentSlope, setSectionMomentSlope] = useAtom(
     sectionMomentCoefficientAtom
   );
+  // The picker shows (x/c)m for the chosen section; the drag build-up needs it.
+  const setMaxThicknessStation = useSetAtom(wingMaxThicknessStationAtom);
 
   const inputs = useMemo<AerofoilInputs>(
     () => ({ ...view.inputs, taperRatio, sectionMomentSlope }),
@@ -194,6 +201,7 @@ export default function WingAndAirfoil() {
   const applySection = (selection: AirfoilSelection, name: string) => {
     withdraw();
     setSectionMomentSlope(selection.sectionMomentSlope);
+    setMaxThicknessStation(selection.maxThicknessStation);
     setView((current) => ({
       ...current,
       sectionName: name,
