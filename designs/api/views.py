@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from aircraft_design.aero_classes import AERO_CLASSES
 from aircraft_design.airfoils import AirfoilNotFound, get_airfoil, list_airfoils
+from aircraft_design.control_references import RUDDER_REFERENCE_CATALOG
 from aircraft_design.costs import CostCalculationError, calculate_costs
 from aircraft_design.sref import ENGINE_CATALOG, SrefCalculationError, calculate_sref
 from aircraft_design.stall_limits import STALL_LIMITS
@@ -160,6 +161,24 @@ class StallLimitCatalogAPIView(APIView):
         )
 
 
+class RudderReferenceCatalogAPIView(APIView):
+    """Selected Sadraey Table 12.20 rudder examples.
+
+    Comparable-aircraft records for choosing preliminary rudder geometry. They
+    are static reference data, not field defaults, so they are served once and
+    cached like the other reference tables.
+    """
+
+    @method_decorator(cache_control(max_age=60 * 60 * 24, public=True))
+    def get(self, request, *args, **kwargs):
+        return Response(
+            {
+                "status": "success",
+                "data": asdict(RUDDER_REFERENCE_CATALOG),
+            }
+        )
+
+
 class AirfoilCatalogAPIView(APIView):
     """Every section the catalogue has wind-tunnel data for.
 
@@ -199,4 +218,3 @@ class AirfoilDetailAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
         return Response({"status": "success", "data": asdict(airfoil)})
-

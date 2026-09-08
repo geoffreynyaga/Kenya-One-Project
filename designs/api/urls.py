@@ -5,6 +5,7 @@ from .views import (
     AirfoilCatalogAPIView,
     AirfoilDetailAPIView,
     CostAnalysisAPIView,
+    RudderReferenceCatalogAPIView,
     SrefEngineCatalogAPIView,
     SrefSizingAPIView,
     StallLimitCatalogAPIView,
@@ -29,6 +30,11 @@ urlpatterns = [
         "stall-limits/",
         StallLimitCatalogAPIView.as_view(),
         name="stall_limit_catalog",
+    ),
+    path(
+        "control-references/rudder/",
+        RudderReferenceCatalogAPIView.as_view(),
+        name="rudder_reference_catalog",
     ),
     path("airfoils/", AirfoilCatalogAPIView.as_view(), name="airfoil_catalog"),
     path(

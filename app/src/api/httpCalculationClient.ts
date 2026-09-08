@@ -10,6 +10,7 @@ import { fetchAeroClasses } from "./aeroClasses";
 import { fetchStallLimits } from "./stallLimits";
 import { fetchAirfoil, fetchAirfoilCatalog } from "./airfoils";
 import { fetchAircraftTypes } from "./aircraftTypes";
+import { fetchRudderReferences } from "./controlReferences";
 import type { CalculationClient } from "./client";
 import { fetchCostAnalysis } from "./costAnalysis";
 import { fetchMtowSizing } from "./mtowSizing";
@@ -26,5 +27,6 @@ export const httpCalculationClient: CalculationClient = {
   aircraftTypes: fetchAircraftTypes,
   aeroClasses: fetchAeroClasses,
   stallLimits: fetchStallLimits,
+  rudderReferences: fetchRudderReferences,
   airfoil: fetchAirfoil,
 };

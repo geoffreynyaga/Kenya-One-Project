@@ -13,6 +13,7 @@ import type { AeroClass } from "./aeroClasses";
 import type { TunnelSection } from "./airfoils";
 import type { AircraftType } from "./aircraftTypes";
 import type { CostAnalysisRequest, CostAnalysisResult } from "./costAnalysis";
+import type { RudderReferenceCatalog } from "./controlReferences";
 import type { MtowSizingRequest } from "./mtowSizing";
 import type { UasSizingRequest, UasSizingResult } from "./uasSizing";
 import type {
@@ -44,6 +45,8 @@ export interface CalculationClient {
   aeroClasses(): Promise<AeroClass[]>;
   /** The stall speed ceiling each certification basis imposes. */
   stallLimits(): Promise<StallLimit[]>;
+  /** Book-backed comparable-aircraft rudder geometry records. */
+  rudderReferences(): Promise<RudderReferenceCatalog>;
   /** Measurements for one section. Rejects when there are none. */
   airfoil(designation: string): Promise<TunnelSection>;
 }
