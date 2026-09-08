@@ -36,7 +36,7 @@ export const GROUPS: Group[] = [
     id: "control",
     label: "CONTROL",
     live: true,
-    path: "/control/aileron",
+    path: "/control/tail-arm",
   },
   { id: "report", label: "REPORT", live: false, path: null },
 ];
@@ -73,9 +73,12 @@ export const PERFORMANCE_SHEETS: Sheet[] = [
 
 /** Sheet index for the control group, in the order they are sized. */
 export const CONTROL_SHEETS: Sheet[] = [
-  { id: "01", label: "01 AILERON", path: "/control/aileron" },
-  { id: "02", label: "02 ELEVATOR", path: "/control/elevator" },
-  { id: "03", label: "03 RUDDER", path: "/control/rudder" },
+  // The tail arm comes first because the other three size against it: the
+  // elevator works a pitching moment through it and the rudder a yawing one.
+  { id: "01", label: "01 TAIL ARM", path: "/control/tail-arm" },
+  { id: "02", label: "02 AILERON", path: "/control/aileron" },
+  { id: "03", label: "03 ELEVATOR", path: "/control/elevator" },
+  { id: "04", label: "04 RUDDER", path: "/control/rudder" },
 ];
 
 /**

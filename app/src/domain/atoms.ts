@@ -383,7 +383,21 @@ export const sectionMomentCoefficientAtom = provisional(
   -0.092
 );
 
-// Provisional until a layout stage owns the installation geometry.
+/**
+ * The tail cone as a frustum, metres. Gudmundsson's methods trade the cone's
+ * wetted area against the tail's, so they need its two radii. Half the
+ * fuselage depth at the wing quarter chord, and at the tail.
+ * @link Gudmundsson Fig. 11-57
+ */
+export const tailConeRootRadiusMAtom = provisional("tailConeRootRadiusM", 0.673);
+export const tailConeTipRadiusMAtom = provisional("tailConeTipRadiusM", 0.15);
+
+/*
+ * The tail arm, wing quarter chord to tail quarter chord. Feet is the source
+ * unit because Cruise carries it that way; `tailArmMAtom` below is the metric
+ * view. The tail-sizing sheet settles it, and it is an estimate until both
+ * quarter chords are drawn — see `untilDrawn`.
+ */
 export const tailArmFtAtom = provisional("tailArmFt", 16.728);
 export const thrustArmFtAtom = provisional("thrustArmFt", 1.9);
 export const thrustLineOffsetFtAtom = provisional("thrustLineOffsetFt", 0.5);

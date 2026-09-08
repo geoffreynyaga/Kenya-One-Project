@@ -33,7 +33,7 @@ export const UNTIL_DRAWN: Record<string, UntilDrawn> = {
     source: "Workbook Elevator!B3",
     measuredFrom: "the fuselage, once it is laid out",
   },
-  tailArmM: {
+  tailArmFt: {
     method:
       "The arm that meets the required tail volume for the least wetted area, or Raymer's fraction of the fuselage length.",
     source: "Gudmundsson §11.5; Raymer ch. 6",

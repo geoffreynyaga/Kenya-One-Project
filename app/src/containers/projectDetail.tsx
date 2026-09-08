@@ -46,6 +46,7 @@ import Climb from "./performance/climb/Climb";
 import Cruise from "./performance/cruise/Cruise";
 import Range from "./performance/range/Range";
 import Landing from "./performance/landing/Landing";
+import TailArm from "./control/tailArm/TailArm";
 import Aileron from "./control/aileron/Aileron";
 import Elevator from "./control/elevator/Elevator";
 import Rudder from "./control/rudder/Rudder";
@@ -124,6 +125,10 @@ const ProjectDetail = () => {
     {
       path: "performance/landing",
       component: Landing,
+    },
+    {
+      path: "control/tail-arm",
+      component: TailArm,
     },
     {
       path: "control/aileron",
