@@ -7,7 +7,7 @@
  * it does in normal flight: landing straight in a crosswind, and keeping the
  * aeroplane pointed the right way when an engine quits. The first is a
  * simultaneous balance of side force and yawing moment, which the workbook
- * solves by typing sideslip angles into a column until a total reads zero. It
+ * solves by typing crab angles into a column until a total reads zero. It
  * is solved here instead.
  *
  * Method from Sadraey, chapter 12.
@@ -31,11 +31,33 @@ export const VMC_ENGINE_OFFSET_AS_WRITTEN_M = 3.5;
  */
 export const CORRECT_ROOT_CHORD_FROM_MEAN_GEOMETRIC = false;
 
-/** How many sideslip angles the crosswind solution is shown at. */
-export const SIDESLIP_POINT_COUNT = 9;
+/**
+ * How many crab angles the crosswind solution is drawn at. The curve is only
+ * ever read near the crossing, so it is sampled finely over a narrow window
+ * rather than coarsely over the whole search bracket.
+ */
+export const CRAB_POINT_COUNT = 41;
 
-/** The bracket the crosswind sideslip is searched over, radians. */
-export const SIDESLIP_SEARCH_RAD = 1.2;
+/**
+ * Raymer's advisory ceiling on rudder in the trim cases, p. 615: "no more than
+ * 20 deg of rudder should be used", so there is travel left to control with.
+ * Sadraey sets no margin — he accepts 29.64 deg against a 30 deg limit — so
+ * this is the stricter of the two and is drawn as advice, not as a limit.
+ */
+export const RAYMER_RUDDER_MARGIN_DEG = 20;
+
+/**
+ * How far either side of the solved crab angle the figures are drawn, rad.
+ * The side-force balance moves the rudder about 150 degrees per radian of
+ * crab, so a quarter of a radian either way spans roughly +/-36 degrees of
+ * rudder — enough to keep both the 30 degree limit and Raymer's 20 degree
+ * advisory on the page without squeezing the crossing.
+ */
+export const CRAB_WINDOW_RAD = 0.24;
+
+/** The bracket the crab angle is searched over, radians. Wide enough to
+ * guarantee a sign change; far too wide to plot. */
+export const CRAB_SEARCH_RAD = 1.2;
 
 export interface RudderInputs {
   /** Workbook B2 — vertical tail area, m². */
@@ -96,10 +118,10 @@ export interface RudderInputs {
   maxDeflectionDeg: number;
 }
 
-/** One sideslip angle on the crosswind solution. Workbook A20:G26. */
-export interface SideslipPoint {
-  /** Workbook F — sideslip held, rad. */
-  sideslipRad: number;
+/** One crab angle on the crosswind solution. Workbook A20:G26. */
+export interface CrabPoint {
+  /** Workbook F — crab angle held, rad. */
+  crabRad: number;
   /** Workbook A — the rudder that balances side force there, rad. */
   rudderRad: number;
   /** Workbook E — what the yawing moment then fails to close by, N·m. */
@@ -146,9 +168,9 @@ export interface RudderResult {
   sideForcePerSideslipRad: number;
 
   /** Workbook A20:G26 — the column the sheet searches by hand. */
-  sideslipSweep: SideslipPoint[];
-  /** Workbook F26 — the sideslip that closes both equations, rad. */
-  solvedSideslipRad: number;
+  crabSweep: CrabPoint[];
+  /** Workbook F26 — the crab angle that closes both equations, rad. */
+  solvedCrabRad: number;
   /** Workbook H32 — the rudder it needs, degrees. */
   crosswindRudderDeg: number;
 

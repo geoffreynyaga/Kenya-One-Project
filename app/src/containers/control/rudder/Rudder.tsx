@@ -30,7 +30,11 @@ import {
   FinField,
   useRudderSheet,
 } from "./useRudderSheet";
-import { RudderInputs, RudderResult } from "./utils";
+import {
+  RAYMER_RUDDER_MARGIN_DEG,
+  RudderInputs,
+  RudderResult,
+} from "./utils";
 
 const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
@@ -814,22 +818,22 @@ export default function Rudder() {
       "Approach and crosswind added as vectors. This is what the fin actually flies at.",
     ],
     [
-      "Crosswind sideslip",
+      "Sideslip, β",
       q(result.crosswindSideslipRad * DEG_PER_RAD, "°", 2),
       "E13",
-      "The angle the relative wind arrives at if the aeroplane is pointed down the runway.",
+      "The angle the relative wind arrives at. The wind sets it — Sadraey Eq. (12.105) — so it is not something the aeroplane gets to choose.",
     ],
     [
-      "Sideslip flown",
-      q(result.solvedSideslipRad * DEG_PER_RAD, "°", 2),
+      "Crab angle, σ",
+      q(result.solvedCrabRad * DEG_PER_RAD, "°", 2),
       "F26",
-      "The angle at which side force and yawing moment both balance. Solved here rather than searched for by typing.",
+      "How far the nose is held off the runway heading. This is the free unknown: it is the angle at which side force and yawing moment both balance. Solved here rather than searched for by typing.",
     ],
     [
       "Rudder to hold it",
       q(Math.abs(result.crosswindRudderDeg), "°", 2),
       "H32",
-      "How much rudder that takes. Small, because the aeroplane is allowed to sideslip rather than being forced to fly straight.",
+      "How much rudder that takes. Small, because the aeroplane is allowed to crab rather than being forced to point down the runway.",
     ],
   ];
 
@@ -872,8 +876,8 @@ export default function Rudder() {
     ],
   ];
 
-  const sweepAngles = result.sideslipSweep.map(
-    (point) => point.sideslipRad * DEG_PER_RAD,
+  const sweepAngles = result.crabSweep.map(
+    (point) => point.crabRad * DEG_PER_RAD,
   );
 
   return (
@@ -966,15 +970,15 @@ export default function Rudder() {
 
           <div className="grid gap-4 xl:grid-cols-2">
             <Figure
-              caption="Side force can be balanced at any sideslip, but only one of them closes the yawing moment as well. That is where the curve crosses zero, and the sheet finds it by typing angles into a column until the number looks small enough."
-              title="YAWING MOMENT · AGAINST SIDESLIP"
+              caption="The sideslip is set by the wind; what the aeroplane can choose is how far it crabs. Side force balances at any crab angle, but only one of them closes the yawing moment as well, and that is where this crosses zero. Sadraey solves the pair algebraically; the workbook typed angles into a column until the number looked small enough. Drawn near the answer, not over the whole search."
+              title="YAWING MOMENT · AGAINST CRAB ANGLE"
             >
               <Plot
                 config={{ displayModeBar: false, responsive: true }}
                 data={[
                   {
                     x: sweepAngles,
-                    y: result.sideslipSweep.map((point) => point.residualNm),
+                    y: result.crabSweep.map((point) => point.residualNm),
                     mode: "lines+markers",
                     line: {
                       color: tokens.colors.ink.DEFAULT,
@@ -985,15 +989,15 @@ export default function Rudder() {
                   },
                   {
                     x: [
-                      result.solvedSideslipRad * DEG_PER_RAD,
-                      result.solvedSideslipRad * DEG_PER_RAD,
+                      result.solvedCrabRad * DEG_PER_RAD,
+                      result.solvedCrabRad * DEG_PER_RAD,
                     ],
                     y: [
                       Math.min(
-                        ...result.sideslipSweep.map((p) => p.residualNm),
+                        ...result.crabSweep.map((p) => p.residualNm),
                       ),
                       Math.max(
-                        ...result.sideslipSweep.map((p) => p.residualNm),
+                        ...result.crabSweep.map((p) => p.residualNm),
                       ),
                     ],
                     mode: "lines",
@@ -1005,22 +1009,22 @@ export default function Rudder() {
                     name: "SOLVED",
                   },
                 ]}
-                layout={figureLayout("SIDESLIP  [°]", "MOMENT  [N·M]", 70)}
+                layout={figureLayout("CRAB ANGLE  [°]", "MOMENT  [N·M]", 70)}
                 style={{ width: "100%" }}
                 useResizeHandler
               />
             </Figure>
 
             <Figure
-              caption="The rudder that balances side force at each sideslip. It falls steeply, which is why the sheet's hand search is delicate: a thousandth of a radian of sideslip is a tenth of a degree of rudder, and the answer sits near zero."
-              title="RUDDER · AGAINST SIDESLIP"
+              caption="The rudder that balances side force at each crab angle, read off where the moment closes. It falls steeply, which is why the workbook's hand search was delicate: a thousandth of a radian of crab is a tenth of a degree of rudder. Sadraey's limit is the full ±30°, which he accepts to the last tenth; Raymer would keep it inside 20° so there is travel left to control with."
+              title="RUDDER · AGAINST CRAB ANGLE"
             >
               <Plot
                 config={{ displayModeBar: false, responsive: true }}
                 data={[
                   {
                     x: sweepAngles,
-                    y: result.sideslipSweep.map(
+                    y: result.crabSweep.map(
                       (point) => point.rudderRad * DEG_PER_RAD,
                     ),
                     mode: "lines+markers",
@@ -1043,13 +1047,27 @@ export default function Rudder() {
                     name: "AVAILABLE",
                   },
                   {
+                    // Raymer p. 615: "no more than 20 deg of rudder should be
+                    // used", to leave travel for control. Sadraey sets no
+                    // margin at all, so this is the stricter of the two.
+                    x: [sweepAngles[0], sweepAngles[sweepAngles.length - 1]],
+                    y: [RAYMER_RUDDER_MARGIN_DEG, RAYMER_RUDDER_MARGIN_DEG],
+                    mode: "lines",
+                    line: {
+                      color: tokens.colors.series.faint,
+                      width: 1,
+                      dash: "dot",
+                    },
+                    name: "RAYMER 20°",
+                  },
+                  {
                     x: [
-                      result.solvedSideslipRad * DEG_PER_RAD,
-                      result.solvedSideslipRad * DEG_PER_RAD,
+                      result.solvedCrabRad * DEG_PER_RAD,
+                      result.solvedCrabRad * DEG_PER_RAD,
                     ],
                     y: [
                       Math.min(
-                        ...result.sideslipSweep.map(
+                        ...result.crabSweep.map(
                           (p) => p.rudderRad * DEG_PER_RAD,
                         ),
                       ),
@@ -1064,7 +1082,7 @@ export default function Rudder() {
                     name: "SOLVED",
                   },
                 ]}
-                layout={figureLayout("SIDESLIP  [°]", "RUDDER  [°]", 58)}
+                layout={figureLayout("CRAB ANGLE  [°]", "RUDDER  [°]", 58)}
                 style={{ width: "100%" }}
                 useResizeHandler
               />
@@ -1134,7 +1152,7 @@ export default function Rudder() {
             <summary className="flex cursor-pointer list-none items-center justify-between gap-2 border-b border-rule-mid px-4 py-[10px] font-mono text-label font-medium tracking-label text-ink-label marker:content-none hover:text-ink">
               <span>CROSSWIND SOLUTION · EVERY SIDESLIP</span>
               <span className="font-normal text-ink-faint">
-                {result.sideslipSweep.length} angles
+                {result.crabSweep.length} angles
               </span>
             </summary>
             <div className="overflow-x-auto">
@@ -1142,7 +1160,7 @@ export default function Rudder() {
                 <thead>
                   <tr className="text-label tracking-label text-ink-label">
                     {[
-                      ["Sideslip", "°"],
+                      ["Crab angle", "°"],
                       ["Rudder", "°"],
                       ["Moment left over", "N·m"],
                     ].map(([label, unit]) => (
@@ -1154,10 +1172,10 @@ export default function Rudder() {
                   </tr>
                 </thead>
                 <tbody className="text-ink-body">
-                  {result.sideslipSweep.map((point) => (
-                    <tr key={point.sideslipRad}>
+                  {result.crabSweep.map((point) => (
+                    <tr key={point.crabRad}>
                       {[
-                        nf(point.sideslipRad * DEG_PER_RAD, 2),
+                        nf(point.crabRad * DEG_PER_RAD, 2),
                         nf(point.rudderRad * DEG_PER_RAD, 2),
                         nf(point.residualNm, 0),
                       ].map((cell, column) => (

@@ -3,13 +3,18 @@
  * straight in a crosswind and to keep it pointed the right way with an engine
  * out.
  *
- * The crosswind case is two equations at once. Side force has to balance, and
- * so does yawing moment, and the aeroplane is free to choose how much sideslip
- * it flies at — so there is one sideslip angle where both close together, and
- * the rudder that goes with it is the answer. The workbook finds it by typing
- * angles into a column until a total reads near zero. It is solved here.
+ * The crosswind case is two equations at once, Sadraey's Eqs. (12.114) and
+ * (12.115). Side force has to balance and so does yawing moment, and the two
+ * unknowns are the rudder deflection and the CRAB ANGLE — how far the nose is
+ * held off the runway heading. The sideslip is not free: it is fixed by the
+ * wind, Eq. (12.105). So there is one crab angle at which both equations
+ * close, and the rudder that goes with it is the answer.
  *
- * Method from Sadraey, chapter 12.
+ * Sadraey solves the pair algebraically and prints the answer. The workbook
+ * finds it by typing angles into a column until a total reads near zero. It is
+ * bisected here.
+ *
+ * Method from Sadraey, chapter 12, §12.6.2.3.
  */
 
 import {
@@ -23,9 +28,10 @@ import {
   RudderInputs,
   RudderResult,
   RudderWarning,
-  SIDESLIP_POINT_COUNT,
-  SIDESLIP_SEARCH_RAD,
-  SideslipPoint,
+  CRAB_POINT_COUNT,
+  CRAB_SEARCH_RAD,
+  CRAB_WINDOW_RAD,
+  CrabPoint,
   span,
   VMC_ENGINE_OFFSET_AS_WRITTEN_M,
 } from "./utils";
@@ -58,14 +64,14 @@ function rootChordM(meanChordM: number, taperRatio: number): number {
 }
 
 /**
- * Finds the sideslip where a residual changes sign, by bisection.
+ * Finds the crab angle where a residual changes sign, by bisection.
  *
  * The residual is smooth and crosses once inside the bracket, so this is all
  * that is needed. Returns NaN when it does not cross, rather than the nearest
  * edge dressed up as an answer.
  */
-function solveSideslip(
-  residualAt: (sideslipRad: number) => number,
+function solveCrab(
+  residualAt: (crabRad: number) => number,
   bracketRad: number
 ): number {
   let low = -bracketRad;
@@ -169,32 +175,41 @@ export function rudder(inputs: RudderInputs): RudderResult {
     0.5 * SEA_LEVEL_DENSITY_KG_M3 * resultantSpeedMps ** 2 * wingArea;
   const dynamicYaw = dynamicSide * wingspan;
 
-  /** The rudder that closes the side-force equation at a given sideslip. */
-  const rudderAt = (sideslipRad: number) =>
+  /** The rudder that closes the side-force equation at a given crab angle.
+   * Sadraey Eq. (12.115), solved for delta_R. */
+  const rudderAt = (crabRad: number) =>
     crosswindForceN / (dynamicSide * sideForcePerRudderRad) -
     (sideForcePerSideslipRad * crosswindSideslipRad) / sideForcePerRudderRad +
-    (sideForcePerSideslipRad * sideslipRad) / sideForcePerRudderRad;
+    (sideForcePerSideslipRad * crabRad) / sideForcePerRudderRad;
 
-  /** What the yawing moment then fails to close by. */
-  const residualAt = (sideslipRad: number) =>
+  /** What the yawing moment then fails to close by. Sadraey Eq. (12.114). */
+  const residualAt = (crabRad: number) =>
     dynamicYaw *
       (inputs.yawMomentAtZero +
-        yawStiffnessPerRad * (crosswindSideslipRad - sideslipRad) +
-        yawMomentPerRudderRad * rudderAt(sideslipRad)) +
-    crosswindForceN * crosswindArmM * Math.cos(sideslipRad);
+        yawStiffnessPerRad * (crosswindSideslipRad - crabRad) +
+        yawMomentPerRudderRad * rudderAt(crabRad)) +
+    crosswindForceN * crosswindArmM * Math.cos(crabRad);
 
-  const sideslipSweep: SideslipPoint[] = span(
-    -SIDESLIP_SEARCH_RAD / 2,
-    SIDESLIP_SEARCH_RAD / 2,
-    SIDESLIP_POINT_COUNT
-  ).map<SideslipPoint>((sideslipRad) => ({
-    sideslipRad,
-    rudderRad: rudderAt(sideslipRad),
-    residualNm: residualAt(sideslipRad),
+  const solvedCrabRad = solveCrab(residualAt, CRAB_SEARCH_RAD);
+
+  /*
+   * The search bracket has to be wide enough to guarantee a sign change, but
+   * drawing it is useless: over the full bracket the side-force balance asks
+   * for a hundred and forty degrees of rudder at one end, which squeezes the
+   * only part anyone reads into a sliver. The figures are drawn in a window
+   * about the answer instead.
+   */
+  const centre = Number.isFinite(solvedCrabRad) ? solvedCrabRad : 0;
+  const crabSweep: CrabPoint[] = span(
+    centre - CRAB_WINDOW_RAD,
+    centre + CRAB_WINDOW_RAD,
+    CRAB_POINT_COUNT
+  ).map<CrabPoint>((crabRad) => ({
+    crabRad,
+    rudderRad: rudderAt(crabRad),
+    residualNm: residualAt(crabRad),
   }));
-
-  const solvedSideslipRad = solveSideslip(residualAt, SIDESLIP_SEARCH_RAD);
-  const crosswindRudderDeg = rudderAt(solvedSideslipRad) * DEG_PER_RAD;
+  const crosswindRudderDeg = rudderAt(solvedCrabRad) * DEG_PER_RAD;
 
   const minimumControlSpeedMps =
     MINIMUM_CONTROL_SPEED_MARGIN * inputs.stallSpeedMps;
@@ -244,8 +259,8 @@ export function rudder(inputs: RudderInputs): RudderResult {
     yawStiffnessPerRad,
     sideForcePerSideslipRad,
 
-    sideslipSweep,
-    solvedSideslipRad,
+    crabSweep,
+    solvedCrabRad,
     crosswindRudderDeg,
 
     engineOutRudderDeg: engineOutRudderRad * DEG_PER_RAD,
@@ -303,12 +318,12 @@ export function rudderWarnings(
   }
 
   warnings.push({
-    key: "sideslip-solved-not-typed",
+    key: "crab-solved-not-typed",
     severity: "check",
     cell: "F20",
     message:
       "The crosswind case is two equations in two unknowns, and the sheet " +
-      "asks for sideslip angles to be typed into a column until one of them " +
+      "asks for crab angles to be typed into a column until one of them " +
       "makes a total read near zero. It is solved here instead, so the answer " +
       "follows the design rather than the last value someone typed.",
   });
@@ -352,12 +367,12 @@ export function rudderWarnings(
     }
   }
 
-  if (!Number.isFinite(result.solvedSideslipRad)) {
+  if (!Number.isFinite(result.solvedCrabRad)) {
     warnings.push({
       key: "crosswind-no-solution",
       severity: "defect",
       message:
-        "There is no sideslip angle at which side force and yawing moment " +
+        "There is no crab angle at which side force and yawing moment " +
         "both balance in this crosswind. The aeroplane cannot be held " +
         "straight on the approach, and no rudder angle is reported rather " +
         "than one that closes only half the problem.",
