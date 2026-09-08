@@ -77,3 +77,23 @@ test("Escape closes it", () => {
 
   expect(document.querySelector('[role="tooltip"]')).toBeNull();
 });
+
+test("a detailed guide stays open after pointer exit and closes with Escape", () => {
+  render(<Hint inputId="guide" spec={{ label: "CG", body: "CG position.", guide: <p>A loading case is not an allowable limit.</p> }} />);
+  const button = screen.getByTestId("help-guide");
+  button.focus();
+  fireEvent.click(button);
+  fireEvent.mouseLeave(button);
+  expect(screen.getByRole("dialog", { name: "CG guide" })).toHaveTextContent("A loading case is not an allowable limit.");
+  expect(screen.getByRole("button", { name: "Close guide" })).toHaveFocus();
+  fireEvent.keyDown(document, { key: "Escape" });
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  expect(button).toHaveFocus();
+});
+
+test("the detailed guide has an explicit close action", () => {
+  render(<Hint inputId="close-guide" spec={{ label: "Power", body: "Power fraction.", guide: <p>Use the applicable engine manual.</p> }} />);
+  fireEvent.click(screen.getByTestId("help-close-guide"));
+  fireEvent.click(screen.getByRole("button", { name: "Close guide" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});

@@ -21,10 +21,14 @@ import katex from "katex";
 import "katex/dist/katex.min.css";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import type { ReactNode } from "react";
+import { FieldGuide } from "./FieldGuide";
 
 export interface HintSpec {
   /** Used for the button's accessible name. */
   label: string;
+  /** Optional persistent decision support, opened by activating the help button. */
+  guide?: ReactNode;
   /** What the quantity is, in a sentence. */
   body: string;
   /** The range a reviewer would expect, when one is known. */
@@ -79,6 +83,8 @@ export function Hint({ inputId, spec }: { inputId: string; spec: HintSpec }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const tipRef = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const closeGuide = useCallback(() => setGuideOpen(false), []);
   const [position, setPosition] = useState<Position | null>(null);
 
   const place = useCallback(() => {
@@ -131,11 +137,19 @@ export function Hint({ inputId, spec }: { inputId: string; spec: HintSpec }) {
     <span className="relative inline-flex align-middle">
       <button
         aria-describedby={helpId}
+        aria-expanded={spec.guide ? guideOpen : undefined}
         aria-label={`Help for ${spec.label}`}
         className="flex h-4 w-4 items-center justify-center border border-rule bg-transparent font-mono text-tag leading-none text-ink-muted outline-none hover:border-ink focus:border-accent focus:text-accent"
         data-testid={`help-${inputId}`}
         onBlur={hide}
-        onClick={(event) => event.preventDefault()}
+        aria-haspopup={spec.guide ? "dialog" : undefined}
+        onClick={(event) => {
+          event.preventDefault();
+          if (spec.guide) {
+            setOpen(false);
+            setGuideOpen(true);
+          }
+        }}
         onFocus={show}
         onMouseEnter={show}
         onMouseLeave={hide}
@@ -144,7 +158,8 @@ export function Hint({ inputId, spec }: { inputId: string; spec: HintSpec }) {
       >
         ?
       </button>
-      {open
+      {guideOpen && spec.guide ? <FieldGuide title={`${spec.label} guide`} onClose={closeGuide}>{spec.guide}</FieldGuide> : null}
+      {open && !guideOpen
         ? createPortal(
             <span
               className={`pointer-events-none fixed z-50 w-[300px] border border-ink bg-ink px-3 py-2 font-sans text-note normal-case leading-[1.55] tracking-normal text-white ${
@@ -156,6 +171,7 @@ export function Hint({ inputId, spec }: { inputId: string; spec: HintSpec }) {
               style={{ top: position?.top ?? 0, left: position?.left ?? 0 }}
             >
               {spec.body}
+              {spec.guide ? <span className="mt-2 block text-white">Click or press Enter for a diagram and selection guide.</span> : null}
               {spec.typical ? (
                 <span className="mt-[6px] block text-white/70">
                   {spec.typical}
