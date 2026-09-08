@@ -74,10 +74,13 @@ export interface FigureProps {
   height?: number;
 }
 
-const MARGIN_TOP = 28;
-const MARGIN_BOTTOM = 72;
-/** Distance from the axis to the legend, held constant at any figure height. */
-const LEGEND_GAP_PX = 110;
+const MARGIN_TOP = 24;
+/** Axis line to the top of the legend: the tick labels and the axis title. */
+const LEGEND_GAP_PX = 62;
+/** One wrapped legend row. */
+const LEGEND_ROW_PX = 24;
+/** Legend entries Plotly fits on a row at this width and font. */
+const LEGEND_COLUMNS = 3;
 /** Where along the sweep the first and last inline curve labels sit. */
 const LABEL_SPAN_START = 0.12;
 const LABEL_SPAN = 0.76;
@@ -117,11 +120,27 @@ export function Figure({
   yDtick,
   height = 420,
 }: FigureProps) {
+  /*
+   * `height` is the drawing area — what the curves get. Everything the figure
+   * needs underneath is added to it, rather than taken out of it: the legend
+   * sits below the axis, outside the plotting area, and wraps onto as many
+   * rows as it has entries. One fixed allowance for that left a band of empty
+   * paper under the six-entry figures and crowded the twelve-entry one.
+   */
+  const legendEntries =
+    curves.filter((curve) => curve.showInLegend ?? true).length +
+    (rightAxis?.curves ?? []).filter((curve) => curve.showInLegend ?? true)
+      .length +
+    (hRule ? 1 : 0) +
+    1; // the design-point rule
+  const legendRows = Math.ceil(legendEntries / LEGEND_COLUMNS);
+  const marginBottom = LEGEND_GAP_PX + legendRows * LEGEND_ROW_PX;
+  const boxHeight = MARGIN_TOP + height + marginBottom;
+
   // The legend's `y` is a fraction of the plotting area, so a taller figure
-  // would push it further from the axis and eventually off the paper. Hold
-  // the gap at a constant number of pixels instead.
-  const plotHeight = height - MARGIN_TOP - MARGIN_BOTTOM;
-  const legendY = -(LEGEND_GAP_PX / plotHeight);
+  // would push it further from the axis. Hold the gap at a constant number of
+  // pixels instead.
+  const legendY = -(LEGEND_GAP_PX / height);
 
   const yValues = curves.flatMap((curve) => curve.y);
   const yMax = Math.max(...yValues, hRule?.y ?? 0) * 1.08;
@@ -165,8 +184,8 @@ export function Figure({
 
   return (
     <div
-      className="relative mt-4 min-h-[240px] border border-rule bg-field px-2 pb-1 pt-3"
-      style={{ minHeight: height + 40 }}
+      className="relative mt-4 border border-rule bg-field px-1 pb-2 pt-2"
+      style={{ minHeight: boxHeight }}
     >
       <div className="absolute right-[14px] top-[8px] z-10 flex items-center gap-2 font-mono text-label text-ink-faint">
         {figureLabel}
@@ -277,6 +296,9 @@ export function Figure({
             type: "scatter" as const,
             mode: "markers" as const,
             name: marker.name,
+            // Each marker is a curve's value at the design point, and carries
+            // that curve's name. Listing both put every name in the key twice.
+            showlegend: false,
             marker: { color: tokens.colors.accent.DEFAULT, size: 8 },
           })),
         ]}
@@ -284,11 +306,13 @@ export function Figure({
           autosize: true,
           // Room for the axis titles; the right margin only when there is
           // a second axis to title.
+          // The axis titles are rotated mono text one line deep, so the
+          // gutters only have to hold the tick labels and that line.
           margin: {
-            l: 78,
-            r: rightAxis ? 76 : 18,
+            l: 58,
+            r: rightAxis ? 58 : 10,
             t: MARGIN_TOP,
-            b: MARGIN_BOTTOM,
+            b: marginBottom,
           },
           paper_bgcolor: tokens.colors.field,
           plot_bgcolor: tokens.colors.field,
@@ -322,7 +346,7 @@ export function Figure({
           legend: { orientation: "h", y: legendY, x: 0 },
           hovermode: "closest",
         }}
-        style={{ width: "100%", height }}
+        style={{ width: "100%", height: boxHeight }}
         useResizeHandler
       />
     </div>

@@ -434,7 +434,7 @@ export default function StallLimits() {
               // and it needs one: below this the five power curves stack
               // into the lower third and the isobars cross them too shallowly
               // to follow.
-              height={945}
+              height={845}
               // 50 BHP a step. Reading a required power off this figure is
               // the whole point of it, and Plotly's automatic interval put
               // 200 between the lines.
