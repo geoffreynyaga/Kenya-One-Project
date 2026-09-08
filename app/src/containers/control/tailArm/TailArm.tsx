@@ -48,7 +48,7 @@ const axis = (text: string) => ({
 
 const layoutFor = (x: string, y: string) => ({
   autosize: true,
-  height: 300,
+  height: 420,
   margin: { l: 62, r: 14, t: 18, b: 96 },
   paper_bgcolor: tokens.colors.field,
   plot_bgcolor: tokens.colors.field,
@@ -502,10 +502,10 @@ export default function TailArm() {
               </table>
             </div>
             <p className="px-4 py-[9px] font-mono text-meta leading-[1.6] text-ink-muted">
-              The wetted area is the tail cone plus both faces of each surface
-              the method sizes, so the single-surface rows are not comparable
-              with the last one. Raymer’s row is shown with the areas its arm
-              would require at the same volumes.
+              Every row is the tail cone plus both faces of both surfaces at
+              that row’s arm, so the four are directly comparable. Gudmundsson
+              asks that one method be chosen and kept to rather than averaged
+              across, so pick the one whose argument fits this aeroplane.
             </p>
           </section>
 
