@@ -222,6 +222,25 @@ describe("a stage the reader can actually confirm", () => {
     expect(store.get(committedStagesAtom).wingAndAirfoil).toBe(false);
   });
 
+  /*
+   * Setting the stage flag alone was not enough: Cruise asks for the taper
+   * ratio and the section moment slope by name, and went on demanding they be
+   * confirmed "in their owning stage" after that stage had just been signed
+   * off. Confirming the sheet has to confirm what the sheet owns.
+   */
+  it("confirming Wing & Airfoil confirms the quantities it owns", () => {
+    const store = createStore();
+    render(withProviders(store, <WingAndAirfoil />));
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "CONFIRM WING & AIRFOIL" })
+    );
+
+    const statuses = store.get(quantityStatusesAtom);
+    expect(statuses.taperRatio).toBe("confirmed");
+    expect(statuses.sectionMomentCoefficient).toBe("confirmed");
+  });
+
   it("editing the taper ratio publishes it as a decided quantity", () => {
     const store = createStore();
     render(withProviders(store, <WingAndAirfoil />));
@@ -232,6 +251,47 @@ describe("a stage the reader can actually confirm", () => {
     });
 
     expect(store.get(quantityStatusesAtom).taperRatio).toBe("confirmed");
+  });
+
+  /*
+   * The path a reader actually walks: confirm the two sheets, then open
+   * Cruise. Every other test here pre-sets the store, so none of them would
+   * have caught Cruise still naming these four after both sheets were signed.
+   */
+  it("confirming both sheets clears the four blockers they own", () => {
+    const store = upstreamDoneStore();
+    store.set(committedStagesAtom, {
+      ...store.get(committedStagesAtom),
+      wingAndAirfoil: false,
+      drag: false,
+    });
+    const { taperRatio, sectionMomentCoefficient, ...rest } =
+      store.get(quantityStatusesAtom);
+    expect(taperRatio).toBe("confirmed"); // the fixture sets both
+    expect(sectionMomentCoefficient).toBe("confirmed");
+    store.set(quantityStatusesAtom, rest);
+
+    const wing = render(withProviders(store, <WingAndAirfoil />));
+    fireEvent.click(
+      screen.getByRole("button", { name: "CONFIRM WING & AIRFOIL" })
+    );
+    wing.unmount();
+
+    const drag = render(withProviders(store, <DragAnalysis />));
+    fireEvent.click(
+      screen.getByRole("button", { name: "CONFIRM DRAG ANALYSIS" })
+    );
+    drag.unmount();
+
+    render(withProviders(store, <Cruise />));
+    for (const blocker of [
+      /Confirm WING & AIRFOIL/,
+      /Confirm DRAG ANALYSIS/,
+      /Confirm wing taper ratio/,
+      /Confirm wing pitching-moment coefficient/,
+    ]) {
+      expect(screen.queryByText(blocker), `${blocker} still blocks`).toBeNull();
+    }
   });
 
   it("Drag analysis commits and withdraws on edit", () => {

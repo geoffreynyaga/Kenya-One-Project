@@ -1,8 +1,11 @@
-import { useAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { useCallback } from "react";
 
-import { committedStagesAtom } from "../../domain/atoms";
+import { committedStagesAtom, confirmQuantitiesAtom } from "../../domain/atoms";
 import { Stage, STAGE_LABELS } from "../../domain/stages";
+
+/** Hoisted so the default does not change identity on every render. */
+const NO_QUANTITIES: string[] = [];
 
 /**
  * A stage's confirmation, and the two things that change it.
@@ -10,11 +13,20 @@ import { Stage, STAGE_LABELS } from "../../domain/stages";
  * Confirming is the reader saying the sheet is settled; every sheet downstream
  * waits on it. Editing anything afterwards withdraws it, because the
  * confirmation described the numbers as they were and no longer describes
- * these. Nothing here changes a quantity — it only records whether the stage
- * has been signed off.
+ * these.
+ *
+ * `quantities` are the shared keys this stage owns. Confirming the sheet
+ * confirms them too: a reader who agreed with the values already shown had
+ * otherwise no way to say so, and the sheets downstream went on asking to have
+ * them confirmed in the very stage that had just been signed off. Editing one
+ * confirms it on its own, because writing a provisional atom is a decision.
  */
-export function useStageCommit(stage: Stage) {
+export function useStageCommit(
+  stage: Stage,
+  quantities: string[] = NO_QUANTITIES
+) {
   const [committed, setCommitted] = useAtom(committedStagesAtom);
+  const confirmQuantities = useSetAtom(confirmQuantitiesAtom);
   const set = useCallback(
     (value: boolean) =>
       setCommitted((current) =>
@@ -23,9 +35,14 @@ export function useStageCommit(stage: Stage) {
     [setCommitted, stage]
   );
 
+  const confirm = useCallback(() => {
+    set(true);
+    if (quantities.length > 0) confirmQuantities(quantities);
+  }, [confirmQuantities, quantities, set]);
+
   return {
     confirmed: committed[stage],
-    confirm: useCallback(() => set(true), [set]),
+    confirm,
     withdraw: useCallback(() => set(false), [set]),
   };
 }
@@ -37,8 +54,15 @@ export function useStageCommit(stage: Stage) {
  * Climb, Range and Landing all sat behind a confirmation the reader could not
  * give anywhere in the app.
  */
-export function StageCommitBar({ stage }: { stage: Stage }) {
-  const { confirmed, confirm } = useStageCommit(stage);
+export function StageCommitBar({
+  stage,
+  quantities,
+}: {
+  stage: Stage;
+  /** Shared keys this stage owns, confirmed along with it. */
+  quantities?: string[];
+}) {
+  const { confirmed, confirm } = useStageCommit(stage, quantities);
   const label = STAGE_LABELS[stage];
 
   return (

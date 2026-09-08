@@ -71,6 +71,13 @@ const CARRIED_FIELDS: EntrySpec[] = [
   { field: "cruiseSpeedKt", label: "Cruise speed", unit: "kt", cell: "B11", origin: "SEED · CRUISE WB", body: "Cruise speed, for the cruise Reynolds number. Seeded until the cruise sheet is ported." },
 ];
 
+/*
+ * The shared quantities this sheet owns. Confirming the sheet confirms them,
+ * so a reader who agrees with the values on screen can say so without having
+ * to retype them.
+ */
+const OWNED_QUANTITIES = ["taperRatio", "sectionMomentCoefficient"];
+
 interface ViewState {
   inputs: AerofoilInputs;
   openSections: string[];
@@ -284,7 +291,7 @@ export default function WingAndAirfoil() {
           {section("planform", "ENTRY · PLANFORM", PLANFORM_FIELDS)}
           {section("section", "ENTRY · SECTION 2-D", SECTION_FIELDS)}
           {section("carried", "CARRIED · UPSTREAM", CARRIED_FIELDS)}
-          <StageCommitBar stage="wingAndAirfoil" />
+          <StageCommitBar quantities={OWNED_QUANTITIES} stage="wingAndAirfoil" />
           <button
             className="mt-4 w-full border border-rule bg-panel px-4 py-3 font-mono text-meta tracking-tab text-ink-faint hover:text-ink"
             onClick={() => setView({ ...DEFAULT_VIEW })}
