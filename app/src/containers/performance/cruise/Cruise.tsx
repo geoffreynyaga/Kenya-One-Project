@@ -2,11 +2,22 @@ import { ReactNode, useMemo } from "react";
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
+import {
+  aerodynamicCentreMacAtom,
+  clAtMinimumDragAtom,
+  mainGearMacAtom,
+  stallAngleDegAtom,
+  tailArmFtAtom,
+  thrustArmFtAtom,
+  thrustLineOffsetFtAtom,
+} from "../../../domain/atoms";
 import { FigureExplainer } from "../../../components/sheet/FigureExplainer";
 import { Hint, HintSpec } from "../../../components/sheet/Hint";
 import { InputSection } from "../../../components/sheet/InputSection";
+import { SeedRow, SeedRowSpec } from "../../../components/sheet/SeedRow";
 import { ValueRow } from "../../../components/sheet/ValueRow";
 import tokens from "../../../design-tokens";
+import { CgGuide, CruisePowerGuide } from "./CruiseGuides";
 import { cruise, cruiseWarnings } from "./cruiseCompute";
 import { cruiseInputIssues } from "./cruiseSchema";
 import { EntryField, useCruiseSheet } from "./useCruiseSheet";
@@ -74,6 +85,7 @@ const ENTRY_FIELDS: EntrySpec[] = [
   {
     field: "cruisePowerFraction",
     label: "Cruise power fraction",
+    guide: <CruisePowerGuide />,
     unit: "fraction",
     cell: "B8",
     body: "The fraction of installed shaft power held at the selected cruise condition.",
@@ -89,6 +101,7 @@ const ENTRY_FIELDS: EntrySpec[] = [
   {
     field: "forwardCgMac",
     label: "Forward CG",
+    guide: <CgGuide />,
     unit: "fraction MAC",
     cell: "B46",
     body: "Forward loading limit as a fraction of mean aerodynamic chord. It remains a local assumption until Weight & Balance owns the live envelope.",
@@ -96,9 +109,73 @@ const ENTRY_FIELDS: EntrySpec[] = [
   {
     field: "aftCgMac",
     label: "Aft CG",
+    guide: <CgGuide aft />,
     unit: "fraction MAC",
     cell: "B47",
     body: "Aft loading limit as a fraction of mean aerodynamic chord. The forward value must remain ahead of this one.",
+  },
+];
+
+/**
+ * Quantities Cruise needs that no stage owns yet.
+ *
+ * Each one blocked the sheet with "Confirm ... in its owning stage" while the
+ * owning stage did not exist, so there was nowhere in the app to go and
+ * resolve it. They are offered here, seeded and editable, until an installation
+ * geometry stage takes them.
+ */
+const SEED_FIELDS: SeedRowSpec[] = [
+  {
+    quantityKey: "clAtMinimumDrag",
+    atom: clAtMinimumDragAtom,
+    label: "Lift coefficient at minimum drag",
+    cell: "H25",
+    body: "Shifts the adjusted drag polar to the section's measured minimum-drag lift coefficient. Zero is valid for a symmetric section.",
+  },
+  {
+    quantityKey: "stallAngleDeg",
+    atom: stallAngleDegAtom,
+    unit: "°",
+    label: "Wing stall angle",
+    cell: "B25",
+    body: "Angle of attack at which the wing stalls, read from the section data and corrected for the finite wing.",
+  },
+  {
+    quantityKey: "tailArmFt",
+    atom: tailArmFtAtom,
+    unit: "ft",
+    label: "Tail arm",
+    body: "Distance from the wing aerodynamic centre to the horizontal tail aerodynamic centre.",
+    typical: "Roughly half the fuselage length on a conventional layout.",
+  },
+  {
+    quantityKey: "thrustArmFt",
+    atom: thrustArmFtAtom,
+    unit: "ft",
+    label: "Thrust arm",
+    body: "Longitudinal distance from the centre of gravity to the propeller plane.",
+  },
+  {
+    quantityKey: "thrustLineOffsetFt",
+    atom: thrustLineOffsetFtAtom,
+    unit: "ft",
+    label: "Thrust-line offset",
+    body: "Vertical offset of the thrust line from the centre of gravity. It sets the pitching moment a power change produces.",
+  },
+  {
+    quantityKey: "aerodynamicCentreMac",
+    atom: aerodynamicCentreMacAtom,
+    unit: "fraction MAC",
+    label: "Aerodynamic-centre station",
+    body: "Wing aerodynamic centre as a fraction of mean aerodynamic chord.",
+    typical: "Near 0.25 for an unswept wing at low speed.",
+  },
+  {
+    quantityKey: "mainGearMac",
+    atom: mainGearMacAtom,
+    unit: "fraction MAC",
+    label: "Main-gear station",
+    body: "Main landing gear contact point as a fraction of mean aerodynamic chord, measured from the leading edge.",
   },
 ];
 
@@ -230,14 +307,6 @@ export default function Cruise() {
       origin: "WING & AIRFOIL",
       body: "Shown as the resulting induced-drag factor used by the polar.",
     },
-    {
-      key: "clAtMinimumDrag",
-      label: "Lift coefficient at minimum drag",
-      value: inputs.clAtMinimumDrag,
-      cell: "H25",
-      origin: "WING & AIRFOIL",
-      body: "Shifts the adjusted drag polar to the section's measured minimum-drag lift coefficient.",
-    },
   ];
 
   const entryRow = (spec: EntrySpec) => {
@@ -290,6 +359,21 @@ export default function Cruise() {
         onToggle={(open) => sheet.toggleSection("loading", open)}
       >
         {ENTRY_FIELDS.map(entryRow)}
+      </InputSection>
+      <InputSection
+        count={SEED_FIELDS.length}
+        open={sheet.openSections.seeded}
+        provisional={
+          SEED_FIELDS.filter(
+            (spec) => sheet.quantityStatus(spec.quantityKey) !== "confirmed"
+          ).length
+        }
+        title="SEEDED · NO OWNING STAGE"
+        onToggle={(open) => sheet.toggleSection("seeded", open)}
+      >
+        {SEED_FIELDS.map((spec) => (
+          <SeedRow idPrefix="cr-seed" key={spec.quantityKey} spec={spec} />
+        ))}
       </InputSection>
       <InputSection
         count={carried.length}

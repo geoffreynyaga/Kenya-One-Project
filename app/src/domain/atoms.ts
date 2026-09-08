@@ -1,4 +1,4 @@
-import { atom } from "jotai";
+import { atom, WritableAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 
 import {
@@ -61,7 +61,14 @@ export function sharedNumericQuantity(
 
 type NumberUpdate = number | ((current: number) => number);
 
-const provisional = (key: string, initial: number) => {
+/**
+ * A quantity carrying a seeded guess until a human decides it. Writing one is
+ * what marks it confirmed, so a component that offers a seeded value for
+ * editing can take this type without knowing which quantity it holds.
+ */
+export type ProvisionalAtom = WritableAtom<number, [NumberUpdate], void>;
+
+const provisional = (key: string, initial: number): ProvisionalAtom => {
   const valueAtom = persisted(key, initial);
   return atom(
     (get) => get(valueAtom),

@@ -12,15 +12,32 @@ import {
 import Plotly from "plotly.js-basic-dist";
 import createPlotlyComponent from "react-plotly.js/factory";
 
+import { approachSpeedRatioAtom } from "../../../domain/atoms";
 import { Hint, HintSpec } from "../../../components/sheet/Hint";
 import { FigureExplainer } from "../../../components/sheet/FigureExplainer";
 import { InputSection } from "../../../components/sheet/InputSection";
+import { SeedRow, SeedRowSpec } from "../../../components/sheet/SeedRow";
 import { ValueRow } from "../../../components/sheet/ValueRow";
 import tokens from "../../../design-tokens";
 import { landing, landingWarnings } from "./landingCompute";
 import { landingInputIssues } from "./landingSchema";
 import { EntryField, useLandingSheet } from "./useLandingSheet";
 import { LandingResult } from "./utils";
+
+/**
+ * The approach speed ratio has no owning stage, so Landing demanded a
+ * confirmation the reader could not give anywhere. It is offered here instead.
+ */
+const SEED_FIELDS: SeedRowSpec[] = [
+  {
+    quantityKey: "approachSpeedRatio",
+    atom: approachSpeedRatioAtom,
+    label: "Approach speed ratio",
+    cell: "G2",
+    body: "Approach speed divided by landing stall speed. The same shared rule is used by the aileron control check.",
+    typical: "1.3 for the certified approach margin; a shorter field trades margin for distance.",
+  },
+];
 
 const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
@@ -336,15 +353,6 @@ export default function Landing() {
       body: "Fuel carried for the selected mission as a fraction of maximum take-off weight. Landing derives the post-burn weight from this choice.",
     },
     {
-      key: "approachSpeedRatio",
-      label: "Approach speed ratio",
-      value: inputs.approachSpeedRatio,
-      digits: 2,
-      cell: "G2",
-      origin: "AILERON",
-      body: "Approach speed divided by landing stall speed. The same shared rule is used by the aileron control check.",
-    },
-    {
       key: "wingArea",
       label: "Wing area",
       unit: "ft²",
@@ -497,6 +505,21 @@ export default function Landing() {
           Leave both empty to use one twentieth of static thrust. Enter both
           only when the selected propulsion installation supports them.
         </p>
+      </InputSection>
+      <InputSection
+        count={SEED_FIELDS.length}
+        open={sheet.openSections.seeded}
+        provisional={
+          SEED_FIELDS.filter(
+            (spec) => sheet.quantityStatus(spec.quantityKey) !== "confirmed"
+          ).length
+        }
+        title="SEEDED · NO OWNING STAGE"
+        onToggle={(open) => sheet.toggleSection("seeded", open)}
+      >
+        {SEED_FIELDS.map((spec) => (
+          <SeedRow idPrefix="ld-seed" key={spec.quantityKey} spec={spec} />
+        ))}
       </InputSection>
       <InputSection
         count={carried.length}

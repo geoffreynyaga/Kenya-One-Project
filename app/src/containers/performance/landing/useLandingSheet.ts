@@ -65,6 +65,7 @@ const SECTION_DEFAULTS = {
   runway: true,
   configuration: true,
   idle: false,
+  seeded: true,
   carried: false,
 };
 

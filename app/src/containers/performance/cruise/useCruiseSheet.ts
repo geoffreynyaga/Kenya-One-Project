@@ -40,7 +40,7 @@ type LocalField = Exclude<EntryField, "cruisePowerFraction">;
 
 const ENTRY_KEY = "kenya-one:cruise:entry:v2";
 const SECTIONS_KEY = "kenya-one:cruise:sections:v1";
-const SECTION_DEFAULTS = { loading: true, carried: false };
+const SECTION_DEFAULTS = { loading: true, seeded: true, carried: false };
 export type SectionKey = keyof typeof SECTION_DEFAULTS;
 
 export interface CruiseSheet {
