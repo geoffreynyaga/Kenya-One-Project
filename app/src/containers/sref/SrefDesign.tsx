@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useAtomValue, useSetAtom } from "jotai";
 import {
@@ -18,6 +18,7 @@ import {
 import { getCalculationClient } from "../../api/client";
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { axisTitle } from "../../components/sheet/ConstraintFigure";
+import { FieldGuide } from "../../components/sheet/FieldGuide";
 import tokens from "../../design-tokens";
 import { InputSection } from "../../components/sheet/InputSection";
 import {
@@ -60,6 +61,9 @@ import {
   wingAreaM2Atom,
 } from "../../domain/atoms";
 import { loopsFor } from "../../domain/loops";
+import WingGeometryGuide, {
+  WingGuideField,
+} from "../wingAndAirfoil/WingGeometryGuide";
 
 const Plot = createPlotlyComponent(Plotly);
 const MONO = tokens.fontFamily.mono.join(", ");
@@ -162,30 +166,45 @@ function readable(raw: string): string {
 
 interface HintProps {
   inputId: string;
-  spec: FieldSpec;
+  spec: FieldSpec & { guide?: ReactNode };
   exact?: string;
 }
 
 function Hint({ inputId, spec, exact }: HintProps) {
   const helpId = `${inputId}-help`;
+  const [guideOpen, setGuideOpen] = useState(false);
   return (
     <span className="group relative inline-flex align-middle">
       <button
         aria-describedby={helpId}
+        aria-haspopup={spec.guide ? "dialog" : undefined}
         aria-label={`Help for ${spec.label}`}
         className="flex h-4 w-4 items-center justify-center border border-rule bg-transparent font-mono text-tag leading-none text-ink-muted outline-none hover:border-ink focus:border-accent focus:text-accent"
         data-testid={`help-${inputId}`}
-        onClick={(event) => event.preventDefault()}
+        onClick={(event) => {
+          event.preventDefault();
+          if (spec.guide) setGuideOpen(true);
+        }}
         type="button"
       >
         ?
       </button>
+      {guideOpen && spec.guide ? (
+        <FieldGuide title={`${spec.label} guide`} onClose={() => setGuideOpen(false)}>
+          {spec.guide}
+        </FieldGuide>
+      ) : null}
       <span
         className="invisible pointer-events-none absolute left-0 top-[calc(100%+6px)] z-50 w-[260px] border border-ink bg-ink px-3 py-2 font-sans text-note normal-case leading-[1.55] tracking-normal text-white opacity-0 transition-opacity group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100"
         id={helpId}
         role="tooltip"
       >
         {spec.body}
+        {spec.guide ? (
+          <span className="mt-2 block text-white">
+            Click or press Enter for a diagram and selection guide.
+          </span>
+        ) : null}
         {spec.typical ? (
           <span className="mt-[6px] block text-white/70">{spec.typical}</span>
         ) : null}
@@ -209,7 +228,7 @@ function Hint({ inputId, spec, exact }: HintProps) {
 }
 
 interface ValueCellProps {
-  spec: FieldSpec;
+  spec: FieldSpec & { guide?: ReactNode };
   values: FormValues;
   errors: Partial<Record<FormField, string>>;
   overridden: boolean;
@@ -701,6 +720,8 @@ export default function SrefDesign() {
     STORAGE_KEY,
     DEFAULT_VIEW
   );
+  const [activeGuideField, setActiveGuideField] =
+    useState<WingGuideField | null>(null);
   const { senses } = view;
 
   const committedStages = useAtomValue(committedStagesAtom);
@@ -935,6 +956,57 @@ export default function SrefDesign() {
     });
   };
 
+  const focusGuideField = (field: WingGuideField) => {
+    const targets: Partial<Record<WingGuideField, FormField>> = {
+      wingLoading: "wingLoading",
+      aspectRatio: "aspectRatio",
+    };
+    const target = targets[field];
+    setActiveGuideField(field);
+    if (!target) return;
+    toggleSection(
+      target === "wingLoading" ? "DESIGN POINT" : "AERODYNAMICS",
+      true
+    );
+    window.setTimeout(() => {
+      document.getElementById(target)?.focus();
+    }, 0);
+  };
+
+  const guideConfirmed = Boolean(submitted && committedStages.sref);
+  const srefGuideValues: Partial<Record<WingGuideField, string>> = guideConfirmed
+    ? {
+        wingLoading: `${formatNumber(Number(values.wingLoading), 2)} lb/ft²`,
+        aspectRatio: formatNumber(Number(values.aspectRatio), 2),
+        wingAreaM2: `${formatNumber(wingAreaM2, 2)} m²`,
+        spanM: `${formatNumber(
+          Math.sqrt(wingAreaM2 * Number(values.aspectRatio)),
+          2
+        )} m`,
+      }
+    : {};
+
+  const srefGuide = (active: WingGuideField | null = activeGuideField) => (
+    <WingGeometryGuide
+      active={active}
+      mode="sref"
+      onSelect={focusGuideField}
+      values={srefGuideValues}
+    />
+  );
+
+  const withGeometryGuide = (
+    spec: FieldSpec
+  ): FieldSpec & { guide?: ReactNode } => {
+    if (spec.field === "wingLoading") {
+      return { ...spec, guide: srefGuide("wingLoading") };
+    }
+    if (spec.field === "aspectRatio") {
+      return { ...spec, guide: srefGuide("aspectRatio") };
+    }
+    return spec;
+  };
+
   const renderSection = (key: SectionKey) => {
     const { title, specs } = SECTIONS[key];
     const statuses = specs.map(fieldStatus);
@@ -947,16 +1019,19 @@ export default function SrefDesign() {
         title={title}
         unresolved={statuses.filter((s) => s === "unresolved").length}
       >
-        {specs.map((spec) => (
-          <ValueCell
-            key={spec.field}
-            overridden={isOverridden(spec.field)}
-            spec={spec}
-            status={fieldStatus(spec)}
-            upstream={upstreamValue(spec.field)}
-            {...cellProps}
-          />
-        ))}
+        {specs.map((rawSpec) => {
+          const spec = withGeometryGuide(rawSpec);
+          return (
+            <ValueCell
+              key={spec.field}
+              overridden={isOverridden(spec.field)}
+              spec={spec}
+              status={fieldStatus(spec)}
+              upstream={upstreamValue(spec.field)}
+              {...cellProps}
+            />
+          );
+        })}
       </InputSection>
     );
   };
@@ -1115,11 +1190,6 @@ export default function SrefDesign() {
               </section>
 
               <aside className="flex flex-col self-start bg-panel xl:border-l xl:border-rule-mid">
-                {/*
-                  The verdict on the design point sits beside the figure it is
-                  about. It used to follow the engine catalog, which is thirty
-                  rows long, so it landed far below the plot it referred to.
-                */}
                 {feasibility && !feasibility.feasible ? (
                   <div
                     className="border-b border-rule-mid bg-accent-wash px-[18px] py-[13px]"
