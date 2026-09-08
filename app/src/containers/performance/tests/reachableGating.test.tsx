@@ -204,15 +204,7 @@ describe("a seeded quantity can be resolved from the sheet that needs it", () =>
   });
 });
 
-/*
- * Wing & Airfoil and Drag Analysis have no confirm action at all: neither
- * sheet touches `committedStagesAtom`, and Wing & Airfoil keeps its planform
- * entries in local view state rather than in the shared quantities. Everything
- * downstream therefore waits on a confirmation the reader cannot give. These
- * describe the sheets as they need to behave; they are skipped until those two
- * sheets own their inputs.
- */
-describe.skip("a stage the reader can actually confirm", () => {
+describe("a stage the reader can actually confirm", () => {
   it("Wing & Airfoil commits and withdraws on edit", () => {
     const store = createStore();
     render(withProviders(store, <WingAndAirfoil />));

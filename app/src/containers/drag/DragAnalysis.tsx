@@ -12,6 +12,10 @@ import {
 import { usePersistentState } from "../../hooks/usePersistentState";
 import { InputSection } from "../../components/sheet/InputSection";
 import { Hint, HintSpec } from "../../components/sheet/Hint";
+import {
+  StageCommitBar,
+  useStageCommit,
+} from "../../components/sheet/StageCommit";
 import { ValueRow } from "../../components/sheet/ValueRow";
 import { dragBuildUp, DragInputs, dragWarnings, SurfaceDrag } from "./dragCompute";
 import { WORKBOOK_INPUTS } from "./dragFixture";
@@ -178,15 +182,18 @@ export default function DragAnalysis() {
     DEFAULT_VIEW
   );
   const { inputs } = view;
+  const { withdraw } = useStageCommit("drag");
 
   const result = useMemo(() => dragBuildUp(inputs), [inputs]);
   const warnings = useMemo(() => dragWarnings(result), [result]);
 
-  const setField = (field: keyof DragInputs, next: number) =>
+  const setField = (field: keyof DragInputs, next: number) => {
+    withdraw();
     setView((current) => ({
       ...current,
       inputs: { ...current.inputs, [field]: next },
     }));
+  };
 
   const toggle = (key: string, open: boolean) =>
     setView((current) => {
@@ -290,6 +297,7 @@ export default function DragAnalysis() {
           {section("shape", "ENTRY · SHAPE", SHAPE_FIELDS)}
           {section("gear", "ENTRY · LANDING GEAR", GEAR_FIELDS)}
           {section("carried", "CARRIED · UPSTREAM", CARRIED_FIELDS)}
+          <StageCommitBar stage="drag" />
           <button
             className="mt-4 w-full border border-rule bg-panel px-4 py-3 font-mono text-meta tracking-tab text-ink-faint hover:text-ink"
             onClick={() => setView({ ...DEFAULT_VIEW })}
