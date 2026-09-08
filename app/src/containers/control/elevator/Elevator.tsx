@@ -20,7 +20,12 @@ import {
   witnessLine,
 } from "../GeometryPlot";
 import { elevator, elevatorWarnings } from "./elevatorCompute";
-import { EntryField, TailField, useElevatorSheet } from "./useElevatorSheet";
+import {
+  DimensionField,
+  EntryField,
+  TailField,
+  useElevatorSheet,
+} from "./useElevatorSheet";
 import { ElevatorInputs, ElevatorResult, TrimPoint } from "./utils";
 
 const Plot = createPlotlyComponent(Plotly);
@@ -184,13 +189,6 @@ const GEOMETRY_FIELDS: EntrySpec[] = [
     unit: "m",
     cell: "B21",
     body: "Where the wing and fuselage lift acts, measured from the wheels.",
-  },
-  {
-    field: "tailAcXM",
-    label: "Tail AC, x",
-    unit: "m",
-    cell: "B24",
-    body: "Where the tail load acts. It is the lever the elevator works on, so it matters more than any other length here.",
   },
   {
     field: "cgZM",
@@ -373,7 +371,10 @@ function tailDimensions(
  * quantities measured from the nose are drawn; the arms this sheet keeps from
  * the leading edge are a different datum and stay in the key.
  */
-function stationDimensions(inputs: ElevatorInputs, active: EntryField | null) {
+function stationDimensions(
+  inputs: ElevatorInputs,
+  active: DimensionField | null,
+) {
   const { cgXM, mainGearXM, wingAcXM, tailAcXM } = inputs;
   if (![cgXM, mainGearXM, wingAcXM, tailAcXM].every(Number.isFinite)) {
     return { shapes: [], annotations: [], points: { x: [], y: [] } };
@@ -705,6 +706,15 @@ export default function Elevator() {
       : { ...spec, guide: geometryGuide };
 
   const carried: CarriedSpec[] = [
+    {
+      label: "Tail AC, x",
+      unit: "m",
+      value: inputs.tailAcXM,
+      digits: 3,
+      cell: "B24",
+      origin: "CONTROL 01",
+      body: "Where the tail load acts, measured from the wheels: the wing AC plus the tail arm Control 01 settled. It is the lever the elevator works on, so it matters more than any other length here.",
+    },
     {
       label: "Design weight",
       unit: "kg",

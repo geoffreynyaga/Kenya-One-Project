@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { Provider, createStore } from "jotai";
 
+import { tailArmFtAtom } from "../../../../domain/atoms";
 import Elevator from "../Elevator";
 
 vi.mock("plotly.js-basic-dist", () => ({ default: {} }));
@@ -19,23 +21,36 @@ describe("Elevator", () => {
     figures.forEach((figure) => expect(figure.closest("details")).toBeNull());
   });
 
+  /*
+   * The tail station is no longer typed in here: it is the wing station plus
+   * the arm Control 01 carries. So the arm is moved at its source, which also
+   * checks that this sheet is actually reading it.
+   */
   it("needs less tail load on a longer arm", () => {
-    const { container } = render(<Elevator />);
+    const load = () =>
+      parseFloat(
+        screen
+          .getByText("TAIL LOAD TO ROTATE")
+          .nextElementSibling!.textContent!.replace(/,/g, "")
+      );
 
-    const before = screen.getByText("TAIL LOAD TO ROTATE").nextElementSibling
-      ?.textContent;
-    fireEvent.click(screen.getByText("ENTRY · WHERE THINGS SIT"));
-    fireEvent.change(container.querySelector("#el-tailAcXM")!, {
-      target: { value: "6.5" },
-    });
-    const after = screen.getByText("TAIL LOAD TO ROTATE").nextElementSibling
-      ?.textContent;
-
-    expect(after).not.toBe(before);
-    // The load is a download, so a longer arm makes it less negative.
-    expect(parseFloat(after!.replace(/,/g, ""))).toBeGreaterThan(
-      parseFloat(before!.replace(/,/g, ""))
+    const store = createStore();
+    const { rerender } = render(
+      <Provider store={store}>
+        <Elevator />
+      </Provider>
     );
+    const before = load();
+
+    store.set(tailArmFtAtom, store.get(tailArmFtAtom) + 4.5);
+    rerender(
+      <Provider store={store}>
+        <Elevator />
+      </Provider>
+    );
+
+    // The load is a download, so a longer arm makes it less negative.
+    expect(load()).toBeGreaterThan(before);
   });
 
   it("says whether the tail is still flying at rotation", () => {

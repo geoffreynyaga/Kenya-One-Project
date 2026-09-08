@@ -27,6 +27,7 @@ import {
   rollingFrictionAtom,
   stallAngleDegAtom,
   stallSpeedKcasAtom,
+  tailArmMAtom,
   takeoffThrustNAtom,
   tailIncidenceDegAtom,
   tailSectionLiftSlopePerDegAtom,
@@ -53,7 +54,6 @@ export type GeometryField =
   | "mainGearXM"
   | "cgXM"
   | "wingAcXM"
-  | "tailAcXM"
   | "dragZM"
   | "mainGearZM"
   | "cgZM"
@@ -64,6 +64,12 @@ export type GeometryField =
   | "forwardCgToAcM";
 
 export type EntryField = SurfaceField | RotationField | GeometryField;
+
+/**
+ * The tail station is drawn and labelled on the diagram like an entry field,
+ * but it is no longer one: it follows the tail arm carried from Control 01.
+ */
+export type DimensionField = EntryField | "tailAcXM";
 
 /**
  * The tailplane the elevator hinges off. Shared quantities the workbook types
@@ -92,7 +98,6 @@ const ENTRY_DEFAULTS: Record<LocalField, number> = {
   mainGearXM: 0,
   cgXM: -0.61894,
   wingAcXM: -0.477468,
-  tailAcXM: 4.622532,
   dragZM: 1.6,
   mainGearZM: 0,
   cgZM: 1.5,
@@ -179,6 +184,7 @@ export function useElevatorSheet(): ElevatorSheet {
   );
   const tailIncidenceDeg = useAtomValue(tailIncidenceDegAtom);
   const tailEfficiency = useAtomValue(horizontalTailEfficiencyAtom);
+  const tailArmM = useAtomValue(tailArmMAtom);
   const [thrustN, setThrustN] = useAtom(takeoffThrustNAtom);
 
   const [entry, setEntryState, resetEntry] = usePersistentState<
@@ -191,6 +197,10 @@ export function useElevatorSheet(): ElevatorSheet {
   const inputs = useMemo<ElevatorInputs>(
     () => ({
       ...entry,
+      // The tail station is the wing's plus the arm Control 01 settled. It
+      // used to be typed in, and disagreed with both the rudder sheet and the
+      // workbook's own cruise figure.
+      tailAcXM: entry.wingAcXM + tailArmM,
       thrustN,
       mtowLb,
       wingAreaM2,
@@ -230,6 +240,7 @@ export function useElevatorSheet(): ElevatorSheet {
     }),
     [
       entry,
+      tailArmM,
       thrustN,
       mtowLb,
       wingAreaM2,

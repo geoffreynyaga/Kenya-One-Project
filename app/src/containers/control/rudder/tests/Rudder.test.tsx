@@ -1,5 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { Provider, createStore } from "jotai";
 
+import { tailArmFtAtom } from "../../../../domain/atoms";
 import Rudder from "../Rudder";
 
 vi.mock("plotly.js-basic-dist", () => ({ default: {} }));
@@ -11,6 +13,37 @@ vi.mock("react-plotly.js/factory", () => ({
 beforeEach(() => window.localStorage.clear());
 
 describe("Rudder", () => {
+  /*
+   * The fin arm was typed in here as 4.299 m while the elevator sheet held
+   * 5.100 m for the same aeroplane. It is now carried from Control 01, so
+   * moving it there has to move this sheet.
+   */
+  it("carries the fin arm from the tail arm sheet", () => {
+    const armShown = () =>
+      screen.getByText("Fin arm").closest("div")!.lastElementChild!.textContent;
+
+    const store = createStore();
+    const { rerender } = render(
+      <Provider store={store}>
+        <Rudder />
+      </Provider>
+    );
+    const before = armShown();
+
+    store.set(tailArmFtAtom, store.get(tailArmFtAtom) + 4.5);
+    rerender(
+      <Provider store={store}>
+        <Rudder />
+      </Provider>
+    );
+
+    // The row prints three decimals, so compare at that resolution.
+    expect(parseFloat(armShown()!)).toBeCloseTo(
+      parseFloat(before!) + 4.5 * 0.3048,
+      2
+    );
+  });
+
   it("shows the geometry guide and both figures without opening anything", () => {
     const { container } = render(<Rudder />);
 

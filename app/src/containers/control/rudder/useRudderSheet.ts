@@ -17,6 +17,7 @@ import {
   fuselageSideAreaM2Atom,
   meanChordMAtom,
   stallSpeedKcasAtom,
+  tailArmMAtom,
   takeoffThrustNAtom,
   verticalTailAreaM2Atom,
   verticalTailAspectRatioAtom,
@@ -35,7 +36,6 @@ export type SurfaceField =
 export type CaseField =
   | "crosswindKnots"
   | "sideDragCoefficient"
-  | "finArmM"
   | "crosswindArmM"
   | "sidewashSlope"
   | "yawInterferenceFactor"
@@ -43,6 +43,12 @@ export type CaseField =
   | "yawMomentAtZero";
 
 export type EntryField = SurfaceField | CaseField;
+
+/**
+ * The fin arm is drawn and labelled on the diagram like an entry field, but it
+ * is no longer one: it follows the tail arm carried from Control 01.
+ */
+export type DimensionField = EntryField | "finArmM";
 
 /**
  * The fin itself. These are shared quantities, not rudder entries: the rudder
@@ -63,7 +69,6 @@ const ENTRY_DEFAULTS: Record<EntryField, number> = {
 
   crosswindKnots: 20,
   sideDragCoefficient: 0.8,
-  finArmM: 4.299372,
   crosswindArmM: 2.3148712025699796,
   sidewashSlope: 0,
   yawInterferenceFactor: 0.75,
@@ -105,6 +110,7 @@ export function useRudderSheet(): RudderSheet {
   const fuselageSideAreaM2 = useAtomValue(fuselageSideAreaM2Atom);
   const fuselageLengthM = useAtomValue(fuselageLengthMAtom);
   const thrustN = useAtomValue(takeoffThrustNAtom);
+  const tailArmM = useAtomValue(tailArmMAtom);
   const engineOffsetM = useAtomValue(engineLateralOffsetMAtom);
 
   const setVerticalTailAreaM2 = useSetAtom(verticalTailAreaM2Atom);
@@ -139,6 +145,10 @@ export function useRudderSheet(): RudderSheet {
   const inputs = useMemo<RudderInputs>(
     () => ({
       ...entry,
+      // The arm the fin volume coefficient is defined on, carried from
+      // Control 01. It was typed in here as 4.299 m against the elevator's
+      // 5.100 m, and the two describe the same aeroplane.
+      finArmM: tailArmM,
       verticalTailAreaM2,
       verticalTailAspectRatio,
       verticalTailTaper,
@@ -155,6 +165,7 @@ export function useRudderSheet(): RudderSheet {
     }),
     [
       entry,
+      tailArmM,
       verticalTailAreaM2,
       verticalTailAspectRatio,
       verticalTailTaper,

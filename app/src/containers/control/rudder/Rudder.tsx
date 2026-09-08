@@ -24,7 +24,12 @@ import {
   witnessLine,
 } from "../GeometryPlot";
 import { rudder, rudderWarnings } from "./rudderCompute";
-import { EntryField, FinField, useRudderSheet } from "./useRudderSheet";
+import {
+  DimensionField,
+  EntryField,
+  FinField,
+  useRudderSheet,
+} from "./useRudderSheet";
 import { RudderInputs, RudderResult } from "./utils";
 
 const Plot = createPlotlyComponent(Plotly);
@@ -183,13 +188,6 @@ const CASE_FIELDS: EntrySpec[] = [
     typical: "0.6–0.9.",
   },
   {
-    field: "finArmM",
-    label: "Fin arm",
-    unit: "m",
-    cell: "E3",
-    body: "From the centre of gravity to the fin's aerodynamic centre. It is the lever everything the rudder does works through.",
-  },
-  {
     field: "crosswindArmM",
     label: "Crosswind lever",
     unit: "m",
@@ -324,7 +322,7 @@ function finDimensions(
 }
 
 /** The two levers the sizing cases turn on, measured from the centre of gravity. */
-function armDimensions(inputs: RudderInputs, active: EntryField | null) {
+function armDimensions(inputs: RudderInputs, active: DimensionField | null) {
   const { finArmM, crosswindArmM } = inputs;
   const longest = Math.max(finArmM, crosswindArmM);
   if (!Number.isFinite(longest) || longest <= 0) {
@@ -553,13 +551,22 @@ export default function Rudder() {
     if (SURFACE_FIELDS.some((surface) => surface.field === spec.field)) {
       return { ...spec, guide: surfaceGuide };
     }
-    if (spec.field === "finArmM" || spec.field === "crosswindArmM") {
+    if (spec.field === "crosswindArmM") {
       return { ...spec, guide: geometryGuide };
     }
     return spec;
   };
 
   const carried: CarriedSpec[] = [
+    {
+      label: "Fin arm",
+      unit: "m",
+      value: inputs.finArmM,
+      digits: 3,
+      cell: "E3",
+      origin: "CONTROL 01",
+      body: "Wing quarter chord to fin quarter chord, carried from Control 01. It is the lever everything the rudder does works through, and the length the fin volume coefficient is defined on.",
+    },
     {
       label: "Fin efficiency",
       value: inputs.finEfficiency,
