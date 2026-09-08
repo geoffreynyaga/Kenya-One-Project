@@ -9,7 +9,11 @@ import {
   fetchSrefEngines,
   fetchSrefSizing,
 } from "../../api/srefDesign";
-import SrefDesign from "./SrefDesign";
+import SrefDesign, {
+  SREF_FIELD_QUANTITY_KEYS,
+  SREF_QUANTITY_KEYS,
+  SREF_UPSTREAM_QUANTITY_KEYS,
+} from "./SrefDesign";
 import {
   cruiseFractionAtom,
   propEfficiencyTakeoffAtom,
@@ -505,4 +509,28 @@ test("blocks solve with an invalid input", async () => {
 
   expect(screen.getAllByText("Enter a number.").length).toBeGreaterThan(0);
   expect(fetchSrefSizingMock).toHaveBeenCalledTimes(1);
+});
+
+/*
+ * Two hand-written lists in one file: the quantities each field writes, and
+ * the quantities confirming the sheet confirms. They drifted — the taxi and
+ * climb fractions were in the first and not the second, so Sref was the only
+ * writer of two quantities it never confirmed and Range blocked on them with
+ * nowhere in the app to go. Adding a field to one list now fails here until it
+ * is settled in the other.
+ */
+describe("the quantities Sref owns", () => {
+  it("are exactly the ones confirming the sheet confirms", () => {
+    const owned = Object.values(SREF_FIELD_QUANTITY_KEYS).filter(
+      (key) => !SREF_UPSTREAM_QUANTITY_KEYS.includes(key)
+    );
+
+    expect([...SREF_QUANTITY_KEYS].sort()).toEqual(owned.sort());
+  });
+
+  it("leave the upstream ones to the stage that owns them", () => {
+    for (const key of SREF_UPSTREAM_QUANTITY_KEYS) {
+      expect(SREF_QUANTITY_KEYS).not.toContain(key);
+    }
+  });
 });

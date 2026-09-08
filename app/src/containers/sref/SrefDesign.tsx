@@ -70,7 +70,21 @@ const MONO = tokens.fontFamily.mono.join(", ");
 
 const STORAGE_KEY = "kenya-one:sref:v1";
 
-const SREF_QUANTITY_KEYS = [
+/**
+ * Shown on this sheet but owned upstream: MTOW settles them and carries them
+ * forward. Overriding one here confirms it on the keystroke, but confirming
+ * Sref must not claim them, and resetting Sref must not un-confirm them.
+ */
+export const SREF_UPSTREAM_QUANTITY_KEYS = ["mtowLb", "cruiseFraction"];
+
+/**
+ * What confirming this sheet confirms. It has to stay the whole of
+ * `SREF_FIELD_QUANTITY_KEYS` less the upstream ones — the taxi and climb
+ * fractions were missing from here while sitting in that map, so Sref was the
+ * only writer of two quantities it never confirmed, and Range blocked on them
+ * with nowhere to go. A test holds the two lists together.
+ */
+export const SREF_QUANTITY_KEYS = [
   "clMax",
   "stallSpeedKcas",
   "aspectRatio",
@@ -86,9 +100,11 @@ const SREF_QUANTITY_KEYS = [
   "cruiseSpeedKnots",
   "cd0",
   "oswaldEfficiency",
-] as const;
+  "taxiFraction",
+  "climbFraction",
+];
 
-const SREF_FIELD_QUANTITY_KEYS: Partial<Record<FormField, string>> = {
+export const SREF_FIELD_QUANTITY_KEYS: Partial<Record<FormField, string>> = {
   altitude: "cruiseAltitudeFt",
   clMax: "clMax",
   stallSpeed: "stallSpeedKcas",
@@ -839,7 +855,7 @@ export default function SrefDesign() {
     event.preventDefault();
     if (Object.keys(errors).length > 0 || !cruiseFractionReady) return;
     const request = toSrefRequest(values);
-    confirmQuantities([...SREF_QUANTITY_KEYS]);
+    confirmQuantities(SREF_QUANTITY_KEYS);
     setCommittedStages((current) => ({ ...current, sref: true }));
     if (submitted && JSON.stringify(request) === JSON.stringify(submitted)) {
       void query.refetch();
@@ -863,7 +879,7 @@ export default function SrefDesign() {
     const nextErrors = srefFormErrors(next);
     if (Object.keys(nextErrors).length > 0) return;
     setSubmitted(toSrefRequest(next));
-    confirmQuantities([...SREF_QUANTITY_KEYS]);
+    confirmQuantities(SREF_QUANTITY_KEYS);
     setCommittedStages((current) => ({ ...current, sref: true }));
   };
 
@@ -871,7 +887,7 @@ export default function SrefDesign() {
     resetSheet();
     resetView();
     publishEngine(null);
-    resetQuantities([...SREF_QUANTITY_KEYS]);
+    resetQuantities(SREF_QUANTITY_KEYS);
     setCommittedStages((current) => ({ ...current, sref: false }));
   };
 
