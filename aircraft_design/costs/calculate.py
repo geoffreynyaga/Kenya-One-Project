@@ -181,6 +181,9 @@ def _calculate_development(inputs: CostInputs) -> DevelopmentResult:
         * certification
         * (1 + 0.5 * assumptions.composite_fraction)
     )
+    # Gudmundsson eq (2-11) prints the leading constant as 24.896; the
+    # workbook (Cost Analysis!L22) truncates it to 24.89, a 0.024% shift on
+    # this one line item. The workbook figure is kept for parity.
     materials_and_equipment = (
         24.89
         * weight**0.689
