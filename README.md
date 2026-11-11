@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://kenya-one.netlify.com/">Online Demo</a>
+  <a href="https://kenya-one.netlify.app/">Online Demo</a>
 </p>
 
 This is an opensource project (implemented in a python/Django backend and a React GUI in a Tauri desktop shell) that was conceived in the `Aerospace Department at the Technical University of Kenya`. This project was initially used for the conceptual and detailed design of the aircraft shown below.
