@@ -1,27 +1,32 @@
-## Welcome to `Kenya One: ✈️ Aircraft Design Software` documentation
+<p align="center">
+  <img src="./docs/images/banner.png" alt="Kenya One" width="180"/>
+</p>
 
-![](https://github.com/geoffreynyaga/KENYA-ONE-PROJECT/workflows/Pytest%20CI/badge.svg)
+<h2 align="center">Welcome to <code>Kenya One: ✈️ Aircraft Design Software</code> documentation</h2>
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/95d504fe-9137-40b2-b27b-c417c0791d2f/deploy-status)](https://app.netlify.com/sites/kenya-one/deploys)
+<p align="center">
+  <img src="https://github.com/geoffreynyaga/KENYA-ONE-PROJECT/workflows/Pytest%20CI/badge.svg" alt="Pytest CI"/>
+  <a href="https://app.netlify.com/sites/kenya-one/deploys"><img src="https://api.netlify.com/api/v1/badges/95d504fe-9137-40b2-b27b-c417c0791d2f/deploy-status" alt="Netlify Status"/></a>
+</p>
 
-<div style="text-align:center"><img src="./docs/images/banner.png" alt="Kenya One" width="360"/>
-</div>
+<p align="center">
+  <a href="https://kenya-one.netlify.com/">Online Demo</a>
+</p>
 
-[Online Demo](https://kenya-one.netlify.com/)
+This is an opensource project (implemented in a python/Django backend and a React GUI in a Tauri desktop shell) that was conceived in the `Aerospace Department at the Technical University of Kenya`. This project was initially used for the conceptual and detailed design of the aircraft shown below.
 
-> This is an opensource project (implemented in a python/Django backend and a React GUI in a Tauri desktop shell) that was conceived in the `Aerospace Department at the Technical University of Kenya`. This project was initially used for the conceptual and detailed design of the aircraft shown below.
+<p align="center">
+  <img src="https://d2t1xqejof9utc.cloudfront.net/screenshots/pics/142095da28472cc6409d4e2ec85673cc/large.jpg" alt="drawing" width="420"/>
+</p>
 
-<div style="text-align:center"><img src="https://d2t1xqejof9utc.cloudfront.net/screenshots/pics/142095da28472cc6409d4e2ec85673cc/large.jpg" alt="drawing" height="200"  padding="200px"/>
-</div>
+Currently it (backend) provides functionalities such as:
 
-> Currently it (backend) provides functionalities such as:
->
-> - Weight Sizing (empty weight, MTOW, Fuel etc),
-> - Wing Surface Area sizing
-> - Detailed Component Weight Calculations
-> - Lifting Line Theory
-> - Performace Sizing: Take-off, Climb, Cruise, Landing
-> - etc
+- Weight Sizing (empty weight, MTOW, Fuel etc),
+- Wing Surface Area sizing
+- Detailed Component Weight Calculations
+- Lifting Line Theory
+- Performace Sizing: Take-off, Climb, Cruise, Landing
+- etc
 
 `Better documentation and Table Of Contents coming soon...`
 
@@ -30,27 +35,22 @@
 However, now it is being modified to be used for other types of General Aviation and Light Drone aircraft design. Hopefully soon there will be modules to work on Large Aircrafts and possibly Airships.
 
 > The main idea 💡 is that we can have a software that aggregrates all sizing, performance, weight estimation, cost analysis, Drag etc into one platform and reduce over-reliance on fragmented excel, matlab/octave, fortran scripts and incorporate modern visualisation and optimisation into the workflow.
->
-> #### Inspiration is derived from works of many great engineers and authors including but not limited to:
->
-> - Prof. Snorri Gudmundsson
-> - Dr. Raymer
-> - Prof. Sadraey
-> - Nicolai
-> - Roskam
-> - Ajoy Kumar Kundu etc
 
 `NB: Majority of logic for the backend have already been implemented, the GUI is what is lacking`
 
-### Work in progress
+### Screenshots
 
-- [✔️] Tauri shell to build the GUI for Windows, MacOS and Linux environments
-- [❌] Bundling the calculations as a worker, so the app needs no server
-- [❌] Local `.kenyaone` project files, so a design is portable
-- [❌] Django backend to store the data.
-- [❌] Deploy the backend so that values can be synce across devices.
+<p align="center">
+  <img src="./docs/images/projects.png" alt="Projects" width="800"/>
+</p>
 
-![sizing](./docs/images/sizing.png)
+<p align="center">
+  <img src="./docs/images/aircraft-category.png" alt="Aircraft category" width="800"/>
+</p>
+
+<p align="center">
+  <img src="./docs/images/sizing.png" alt="Sizing" width="800"/>
+</p>
 
 `I invite anyone with any ideas to collaborate and add features.`
 
