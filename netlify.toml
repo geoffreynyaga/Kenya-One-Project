@@ -1,0 +1,12 @@
+# Web build of the desktop app in app/.
+[build]
+  base = "app"
+  # vite.config.mts uses relative asset paths for Tauri. The web build is
+  # served from the domain root with BrowserRouter, so a refresh on a nested
+  # route needs absolute paths.
+  command = "bun install --frozen-lockfile && bun run build -- --base=/"
+  publish = "build"
+
+[build.environment]
+  BUN_VERSION = "1.3.14"
+  NODE_VERSION = "22"
